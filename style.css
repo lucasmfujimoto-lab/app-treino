@@ -16,11 +16,18 @@ body {
 
 header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  width: 100%;
 }
 
 header h1 {
   color: #00e676;
+}
+
+#info-usuario-logado {
+  font-size: 0.8rem;
+  color: #a8a8b3;
+  margin-top: 4px;
 }
 
 .container {
@@ -88,6 +95,17 @@ button:active {
 
 .hidden {
   display: none !important;
+}
+
+.input-form {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 6px;
+  border: 1px solid #323238;
+  background: #121214;
+  color: #fff;
+  font-size: 0.9rem;
 }
 
 /* Lista de Exercícios */
@@ -162,6 +180,7 @@ button:active {
   max-width: 420px;
   color: #fff;
   position: relative;
+  text-align: center;
 }
 
 .close {
@@ -189,4 +208,18 @@ button:active {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.seletor-exercicios-montagem {
+  text-align: left;
+  background: #121214;
+  padding: 8px;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.seletor-exercicios-montagem label {
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
 }
