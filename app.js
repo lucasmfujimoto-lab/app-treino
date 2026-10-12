@@ -1,12 +1,13 @@
 // CONFIGURAÇÃO DO FIREBASE (Insira os dados do seu projeto Firebase)
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_AQUI",
-  authDomain: "seu-projeto.firebaseapp.com",
-  projectId: "seu-projeto",
-  storageBucket: "seu-projeto.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyALJh4FgI8Tk-_POXcjadiEGF3CKtxOuBA",
+  authDomain: "app-treino-4b6da.firebaseapp.com",
+  projectId: "app-treino-4b6da",
+  storageBucket: "app-treino-4b6da.firebasestorage.app",
+  messagingSenderId: "170368119250",
+  appId: "1:170368119250:web:e703af3232219bedd9980b"
 };
+
 
 // Inicializar Firebase
 if (!firebase.apps.length) {
