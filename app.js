@@ -1,53 +1,85 @@
-// Catálogo Completo de Exercícios e Alongamento com vídeos em Português
 const catalogoExercicios = {
   Alongamento: [
-    { id: 1, nome: "Mobilidade de Ombro (Bastão)", video: "https://www.youtube.com/embed/S2pG37y-Jls" },
+    { id: 1, nome: "Mobilidade de Ombro", video: "https://www.youtube.com/embed/S2pG37y-Jls" },
     { id: 2, nome: "Alongamento Torácico e Peitoral", video: "https://www.youtube.com/embed/5T2kM3g-_18" },
-    { id: 3, nome: "Mobilidade de Quadril (Profundo)", video: "https://www.youtube.com/embed/3m4aA-Gj_pU" },
-    { id: 4, nome: "Alongamento de Isquiotibiais (Posterior)", video: "https://www.youtube.com/embed/e_Z_8LqJd0M" }
+    { id: 3, nome: "Mobilidade de Quadril", video: "https://www.youtube.com/embed/3m4aA-Gj_pU" },
+    { id: 4, nome: "Alongamento de Isquiotibiais", video: "https://www.youtube.com/embed/e_Z_8LqJd0M" },
+    { id: 5, nome: "Alongamento de Dorsal e Costas", video: "https://www.youtube.com/embed/G8L_8wO9U4E" },
+    { id: 6, nome: "Mobilidade de Tornozelo", video: "https://www.youtube.com/embed/N3awlEyY980" },
+    { id: 7, nome: "Alongamento de Flexores do Quadril", video: "https://www.youtube.com/embed/3m4aA-Gj_pU" }
   ],
   Peito: [
     { id: 101, nome: "Supino Reto com Barra", video: "https://www.youtube.com/embed/sqOw2Y6uDWQ" },
     { id: 102, nome: "Supino Inclinado Halteres", video: "https://www.youtube.com/embed/Z1r2T8G9x-k" },
-    { id: 103, nome: "Crossover no Cabo", video: "https://www.youtube.com/embed/U33S2kX1Aag" },
-    { id: 104, nome: "Peck Deck / Voador", video: "https://www.youtube.com/embed/6Yp2I1yEUpE" }
+    { id: 103, nome: "Supino Declinado Halteres", video: "https://www.youtube.com/embed/sqOw2Y6uDWQ" },
+    { id: 104, nome: "Crossover no Cabo (Médio)", video: "https://www.youtube.com/embed/U33S2kX1Aag" },
+    { id: 105, nome: "Crossover de Baixo para Cima", video: "https://www.youtube.com/embed/U33S2kX1Aag" },
+    { id: 106, nome: "Peck Deck / Voador", video: "https://www.youtube.com/embed/6Yp2I1yEUpE" },
+    { id: 107, nome: "Crucifixo Reto com Halteres", video: "https://www.youtube.com/embed/Z1r2T8G9x-k" }
   ],
   Costas: [
     { id: 201, nome: "Puxada Frontal Aberta", video: "https://www.youtube.com/embed/XZA1v65I7wI" },
-    { id: 202, nome: "Remada Curvada com Barra", video: "https://www.youtube.com/embed/G8L_8wO9U4E" },
-    { id: 203, nome: "Remada Baixa Triângulo", video: "https://www.youtube.com/embed/3O91b-6V-6U" },
-    { id: 204, nome: "Pulldown na Polia", video: "https://www.youtube.com/embed/Y0p3qR543O0" }
+    { id: 202, nome: "Puxada com Pegada Cruzada/Triângulo", video: "https://www.youtube.com/embed/XZA1v65I7wI" },
+    { id: 203, nome: "Remada Curvada com Barra", video: "https://www.youtube.com/embed/G8L_8wO9U4E" },
+    { id: 204, nome: "Remada Baixa Triângulo", video: "https://www.youtube.com/embed/3O91b-6V-6U" },
+    { id: 205, nome: "Remada Unilateral com Halter (Serrote)", video: "https://www.youtube.com/embed/G8L_8wO9U4E" },
+    { id: 206, nome: "Pulldown na Polia Alta", video: "https://www.youtube.com/embed/Y0p3qR543O0" },
+    { id: 207, nome: "Levantamento Terra", video: "https://www.youtube.com/embed/U3HlEF_E9so" }
   ],
   Biceps: [
-    { id: 301, nome: "Rosca Direta com Barra W", video: "https://www.youtube.com/embed/S2i2N02L0eI" },
+    { id: 301, nome: "Rosca Direta Barra W", video: "https://www.youtube.com/embed/S2i2N02L0eI" },
     { id: 302, nome: "Rosca Martelo Halteres", video: "https://www.youtube.com/embed/zC3nLlEvinU" },
-    { id: 303, nome: "Rosca Scott no Banco", video: "https://www.youtube.com/embed/0B2h8_cI66E" }
+    { id: 303, nome: "Rosca Scott no Banco", video: "https://www.youtube.com/embed/0B2h8_cI66E" },
+    { id: 304, nome: "Rosca Inclinada no Banco 45°", video: "https://www.youtube.com/embed/S2i2N02L0eI" },
+    { id: 305, nome: "Rosca Concentrada Unilateral", video: "https://www.youtube.com/embed/0B2h8_cI66E" },
+    { id: 306, nome: "Rosca na Polia Baixa Corda", video: "https://www.youtube.com/embed/zC3nLlEvinU" },
+    { id: 307, nome: "Rosca Inversa com Barra", video: "https://www.youtube.com/embed/S2i2N02L0eI" }
   ],
   Triceps: [
     { id: 401, nome: "Tríceps Pulley Corda", video: "https://www.youtube.com/embed/8A28J27LpL0" },
-    { id: 402, nome: "Tríceps Testa Barra H", video: "https://www.youtube.com/embed/d_KZxkY_0cM" },
-    { id: 403, nome: "Tríceps Francês Halter", video: "https://www.youtube.com/embed/wX2L3O815A0" }
+    { id: 402, nome: "Tríceps Pulley Barra Reta", video: "https://www.youtube.com/embed/8A28J27LpL0" },
+    { id: 403, nome: "Tríceps Testa Barra H", video: "https://www.youtube.com/embed/d_KZxkY_0cM" },
+    { id: 404, nome: "Tríceps Francês Unilateral Halter", video: "https://www.youtube.com/embed/wX2L3O815A0" },
+    { id: 405, nome: "Tríceps Coice na Polia", video: "https://www.youtube.com/embed/wX2L3O815A0" },
+    { id: 406, nome: "Mergulho / Paralelas", video: "https://www.youtube.com/embed/d_KZxkY_0cM" },
+    { id: 407, nome: "Supino Fechado", video: "https://www.youtube.com/embed/sqOw2Y6uDWQ" }
   ],
   Ombro: [
     { id: 501, nome: "Desenvolvimento com Halteres", video: "https://www.youtube.com/embed/M2rwv2g8OEU" },
-    { id: 502, nome: "Elevação Lateral Halteres", video: "https://www.youtube.com/embed/3VcKaXpzqRo" },
-    { id: 503, nome: "Elevação Frontal Polia", video: "https://www.youtube.com/embed/hRJ6tR5-ioo" }
+    { id: 502, nome: "Desenvolvimento Arnold", video: "https://www.youtube.com/embed/M2rwv2g8OEU" },
+    { id: 503, nome: "Elevação Lateral Halteres", video: "https://www.youtube.com/embed/3VcKaXpzqRo" },
+    { id: 504, nome: "Elevação Lateral na Polia Baixa", video: "https://www.youtube.com/embed/3VcKaXpzqRo" },
+    { id: 505, nome: "Elevação Frontal com Barra/Halteres", video: "https://www.youtube.com/embed/hRJ6tR5-ioo" },
+    { id: 506, nome: "Crucifixo Invertido no Peck Deck", video: "https://www.youtube.com/embed/6Yp2I1yEUpE" },
+    { id: 507, nome: "Encolhimento de Ombros (Trapézio)", video: "https://www.youtube.com/embed/M2rwv2g8OEU" }
   ],
   Perna: [
-    { id: 601, nome: "Agachamento Livre", video: "https://www.youtube.com/embed/U3HlEF_E9so" },
+    { id: 601, nome: "Agachamento Livre com Barra", video: "https://www.youtube.com/embed/U3HlEF_E9so" },
     { id: 602, nome: "Leg Press 45°", video: "https://www.youtube.com/embed/yZmx_Ac3880" },
     { id: 603, nome: "Cadeira Extensora", video: "https://www.youtube.com/embed/Yy5D4O3_02s" },
     { id: 604, nome: "Mesa Flexora", video: "https://www.youtube.com/embed/1Tq3VMWInno" },
-    { id: 605, nome: "Gêmeos em Pé (Panturrilha)", video: "https://www.youtube.com/embed/N3awlEyY980" }
+    { id: 605, nome: "Cadeira Flexora", video: "https://www.youtube.com/embed/1Tq3VMWInno" },
+    { id: 606, nome: "Agachamento Búlgaro", video: "https://www.youtube.com/embed/U3HlEF_E9so" },
+    { id: 607, nome: "Stiff com Halteres / Barra", video: "https://www.youtube.com/embed/e_Z_8LqJd0M" },
+    { id: 608, nome: "Gêmeos em Pé (Panturrilha)", video: "https://www.youtube.com/embed/N3awlEyY980" }
   ],
   Abdomen: [
-    { id: 701, nome: "Abdominal Infra na Barra/Solo", video: "https://www.youtube.com/embed/l41NoxJ3I1U" },
-    { id: 702, nome: "Abdominal Supra na Polia/Solo", video: "https://www.youtube.com/embed/5ER5Of4-62g" },
-    { id: 703, nome: "Prancha Isométrica", video: "https://www.youtube.com/embed/pSHjTRCQxIw" }
+    { id: 701, nome: "Abdominal Infra Solo", video: "https://www.youtube.com/embed/l41NoxJ3I1U" },
+    { id: 702, nome: "Abdominal Supra Solo", video: "https://www.youtube.com/embed/5ER5Of4-62g" },
+    { id: 703, nome: "Abdominal na Polia Alta (Roda/Corda)", video: "https://www.youtube.com/embed/5ER5Of4-62g" },
+    { id: 704, nome: "Prancha Isométrica", video: "https://www.youtube.com/embed/pSHjTRCQxIw" },
+    { id: 705, nome: "Prancha Lateral", video: "https://www.youtube.com/embed/pSHjTRCQxIw" },
+    { id: 706, nome: "Abdominal Infra Suspenso na Barra", video: "https://www.youtube.com/embed/l41NoxJ3I1U" },
+    { id: 707, nome: "Abdominal Oblíquo Cruzado", video: "https://www.youtube.com/embed/5ER5Of4-62g" }
   ],
   Cardio: [
     { id: 801, nome: "Esteira (Caminhada / Corrida)", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
-    { id: 802, nome: "Bicicleta Ergométrica", video: "https://www.youtube.com/embed/0G2_XV7slIg" }
+    { id: 802, nome: "Bicicleta Ergométrica", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
+    { id: 803, nome: "Elíptico / Transport", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
+    { id: 804, nome: "Simulador de Escada", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
+    { id: 805, nome: "Corda de Pular", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
+    { id: 806, nome: "Remo Seco Ergômetro", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
+    { id: 807, nome: "Polichinelos / HIIT", video: "https://www.youtube.com/embed/0G2_XV7slIg" }
   ]
 };
 
@@ -66,7 +98,15 @@ document.addEventListener("DOMContentLoaded", () => {
   atualizarTelaInicial();
   renderizarCalendario();
   carregarBlocoAlongamento();
+
+  document.getElementById('btn-abrir-alongamento').addEventListener('click', () => {
+    document.getElementById('modal-alongamento').classList.remove('hidden');
+  });
 });
+
+function fecharModalAlongamento() {
+  document.getElementById('modal-alongamento').classList.add('hidden');
+}
 
 function carregarBlocoAlongamento() {
   const container = document.getElementById('lista-alongamento');
@@ -76,24 +116,30 @@ function carregarBlocoAlongamento() {
     const item = document.createElement('div');
     item.className = 'item-exercicio';
     item.style.cssText = "display: flex; justify-content: space-between; align-items: center;";
-    item.innerHTML = `
-      <span style='font-size: 0.85rem;'>${ex.nome}</span>
-      <button class='btn-secundario' style='padding: 4px 8px; font-size: 0.75rem;' onclick="verVideo('${ex.nome}', '${ex.video}')">▶ Vídeo</button>
-    `;
+
+    const span = document.createElement('span');
+    span.style.fontSize = "0.85rem";
+    span.innerText = ex.nome;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-secundario';
+    btn.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
+    btn.innerText = '▶ Vídeo';
+    btn.addEventListener('click', () => verVideo(ex.nome, ex.video));
+
+    item.appendChild(span);
+    item.appendChild(btn);
     container.appendChild(item);
   });
 }
 
-function toggleAlongamento() {
-  const lista = document.getElementById('lista-alongamento');
-  lista.classList.toggle('hidden');
-}
-
 function atualizarTelaInicial() {
   if (configuracaoTreino.length === 0) return;
+  if (indiceTreinoAtual >= configuracaoTreino.length) indiceTreinoAtual = 0;
+  
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
   document.getElementById('nome-treino').innerText = `TREINO ${treinoAtual.letra}`;
-  document.getElementById('foco-treino').innerText = `Grupos: ${treinoAtual.grupos.join(', ')}`;
+  document.getElementById('foco-treino').innerText = `Músculos: ${treinoAtual.grupos.join(', ')}`;
 }
 
 function iniciarTreino() {
@@ -115,20 +161,32 @@ function iniciarTreino() {
     exerciciosGrupo.forEach(ex => {
       const cardEx = document.createElement('div');
       cardEx.className = 'item-exercicio';
-      cardEx.innerHTML = `
-        <div class="exercicio-topo">
-          <label>
-            <input type="checkbox" class="check-ex" data-nome="${ex.nome}" checked> 
-            <strong>${ex.nome}</strong>
-          </label>
-          <button class="btn-secundario" style="padding: 4px 8px; font-size: 0.75rem;" onclick="verVideo('${ex.nome}', '${ex.video}')">▶ Vídeo</button>
-        </div>
-        <div class="inputs-treino">
-          <input type="number" placeholder="Séries" value="3" class="input-series">
-          <input type="text" placeholder="Reps" value="8-10" class="input-reps">
-          <input type="number" placeholder="Carga (kg)" class="input-carga">
-        </div>
+      
+      const topo = document.createElement('div');
+      topo.className = 'exercicio-topo';
+      
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${ex.nome}" checked> <strong>${ex.nome}</strong>`;
+      
+      const btnVid = document.createElement('button');
+      btnVid.className = 'btn-secundario';
+      btnVid.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
+      btnVid.innerText = '▶ Vídeo';
+      btnVid.addEventListener('click', () => verVideo(ex.nome, ex.video));
+
+      topo.appendChild(label);
+      topo.appendChild(btnVid);
+
+      const inputs = document.createElement('div');
+      inputs.className = 'inputs-treino';
+      inputs.innerHTML = `
+        <input type="number" placeholder="Séries" value="3" class="input-series">
+        <input type="text" placeholder="Reps" value="8-10" class="input-reps">
+        <input type="number" placeholder="Carga (kg)" class="input-carga">
       `;
+
+      cardEx.appendChild(topo);
+      cardEx.appendChild(inputs);
       listaContainer.appendChild(cardEx);
     });
   });
@@ -241,7 +299,6 @@ function fecharModalDetalhes() {
   document.getElementById('modal-detalhes').classList.add('hidden');
 }
 
-// Configuração de Divisão sem Travar
 function abrirConfigRotina() {
   document.getElementById('modal-config-rotina').classList.remove('hidden');
   gerarCamposConfig();
@@ -298,10 +355,11 @@ function salvarNovaConfig() {
     configuracaoTreino = novaRotina;
     indiceTreinoAtual = 0;
     localStorage.setItem('minhaRotina', JSON.stringify(configuracaoTreino));
-    localStorage.setItem('indiceTreinoAtual', 0);
+    localStorage.setItem('indiceTreinoAtual', '0');
+    
     atualizarTelaInicial();
     fecharModalConfig();
-    alert('Nova rotina configurada com sucesso!');
+    alert('Nova rotina salva com sucesso!');
   } else {
     alert('Marque pelo menos um músculo para cada treino.');
   }
@@ -311,10 +369,11 @@ function fecharModalConfig() {
   document.getElementById('modal-config-rotina').classList.add('hidden');
 }
 
-// Player de Vídeo
 function verVideo(titulo, url) {
   document.getElementById('video-titulo').innerText = titulo;
-  document.getElementById('video-container').innerHTML = `<iframe width="100%" height="220" src="${url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  document.getElementById('video-container').innerHTML = `
+    <iframe width="100%" height="220" src="${url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  `;
   document.getElementById('modal-video').classList.remove('hidden');
 }
 
