@@ -1,12 +1,33 @@
+// CONFIGURAÇÃO DO FIREBASE (Insira os dados do seu projeto Firebase)
+const firebaseConfig = {
+  apiKey: "SUA_API_KEY_AQUI",
+  authDomain: "seu-projeto.firebaseapp.com",
+  projectId: "seu-projeto",
+  storageBucket: "seu-projeto.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};
+
+// Inicializar Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// CATÁLOGO EXPANDIDO COM 10 EXERCÍCIOS POR MÚSCULO
 const catalogoExercicios = {
   Alongamento: [
-    { id: 1, nome: "Mobilidade de Ombro", video: "https://www.youtube.com/embed/S2pG37y-Jls" },
+    { id: 1, nome: "Mobilidade de Ombro (Bastão)", video: "https://www.youtube.com/embed/S2pG37y-Jls" },
     { id: 2, nome: "Alongamento Torácico e Peitoral", video: "https://www.youtube.com/embed/5T2kM3g-_18" },
     { id: 3, nome: "Mobilidade de Quadril", video: "https://www.youtube.com/embed/3m4aA-Gj_pU" },
     { id: 4, nome: "Alongamento de Isquiotibiais", video: "https://www.youtube.com/embed/e_Z_8LqJd0M" },
     { id: 5, nome: "Alongamento de Dorsal e Costas", video: "https://www.youtube.com/embed/G8L_8wO9U4E" },
     { id: 6, nome: "Mobilidade de Tornozelo", video: "https://www.youtube.com/embed/N3awlEyY980" },
-    { id: 7, nome: "Alongamento de Flexores do Quadril", video: "https://www.youtube.com/embed/3m4aA-Gj_pU" }
+    { id: 7, nome: "Alongamento de Flexores do Quadril", video: "https://www.youtube.com/embed/3m4aA-Gj_pU" },
+    { id: 8, nome: "Mobilidade de Punho e Antebraço", video: "https://www.youtube.com/embed/S2pG37y-Jls" },
+    { id: 9, nome: "Alongamento de Glúteo e Piriforme", video: "https://www.youtube.com/embed/3m4aA-Gj_pU" },
+    { id: 10, nome: "Mobilidade de Cervical e Pescoço", video: "https://www.youtube.com/embed/5T2kM3g-_18" }
   ],
   Peito: [
     { id: 101, nome: "Supino Reto com Barra", video: "https://www.youtube.com/embed/sqOw2Y6uDWQ" },
@@ -15,62 +36,82 @@ const catalogoExercicios = {
     { id: 104, nome: "Crossover no Cabo (Médio)", video: "https://www.youtube.com/embed/U33S2kX1Aag" },
     { id: 105, nome: "Crossover de Baixo para Cima", video: "https://www.youtube.com/embed/U33S2kX1Aag" },
     { id: 106, nome: "Peck Deck / Voador", video: "https://www.youtube.com/embed/6Yp2I1yEUpE" },
-    { id: 107, nome: "Crucifixo Reto com Halteres", video: "https://www.youtube.com/embed/Z1r2T8G9x-k" }
+    { id: 107, nome: "Crucifixo Reto Halteres", video: "https://www.youtube.com/embed/Z1r2T8G9x-k" },
+    { id: 108, nome: "Flexão de Braço Tradicional", video: "https://www.youtube.com/embed/sqOw2Y6uDWQ" },
+    { id: 109, nome: "Pullover com Halter", video: "https://www.youtube.com/embed/Z1r2T8G9x-k" },
+    { id: 110, nome: "Supino Máquina Articulada", video: "https://www.youtube.com/embed/6Yp2I1yEUpE" }
   ],
   Costas: [
     { id: 201, nome: "Puxada Frontal Aberta", video: "https://www.youtube.com/embed/XZA1v65I7wI" },
-    { id: 202, nome: "Puxada com Pegada Cruzada/Triângulo", video: "https://www.youtube.com/embed/XZA1v65I7wI" },
+    { id: 202, nome: "Puxada Triângulo", video: "https://www.youtube.com/embed/XZA1v65I7wI" },
     { id: 203, nome: "Remada Curvada com Barra", video: "https://www.youtube.com/embed/G8L_8wO9U4E" },
     { id: 204, nome: "Remada Baixa Triângulo", video: "https://www.youtube.com/embed/3O91b-6V-6U" },
-    { id: 205, nome: "Remada Unilateral com Halter (Serrote)", video: "https://www.youtube.com/embed/G8L_8wO9U4E" },
+    { id: 205, nome: "Remada Serrote Unilateral", video: "https://www.youtube.com/embed/G8L_8wO9U4E" },
     { id: 206, nome: "Pulldown na Polia Alta", video: "https://www.youtube.com/embed/Y0p3qR543O0" },
-    { id: 207, nome: "Levantamento Terra", video: "https://www.youtube.com/embed/U3HlEF_E9so" }
+    { id: 207, nome: "Levantamento Terra", video: "https://www.youtube.com/embed/U3HlEF_E9so" },
+    { id: 208, nome: "Barra Fixa Pronada", video: "https://www.youtube.com/embed/XZA1v65I7wI" },
+    { id: 209, nome: "Remada Articulada Máquina", video: "https://www.youtube.com/embed/3O91b-6V-6U" },
+    { id: 210, nome: "Hiperextensão Lombar", video: "https://www.youtube.com/embed/G8L_8wO9U4E" }
   ],
   Biceps: [
     { id: 301, nome: "Rosca Direta Barra W", video: "https://www.youtube.com/embed/S2i2N02L0eI" },
     { id: 302, nome: "Rosca Martelo Halteres", video: "https://www.youtube.com/embed/zC3nLlEvinU" },
     { id: 303, nome: "Rosca Scott no Banco", video: "https://www.youtube.com/embed/0B2h8_cI66E" },
-    { id: 304, nome: "Rosca Inclinada no Banco 45°", video: "https://www.youtube.com/embed/S2i2N02L0eI" },
-    { id: 305, nome: "Rosca Concentrada Unilateral", video: "https://www.youtube.com/embed/0B2h8_cI66E" },
-    { id: 306, nome: "Rosca na Polia Baixa Corda", video: "https://www.youtube.com/embed/zC3nLlEvinU" },
-    { id: 307, nome: "Rosca Inversa com Barra", video: "https://www.youtube.com/embed/S2i2N02L0eI" }
+    { id: 304, nome: "Rosca Inclinada Banco 45°", video: "https://www.youtube.com/embed/S2i2N02L0eI" },
+    { id: 305, nome: "Rosca Concentrada", video: "https://www.youtube.com/embed/0B2h8_cI66E" },
+    { id: 306, nome: "Rosca Polia Baixa Corda", video: "https://www.youtube.com/embed/zC3nLlEvinU" },
+    { id: 307, nome: "Rosca Inversa Barra", video: "https://www.youtube.com/embed/S2i2N02L0eI" },
+    { id: 308, nome: "Rosca Spider no Banco", video: "https://www.youtube.com/embed/0B2h8_cI66E" },
+    { id: 309, nome: "Rosca 21 com Barra", video: "https://www.youtube.com/embed/S2i2N02L0eI" },
+    { id: 310, nome: "Rosca Simultânea Halteres", video: "https://www.youtube.com/embed/zC3nLlEvinU" }
   ],
   Triceps: [
     { id: 401, nome: "Tríceps Pulley Corda", video: "https://www.youtube.com/embed/8A28J27LpL0" },
     { id: 402, nome: "Tríceps Pulley Barra Reta", video: "https://www.youtube.com/embed/8A28J27LpL0" },
     { id: 403, nome: "Tríceps Testa Barra H", video: "https://www.youtube.com/embed/d_KZxkY_0cM" },
-    { id: 404, nome: "Tríceps Francês Unilateral Halter", video: "https://www.youtube.com/embed/wX2L3O815A0" },
-    { id: 405, nome: "Tríceps Coice na Polia", video: "https://www.youtube.com/embed/wX2L3O815A0" },
-    { id: 406, nome: "Mergulho / Paralelas", video: "https://www.youtube.com/embed/d_KZxkY_0cM" },
-    { id: 407, nome: "Supino Fechado", video: "https://www.youtube.com/embed/sqOw2Y6uDWQ" }
+    { id: 404, nome: "Tríceps Francês Halter", video: "https://www.youtube.com/embed/wX2L3O815A0" },
+    { id: 405, nome: "Tríceps Coice Polia", video: "https://www.youtube.com/embed/wX2L3O815A0" },
+    { id: 406, nome: "Paralelas / Mergulho", video: "https://www.youtube.com/embed/d_KZxkY_0cM" },
+    { id: 407, nome: "Supino Fechado", video: "https://www.youtube.com/embed/sqOw2Y6uDWQ" },
+    { id: 408, nome: "Tríceps Banco", video: "https://www.youtube.com/embed/d_KZxkY_0cM" },
+    { id: 409, nome: "Tríceps Inverso Polia", video: "https://www.youtube.com/embed/8A28J27LpL0" },
+    { id: 410, nome: "Tríceps Testa Banco Inclinado", video: "https://www.youtube.com/embed/d_KZxkY_0cM" }
   ],
   Ombro: [
-    { id: 501, nome: "Desenvolvimento com Halteres", video: "https://www.youtube.com/embed/M2rwv2g8OEU" },
+    { id: 501, nome: "Desenvolvimento Halteres", video: "https://www.youtube.com/embed/M2rwv2g8OEU" },
     { id: 502, nome: "Desenvolvimento Arnold", video: "https://www.youtube.com/embed/M2rwv2g8OEU" },
     { id: 503, nome: "Elevação Lateral Halteres", video: "https://www.youtube.com/embed/3VcKaXpzqRo" },
-    { id: 504, nome: "Elevação Lateral na Polia Baixa", video: "https://www.youtube.com/embed/3VcKaXpzqRo" },
-    { id: 505, nome: "Elevação Frontal com Barra/Halteres", video: "https://www.youtube.com/embed/hRJ6tR5-ioo" },
-    { id: 506, nome: "Crucifixo Invertido no Peck Deck", video: "https://www.youtube.com/embed/6Yp2I1yEUpE" },
-    { id: 507, nome: "Encolhimento de Ombros (Trapézio)", video: "https://www.youtube.com/embed/M2rwv2g8OEU" }
+    { id: 504, nome: "Elevação Lateral Polia", video: "https://www.youtube.com/embed/3VcKaXpzqRo" },
+    { id: 505, nome: "Elevação Frontal Halteres", video: "https://www.youtube.com/embed/hRJ6tR5-ioo" },
+    { id: 506, nome: "Crucifixo Invertido Peck Deck", video: "https://www.youtube.com/embed/6Yp2I1yEUpE" },
+    { id: 507, nome: "Encolhimento com Barra", video: "https://www.youtube.com/embed/M2rwv2g8OEU" },
+    { id: 508, nome: "Remada Alta Polia", video: "https://www.youtube.com/embed/hRJ6tR5-ioo" },
+    { id: 509, nome: "Elevação Y no Banco Inclinado", video: "https://www.youtube.com/embed/3VcKaXpzqRo" },
+    { id: 510, nome: "Face Pull com Corda", video: "https://www.youtube.com/embed/6Yp2I1yEUpE" }
   ],
   Perna: [
-    { id: 601, nome: "Agachamento Livre com Barra", video: "https://www.youtube.com/embed/U3HlEF_E9so" },
+    { id: 601, nome: "Agachamento Livre Barra", video: "https://www.youtube.com/embed/U3HlEF_E9so" },
     { id: 602, nome: "Leg Press 45°", video: "https://www.youtube.com/embed/yZmx_Ac3880" },
     { id: 603, nome: "Cadeira Extensora", video: "https://www.youtube.com/embed/Yy5D4O3_02s" },
     { id: 604, nome: "Mesa Flexora", video: "https://www.youtube.com/embed/1Tq3VMWInno" },
     { id: 605, nome: "Cadeira Flexora", video: "https://www.youtube.com/embed/1Tq3VMWInno" },
     { id: 606, nome: "Agachamento Búlgaro", video: "https://www.youtube.com/embed/U3HlEF_E9so" },
-    { id: 607, nome: "Stiff com Halteres / Barra", video: "https://www.youtube.com/embed/e_Z_8LqJd0M" },
-    { id: 608, nome: "Gêmeos em Pé (Panturrilha)", video: "https://www.youtube.com/embed/N3awlEyY980" }
+    { id: 607, nome: "Stiff com Halteres", video: "https://www.youtube.com/embed/e_Z_8LqJd0M" },
+    { id: 608, nome: "Afundo / Passada com Halteres", video: "https://www.youtube.com/embed/U3HlEF_E9so" },
+    { id: 609, nome: "Cadeira Adutora", video: "https://www.youtube.com/embed/yZmx_Ac3880" },
+    { id: 10, nome: "Gêmeos em Pé (Panturrilha)", video: "https://www.youtube.com/embed/N3awlEyY980" }
   ],
   Abdomen: [
     { id: 701, nome: "Abdominal Infra Solo", video: "https://www.youtube.com/embed/l41NoxJ3I1U" },
     { id: 702, nome: "Abdominal Supra Solo", video: "https://www.youtube.com/embed/5ER5Of4-62g" },
-    { id: 703, nome: "Abdominal na Polia Alta (Roda/Corda)", video: "https://www.youtube.com/embed/5ER5Of4-62g" },
+    { id: 703, nome: "Abdominal Polia Corda", video: "https://www.youtube.com/embed/5ER5Of4-62g" },
     { id: 704, nome: "Prancha Isométrica", video: "https://www.youtube.com/embed/pSHjTRCQxIw" },
     { id: 705, nome: "Prancha Lateral", video: "https://www.youtube.com/embed/pSHjTRCQxIw" },
-    { id: 706, nome: "Abdominal Infra Suspenso na Barra", video: "https://www.youtube.com/embed/l41NoxJ3I1U" },
-    { id: 707, nome: "Abdominal Oblíquo Cruzado", video: "https://www.youtube.com/embed/5ER5Of4-62g" }
+    { id: 706, nome: "Abdominal Infra Suspenso", video: "https://www.youtube.com/embed/l41NoxJ3I1U" },
+    { id: 707, nome: "Abdominal Oblíquo Cruzado", video: "https://www.youtube.com/embed/5ER5Of4-62g" },
+    { id: 708, nome: "Abdominal Roda (Ab Roller)", video: "https://www.youtube.com/embed/pSHjTRCQxIw" },
+    { id: 709, nome: "Abdominal Canivete", video: "https://www.youtube.com/embed/l41NoxJ3I1U" },
+    { id: 710, nome: "Vacuum Abdominal", video: "https://www.youtube.com/embed/5ER5Of4-62g" }
   ],
   Cardio: [
     { id: 801, nome: "Esteira (Caminhada / Corrida)", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
@@ -79,26 +120,146 @@ const catalogoExercicios = {
     { id: 804, nome: "Simulador de Escada", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
     { id: 805, nome: "Corda de Pular", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
     { id: 806, nome: "Remo Seco Ergômetro", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
-    { id: 807, nome: "Polichinelos / HIIT", video: "https://www.youtube.com/embed/0G2_XV7slIg" }
+    { id: 807, nome: "Polichinelos / HIIT", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
+    { id: 808, nome: "Corrida Estacionária", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
+    { id: 809, nome: "Burpees", video: "https://www.youtube.com/embed/0G2_XV7slIg" },
+    { id: 810, nome: "Mountain Climbers", video: "https://www.youtube.com/embed/0G2_XV7slIg" }
   ]
 };
 
 const todosGrupos = ["Peito", "Costas", "Biceps", "Triceps", "Ombro", "Perna", "Abdomen", "Cardio"];
 
-let configuracaoTreino = JSON.parse(localStorage.getItem('minhaRotina')) || [
-  { letra: "A", grupos: ["Peito", "Triceps"] },
-  { letra: "B", grupos: ["Costas", "Biceps"] },
-  { letra: "C", grupos: ["Perna", "Ombro", "Abdomen"] }
-];
+// Estado da Aplicação
+let usuarioLogado = null;
+let perfilUsuario = null; // { tipo: 'aluno'|'treinador', codigo: 'ALUNO-1234' }
+let uidAlvoTrabalho = null; // UID do usuário cujos treinos estamos editando/visualizando
 
-let indiceTreinoAtual = parseInt(localStorage.getItem('indiceTreinoAtual')) || 0;
-let historicoTreinos = JSON.parse(localStorage.getItem('historicoTreinos')) || {};
+let configuracaoTreino = [];
+let indiceTreinoAtual = 0;
+let historicoTreinos = {};
+let modoCadastro = false;
 
-document.addEventListener("DOMContentLoaded", () => {
+// Observador de Autenticação
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    usuarioLogado = user;
+    uidAlvoTrabalho = user.uid;
+
+    const docUser = await db.collection("usuarios").doc(user.uid).get();
+    if (docUser.exists) {
+      perfilUsuario = docUser.data();
+    } else {
+      perfilUsuario = { tipo: "aluno", codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() };
+      await db.collection("usuarios").doc(user.uid).set(perfilUsuario);
+    }
+
+    document.getElementById("tela-login").classList.add("hidden");
+    document.getElementById("app-principal").classList.remove("hidden");
+    
+    document.getElementById("info-usuario-logado").innerText = `Usuário: ${user.email} | Código: ${perfilUsuario.codigo}`;
+
+    if (perfilUsuario.tipo === "treinador") {
+      document.getElementById("card-treinador").classList.remove("hidden");
+    }
+
+    carregarDadosDoServidor();
+  } else {
+    document.getElementById("tela-login").classList.remove("hidden");
+    document.getElementById("app-principal").classList.add("hidden");
+  }
+});
+
+// Alternar entre Login e Cadastro
+function alternarModoLogin(e) {
+  e.preventDefault();
+  modoCadastro = !modoCadastro;
+  document.getElementById("login-subtitulo").innerText = modoCadastro ? "Crie sua conta para começar" : "Acesse sua conta para continuar";
+  document.getElementById("btn-submit-login").innerText = modoCadastro ? "CRIAR CONTA" : "ENTRAR";
+  document.getElementById("txt-alternar-login").innerText = modoCadastro ? "Já tem uma conta?" : "Não tem conta?";
+  document.getElementById("link-alternar-login").innerText = modoCadastro ? "Fazer Login" : "Criar Conta";
+  
+  if (modoCadastro) {
+    document.getElementById("area-perfil-cadastro").classList.remove("hidden");
+  } else {
+    document.getElementById("area-perfil-cadastro").classList.add("hidden");
+  }
+}
+
+// Autenticação Firebase
+async function autenticarUsuario(e) {
+  e.preventDefault();
+  const email = document.getElementById("login-email").value;
+  const senha = document.getElementById("login-senha").value;
+
+  try {
+    if (modoCadastro) {
+      const tipoPerfil = document.getElementById("login-tipo-perfil").value;
+      const res = await auth.createUserWithEmailAndPassword(email, senha);
+      const codigoGerado = "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+      
+      await db.collection("usuarios").doc(res.user.uid).set({
+        email: email,
+        tipo: tipoPerfil,
+        codigo: codigoGerado
+      });
+      alert("Conta criada com sucesso!");
+    } else {
+      await auth.signInWithEmailAndPassword(email, senha);
+    }
+  } catch (err) {
+    alert("Erro na autenticação: " + err.message);
+  }
+}
+
+function deslogar() {
+  auth.signOut();
+}
+
+// Treinador carregar aluno pelo código
+async function carregarTreinoDoAluno() {
+  const codigo = document.getElementById("input-codigo-aluno").value.trim().toUpperCase();
+  if (!codigo) return alert("Digite o código do aluno.");
+
+  const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
+  if (snap.empty) {
+    return alert("Nenhum aluno encontrado com este código.");
+  }
+
+  const docAluno = snap.docs[0];
+  uidAlvoTrabalho = docAluno.id;
+  const dadosAluno = docAluno.data();
+
+  const msg = document.getElementById("msg-aluno-carregado");
+  msg.innerText = `Editando/Visualizando treino do aluno: ${dadosAluno.email}`;
+  msg.classList.remove("hidden");
+
+  carregarDadosDoServidor();
+}
+
+// Carregar Dados do Firestore
+async function carregarDadosDoServidor() {
+  const docRotina = await db.collection("rotinas").doc(uidAlvoTrabalho).get();
+  if (docRotina.exists) {
+    const d = docRotina.data();
+    configuracaoTreino = d.rotina || [];
+    indiceTreinoAtual = d.indiceAtual || 0;
+  } else {
+    configuracaoTreino = [
+      { letra: "A", grupos: ["Peito", "Triceps"], exerciciosFixos: ["Supino Reto com Barra", "Tríceps Pulley Corda"] },
+      { letra: "B", grupos: ["Costas", "Biceps"], exerciciosFixos: ["Puxada Frontal Aberta", "Rosca Direta Barra W"] }
+    ];
+    indiceTreinoAtual = 0;
+  }
+
+  const docHist = await db.collection("historicos").doc(uidAlvoTrabalho).get();
+  historicoTreinos = docHist.exists ? docHist.data() : {};
+
   atualizarTelaInicial();
   renderizarCalendario();
   carregarBlocoAlongamento();
+}
 
+document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('btn-abrir-alongamento').addEventListener('click', () => {
     document.getElementById('modal-alongamento').classList.remove('hidden');
   });
@@ -151,14 +312,19 @@ function iniciarTreino() {
 
   treinoAtual.grupos.forEach(grupo => {
     const exerciciosGrupo = catalogoExercicios[grupo] || [];
-    if (exerciciosGrupo.length > 0) {
+    
+    // Filtrar apenas os selecionados na configuração se existirem
+    const selecionados = treinoAtual.exerciciosFixos || [];
+    const exerciciosExibir = exerciciosGrupo.filter(ex => selecionados.length === 0 || selecionados.includes(ex.nome));
+
+    if (exerciciosExibir.length > 0) {
       const tituloGrupo = document.createElement('h3');
       tituloGrupo.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
       tituloGrupo.innerText = `● ${grupo}`;
       listaContainer.appendChild(tituloGrupo);
     }
 
-    exerciciosGrupo.forEach(ex => {
+    exerciciosExibir.forEach(ex => {
       const cardEx = document.createElement('div');
       cardEx.className = 'item-exercicio';
       
@@ -194,7 +360,7 @@ function iniciarTreino() {
   areaExecucao.classList.remove('hidden');
 }
 
-function concluirTreino() {
+async function concluirTreino() {
   const hoje = new Date().toISOString().split('T')[0];
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
 
@@ -224,20 +390,26 @@ function concluirTreino() {
     exercicios: exerciciosConcluidos
   };
 
-  localStorage.setItem('historicoTreinos', JSON.stringify(historicoTreinos));
+  await db.collection("historicos").doc(uidAlvoTrabalho).set(historicoTreinos);
 
   indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
-  localStorage.setItem('indiceTreinoAtual', indiceTreinoAtual);
+  await db.collection("rotinas").doc(uidAlvoTrabalho).set({
+    rotina: configuracaoTreino,
+    indiceAtual: indiceTreinoAtual
+  });
 
-  alert('Treino concluído com sucesso!');
+  alert('Treino concluído e salvo na nuvem!');
   document.getElementById('area-execucao').classList.add('hidden');
   atualizarTelaInicial();
   renderizarCalendario();
 }
 
-function trocarTreinoManual() {
+async function trocarTreinoManual() {
   indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
-  localStorage.setItem('indiceTreinoAtual', indiceTreinoAtual);
+  await db.collection("rotinas").doc(uidAlvoTrabalho).set({
+    rotina: configuracaoTreino,
+    indiceAtual: indiceTreinoAtual
+  });
   atualizarTelaInicial();
 }
 
@@ -318,13 +490,15 @@ function gerarCamposConfig() {
     bloco.style.cssText = "margin-bottom: 15px; border-bottom: 1px solid #29292e; padding-bottom: 10px;";
     
     let html = `<h4 style='color: #00e676; margin-bottom: 8px; text-align: left;'>Treino ${letra}</h4>`;
+    html += `<p style='font-size: 0.8rem; color: #a8a8b3; text-align: left;'>Selecione os músculos e abra para escolher os exercícios fixos:</p>`;
     html += `<div class='grupo-checkboxes' data-letra='${letra}'>`;
     
     todosGrupos.forEach(grupo => {
       html += `
         <label>
-          <input type='checkbox' value='${grupo}'> ${grupo}
+          <input type='checkbox' value='${grupo}' onchange='toggleExerciciosMontagem(this, "${letra}", "${grupo}")'> ${grupo}
         </label>
+        <div id='exs-${letra}-${grupo}' class='seletor-exercicios-montagem hidden'></div>
       `;
     });
     html += `</div>`;
@@ -335,7 +509,28 @@ function gerarCamposConfig() {
   document.getElementById('btn-salvar-rotina').classList.remove('hidden');
 }
 
-function salvarNovaConfig() {
+function toggleExerciciosMontagem(cb, letra, grupo) {
+  const containerExs = document.getElementById(`exs-${letra}-${grupo}`);
+  if (!containerExs) return;
+
+  if (cb.checked) {
+    containerExs.classList.remove('hidden');
+    containerExs.innerHTML = `<strong style='font-size: 0.75rem; color: #00e676;'>Exercícios de ${grupo}:</strong>`;
+    
+    catalogoExercicios[grupo].forEach(ex => {
+      containerExs.innerHTML += `
+        <label style='font-weight: normal;'>
+          <input type='checkbox' class='cb-ex-fixo' data-letra='${letra}' data-grupo='${grupo}' value='${ex.nome}' checked> ${ex.nome}
+        </label>
+      `;
+    });
+  } else {
+    containerExs.classList.add('hidden');
+    containerExs.innerHTML = '';
+  }
+}
+
+async function salvarNovaConfig() {
   const blocos = document.querySelectorAll('.grupo-checkboxes');
   const novaRotina = [];
 
@@ -343,23 +538,37 @@ function salvarNovaConfig() {
     const letra = bloco.getAttribute('data-letra');
     const marcados = [];
     bloco.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-      marcados.push(cb.value);
+      if (todosGrupos.includes(cb.value)) {
+        marcados.push(cb.value);
+      }
+    });
+
+    const exerciciosFixos = [];
+    bloco.querySelectorAll('.cb-ex-fixo:checked').forEach(cbEx => {
+      exerciciosFixos.push(cbEx.value);
     });
 
     if (marcados.length > 0) {
-      novaRotina.push({ letra: letra, grupos: marcados });
+      novaRotina.push({ 
+        letra: letra, 
+        grupos: marcados,
+        exerciciosFixos: exerciciosFixos
+      });
     }
   });
 
   if (novaRotina.length > 0) {
     configuracaoTreino = novaRotina;
     indiceTreinoAtual = 0;
-    localStorage.setItem('minhaRotina', JSON.stringify(configuracaoTreino));
-    localStorage.setItem('indiceTreinoAtual', '0');
+    
+    await db.collection("rotinas").doc(uidAlvoTrabalho).set({
+      rotina: configuracaoTreino,
+      indiceAtual: 0
+    });
     
     atualizarTelaInicial();
     fecharModalConfig();
-    alert('Nova rotina salva com sucesso!');
+    alert('Nova rotina com exercícios fixos salva com sucesso!');
   } else {
     alert('Marque pelo menos um músculo para cada treino.');
   }
