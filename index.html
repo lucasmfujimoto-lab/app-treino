@@ -8,7 +8,6 @@
 </head>
 <body>
 
-  <!-- CABEÇALHO -->
   <header>
     <h1>🔥 FitRotina</h1>
     <p>Treino, Foco e Consistência</p>
@@ -16,21 +15,23 @@
 
   <main class="container">
 
-    <!-- BLOCO FIXO DE ALONGAMENTO (FORA DOS TREINOS) -->
+    <!-- BOTÃO ALONGAMENTO NA TELA INICIAL -->
     <section class="card card-alongamento">
       <div class="alongamento-topo">
-        <h2>🧘 Alongamento & Mobilidade</h2>
-        <button class="btn-secundario" onclick="toggleAlongamento()">Ver Exercícios</button>
+        <div>
+          <h2>🧘 Alongamento & Mobilidade</h2>
+          <p style="font-size: 0.8rem; color: #a8a8b3;">Prepare as articulações antes de treinar</p>
+        </div>
+        <button id="btn-abrir-alongamento" class="btn-secundario">Ver Exercícios</button>
       </div>
-      <div id="lista-alongamento" class="hidden" style="margin-top: 10px;"></div>
     </section>
 
-    <!-- TELA INICIAL / TREINO DO DIA -->
+    <!-- TREINO DO DIA -->
     <section id="card-hoje" class="card">
       <h2>Treino de Hoje</h2>
       <div id="treino-atual-info">
         <h3 id="nome-treino">Carregando...</h3>
-        <p id="foco-treino">Musculos: --</p>
+        <p id="foco-treino">Músculos: --</p>
       </div>
 
       <div class="botoes-acao">
@@ -39,7 +40,7 @@
       </div>
     </section>
 
-    <!-- ÁREA DE EXECUÇÃO DO TREINO -->
+    <!-- ÁREA DE EXECUÇÃO -->
     <section id="area-execucao" class="card hidden">
       <h2>Exercícios do Treino</h2>
       <div id="lista-exercicios"></div>
@@ -53,13 +54,24 @@
       <div id="calendario" class="calendario-grid"></div>
     </section>
 
-    <!-- CONFIGURAÇÕES DE MONTAGEM DE TREINO -->
+    <!-- CONFIGURAÇÃO DA ROTINA -->
     <section class="card config-section">
       <h2>Montagem da Rotina</h2>
       <button onclick="abrirConfigRotina()" class="btn-alerta" style="width: 100%;">⚙️ Configurar Divisão (A, B, C...)</button>
     </section>
 
   </main>
+
+  <!-- TELA DE ALONGAMENTO & MOBILIDADE -->
+  <div id="modal-alongamento" class="modal hidden">
+    <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+      <span class="close" onclick="fecharModalAlongamento()">&times;</span>
+      <h3>🧘 Alongamento & Mobilidade</h3>
+      <p style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 15px;">Exercícios de aquecimento e preparação pré-treino:</p>
+      <div id="lista-alongamento"></div>
+      <button onclick="fecharModalAlongamento()" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR À TELA INICIAL</button>
+    </div>
+  </div>
 
   <!-- MODAL DE VÍDEO -->
   <div id="modal-video" class="modal hidden">
@@ -71,7 +83,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE DETALHES DO HISTÓRICO -->
+  <!-- MODAL DETALHES -->
   <div id="modal-detalhes" class="modal hidden">
     <div class="modal-content">
       <span class="close" onclick="fecharModalDetalhes()">&times;</span>
@@ -81,16 +93,16 @@
     </div>
   </div>
 
-  <!-- MODAL DE CONFIGURAÇÃO DE ROTINA (ESCOLHER A, B, C...) -->
+  <!-- MODAL CONFIGURAÇÃO ROTINA -->
   <div id="modal-config-rotina" class="modal hidden">
     <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
       <span class="close" onclick="fecharModalConfig()">&times;</span>
       <h3>Configurar Rotina</h3>
-      <p style="font-size: 0.85rem; color: #a8a8b3; margin-top: 5px;">Escolha qual divisão deseja (Ex: ABC, ABCD, AB):</p>
+      <p style="font-size: 0.85rem; color: #a8a8b3; margin-top: 5px;">Digite a sequência desejada (Ex: ABC, ABCD, AB):</p>
       
       <div style="margin: 12px 0;">
-        <input type="text" id="input-divisao-letras" value="ABC" placeholder="Ex: ABC" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #323238; background: #121214; color: #fff; text-align: center; font-weight: bold; font-size: 1.1rem;">
-        <button onclick="gerarCamposConfig()" class="btn-secundario" style="width: 100%; margin-top: 8px;">Gerar Opções</button>
+        <input type="text" id="input-divisao-letras" value="ABC" placeholder="Ex: ABC" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #323238; background: #121214; color: #fff; text-align: center; font-weight: bold; font-size: 1.1rem; text-transform: uppercase;">
+        <button onclick="gerarCamposConfig()" class="btn-secundario" style="width: 100%; margin-top: 8px;">Gerar Músculos de Cada Treino</button>
       </div>
 
       <div id="container-config-dias"></div>
