@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meu Treino App</title>
+  <title>FitRotina 2.0</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,14 +11,14 @@
   <!-- CABEÇALHO -->
   <header>
     <h1>🔥 FitRotina</h1>
-    <p id="streak-counter">Sequência: 0 dias seguidos</p>
+    <p id="streak-counter">Foco total no objetivo!</p>
   </header>
 
   <main class="container">
 
     <!-- TELA INICIAL / TREINO DO DIA -->
     <section id="card-hoje" class="card">
-      <h2>Treino do Dia</h2>
+      <h2>Treino de Hoje</h2>
       <div id="treino-atual-info">
         <h3 id="nome-treino">Carregando...</h3>
         <p id="foco-treino">Musculos: --</p>
@@ -26,36 +26,58 @@
 
       <div class="botoes-acao">
         <button id="btn-iniciar" onclick="iniciarTreino()">INICIAR TREINO</button>
-        <button id="btn-trocar" class="btn-secundario" onclick="trocarTreinoManual()">Trocar letra (A/B/C)</button>
+        <button id="btn-trocar" class="btn-secundario" onclick="trocarTreinoManual()">Pular/Trocar letra (A, B, C...)</button>
       </div>
     </section>
 
-    <!-- ÁREA DO EXERCÍCIO (Aparece ao Clicar em Iniciar) -->
+    <!-- ÁREA DE EXECUÇÃO DO TREINO -->
     <section id="area-execucao" class="card hidden">
-      <h2>Selecione os Exercícios de Hoje</h2>
+      <h2>Marque os exercícios de hoje</h2>
       <div id="lista-exercicios"></div>
-      <button id="btn-concluir" onclick="concluirTreino()">CONCLUIR TREINO (CHECK-IN)</button>
+      <button id="btn-concluir" style="margin-top: 15px; width: 100%;" onclick="concluirTreino()">CONCLUIR TREINO (CHECK-IN)</button>
     </section>
 
     <!-- CALENDÁRIO / HISTÓRICO -->
     <section class="card">
-      <h2>Histórico de Treinos</h2>
+      <h2>Calendário de Treinos</h2>
+      <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Clique em um dia verde para ver o treino realizado.</p>
       <div id="calendario" class="calendario-grid"></div>
     </section>
 
-    <!-- AÇÕES DE CONFIGURAÇÃO -->
+    <!-- CONFIGURAÇÕES DE MONTAGEM DE TREINO -->
     <section class="card config-section">
-      <button onclick="alterarSequencia()" class="btn-alerta">⚙️ Alterar Sequência de Treino</button>
+      <h2>Montagem de Rotina</h2>
+      <button onclick="abrirConfigRotina()" class="btn-secundario" style="width: 100%;">⚙️ Configurar Divisão de Treinos (A, B, C...)</button>
     </section>
 
   </main>
 
-  <!-- MODAL DE VÍDEO -->
+  <!-- MODAL DE VÍDEO DO EXERCÍCIO -->
   <div id="modal-video" class="modal hidden">
     <div class="modal-content">
-      <span class="close" onclick="fecharModal()">&times;</span>
-      <h3 id="video-titulo">Como executar</h3>
-      <div id="video-container"></div>
+      <span class="close" onclick="fecharModalVideo()">&times;</span>
+      <h3 id="video-titulo">Como Executar</h3>
+      <div id="video-container" style="margin-top: 10px;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL DE DETALHES DO TREINO FEITO (CLIQUE NO CALENDÁRIO) -->
+  <div id="modal-detalhes" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="fecharModalDetalhes()">&times;</span>
+      <h3 id="detalhes-data">Treino Realizado</h3>
+      <div id="detalhes-corpo" style="margin-top: 15px; text-align: left;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIGURAÇÃO DE ROTINA (ESCOLHER A, B, C...) -->
+  <div id="modal-config-rotina" class="modal hidden">
+    <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+      <span class="close" onclick="fecharModalConfig()">&times;</span>
+      <h3>Configurar Rotina</h3>
+      <p style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 12px;">Selecione os grupos para cada treino:</p>
+      <div id="container-config-dias"></div>
+      <button onclick="salvarNovaConfig()" style="margin-top: 15px; width: 100%;">Salvar Rotina</button>
     </div>
   </div>
 
