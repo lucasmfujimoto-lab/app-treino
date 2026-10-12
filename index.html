@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Treino App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- CABEÇALHO -->
+  <header>
+    <h1>🔥 FitRotina</h1>
+    <p id="streak-counter">Sequência: 0 dias seguidos</p>
+  </header>
+
+  <main class="container">
+
+    <!-- TELA INICIAL / TREINO DO DIA -->
+    <section id="card-hoje" class="card">
+      <h2>Treino do Dia</h2>
+      <div id="treino-atual-info">
+        <h3 id="nome-treino">Carregando...</h3>
+        <p id="foco-treino">Musculos: --</p>
+      </div>
+
+      <div class="botoes-acao">
+        <button id="btn-iniciar" onclick="iniciarTreino()">INICIAR TREINO</button>
+        <button id="btn-trocar" class="btn-secundario" onclick="trocarTreinoManual()">Trocar letra (A/B/C)</button>
+      </div>
+    </section>
+
+    <!-- ÁREA DO EXERCÍCIO (Aparece ao Clicar em Iniciar) -->
+    <section id="area-execucao" class="card hidden">
+      <h2>Selecione os Exercícios de Hoje</h2>
+      <div id="lista-exercicios"></div>
+      <button id="btn-concluir" onclick="concluirTreino()">CONCLUIR TREINO (CHECK-IN)</button>
+    </section>
+
+    <!-- CALENDÁRIO / HISTÓRICO -->
+    <section class="card">
+      <h2>Histórico de Treinos</h2>
+      <div id="calendario" class="calendario-grid"></div>
+    </section>
+
+    <!-- AÇÕES DE CONFIGURAÇÃO -->
+    <section class="card config-section">
+      <button onclick="alterarSequencia()" class="btn-alerta">⚙️ Alterar Sequência de Treino</button>
+    </section>
+
+  </main>
+
+  <!-- MODAL DE VÍDEO -->
+  <div id="modal-video" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="fecharModal()">&times;</span>
+      <h3 id="video-titulo">Como executar</h3>
+      <div id="video-container"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
