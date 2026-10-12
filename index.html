@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FitRotina 2.0</title>
+  <title>FitRotina Pro</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,10 +11,19 @@
   <!-- CABEÇALHO -->
   <header>
     <h1>🔥 FitRotina</h1>
-    <p id="streak-counter">Foco total no objetivo!</p>
+    <p>Treino, Foco e Consistência</p>
   </header>
 
   <main class="container">
+
+    <!-- BLOCO FIXO DE ALONGAMENTO (FORA DOS TREINOS) -->
+    <section class="card card-alongamento">
+      <div class="alongamento-topo">
+        <h2>🧘 Alongamento & Mobilidade</h2>
+        <button class="btn-secundario" onclick="toggleAlongamento()">Ver Exercícios</button>
+      </div>
+      <div id="lista-alongamento" class="hidden" style="margin-top: 10px;"></div>
+    </section>
 
     <!-- TELA INICIAL / TREINO DO DIA -->
     <section id="card-hoje" class="card">
@@ -25,14 +34,14 @@
       </div>
 
       <div class="botoes-acao">
-        <button id="btn-iniciar" onclick="iniciarTreino()">INICIAR TREINO</button>
-        <button id="btn-trocar" class="btn-secundario" onclick="trocarTreinoManual()">Pular/Trocar letra (A, B, C...)</button>
+        <button id="btn-iniciar" onclick="iniciarTreino()">INICIAR TREINO DO DIA</button>
+        <button id="btn-trocar" class="btn-secundario" onclick="trocarTreinoManual()">Pular para o Próximo Treino</button>
       </div>
     </section>
 
     <!-- ÁREA DE EXECUÇÃO DO TREINO -->
     <section id="area-execucao" class="card hidden">
-      <h2>Marque os exercícios de hoje</h2>
+      <h2>Exercícios do Treino</h2>
       <div id="lista-exercicios"></div>
       <button id="btn-concluir" style="margin-top: 15px; width: 100%;" onclick="concluirTreino()">CONCLUIR TREINO (CHECK-IN)</button>
     </section>
@@ -40,33 +49,35 @@
     <!-- CALENDÁRIO / HISTÓRICO -->
     <section class="card">
       <h2>Calendário de Treinos</h2>
-      <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Clique em um dia verde para ver o treino realizado.</p>
+      <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Clique no dia verde para ver o histórico do treino.</p>
       <div id="calendario" class="calendario-grid"></div>
     </section>
 
     <!-- CONFIGURAÇÕES DE MONTAGEM DE TREINO -->
     <section class="card config-section">
-      <h2>Montagem de Rotina</h2>
-      <button onclick="abrirConfigRotina()" class="btn-secundario" style="width: 100%;">⚙️ Configurar Divisão de Treinos (A, B, C...)</button>
+      <h2>Montagem da Rotina</h2>
+      <button onclick="abrirConfigRotina()" class="btn-alerta" style="width: 100%;">⚙️ Configurar Divisão (A, B, C...)</button>
     </section>
 
   </main>
 
-  <!-- MODAL DE VÍDEO DO EXERCÍCIO -->
+  <!-- MODAL DE VÍDEO -->
   <div id="modal-video" class="modal hidden">
     <div class="modal-content">
       <span class="close" onclick="fecharModalVideo()">&times;</span>
       <h3 id="video-titulo">Como Executar</h3>
       <div id="video-container" style="margin-top: 10px;"></div>
+      <button onclick="fecharModalVideo()" class="btn-secundario" style="width: 100%; margin-top: 15px;">FECHAR VÍDEO</button>
     </div>
   </div>
 
-  <!-- MODAL DE DETALHES DO TREINO FEITO (CLIQUE NO CALENDÁRIO) -->
+  <!-- MODAL DE DETALHES DO HISTÓRICO -->
   <div id="modal-detalhes" class="modal hidden">
     <div class="modal-content">
       <span class="close" onclick="fecharModalDetalhes()">&times;</span>
       <h3 id="detalhes-data">Treino Realizado</h3>
       <div id="detalhes-corpo" style="margin-top: 15px; text-align: left;"></div>
+      <button onclick="fecharModalDetalhes()" class="btn-secundario" style="width: 100%; margin-top: 15px;">FECHAR</button>
     </div>
   </div>
 
@@ -75,9 +86,16 @@
     <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
       <span class="close" onclick="fecharModalConfig()">&times;</span>
       <h3>Configurar Rotina</h3>
-      <p style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 12px;">Selecione os grupos para cada treino:</p>
+      <p style="font-size: 0.85rem; color: #a8a8b3; margin-top: 5px;">Escolha qual divisão deseja (Ex: ABC, ABCD, AB):</p>
+      
+      <div style="margin: 12px 0;">
+        <input type="text" id="input-divisao-letras" value="ABC" placeholder="Ex: ABC" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #323238; background: #121214; color: #fff; text-align: center; font-weight: bold; font-size: 1.1rem;">
+        <button onclick="gerarCamposConfig()" class="btn-secundario" style="width: 100%; margin-top: 8px;">Gerar Opções</button>
+      </div>
+
       <div id="container-config-dias"></div>
-      <button onclick="salvarNovaConfig()" style="margin-top: 15px; width: 100%;">Salvar Rotina</button>
+      
+      <button id="btn-salvar-rotina" onclick="salvarNovaConfig()" class="hidden" style="margin-top: 15px; width: 100%;">Salvar Nova Rotina</button>
     </div>
   </div>
 
