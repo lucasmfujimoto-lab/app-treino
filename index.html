@@ -5,71 +5,118 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FitRotina Pro</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-  <header>
-    <h1>🔥 FitRotina</h1>
-    <p>Treino, Foco e Consistência</p>
-  </header>
+  <!-- TELA DE LOGIN / CADASTRO -->
+  <div id="tela-login" class="modal">
+    <div class="modal-content">
+      <h2 style="color: #00e676; margin-bottom: 5px;">🔥 FitRotina</h2>
+      <p style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 15px;" id="login-subtitulo">Acesse sua conta para continuar</p>
 
-  <main class="container">
+      <form id="form-login" onsubmit="autenticarUsuario(event)">
+        <input type="email" id="login-email" placeholder="E-mail" required class="input-form">
+        <input type="password" id="login-senha" placeholder="Senha" required class="input-form">
 
-    <!-- BOTÃO ALONGAMENTO NA TELA INICIAL -->
-    <section class="card card-alongamento">
-      <div class="alongamento-topo">
-        <div>
-          <h2>🧘 Alongamento & Mobilidade</h2>
-          <p style="font-size: 0.8rem; color: #a8a8b3;">Prepare as articulações antes de treinar</p>
+        <div id="area-perfil-cadastro" class="hidden" style="margin-top: 10px; text-align: left;">
+          <label style="font-size: 0.85rem; color: #a8a8b3;">Tipo de Conta:</label>
+          <select id="login-tipo-perfil" class="input-form">
+            <option value="aluno">Aluno / Praticante</option>
+            <option value="treinador">Treinador / Personal (Pode editar alunos)</option>
+          </select>
         </div>
-        <button id="btn-abrir-alongamento" class="btn-secundario">Ver Exercícios</button>
-      </div>
-    </section>
 
-    <!-- TREINO DO DIA -->
-    <section id="card-hoje" class="card">
-      <h2>Treino de Hoje</h2>
-      <div id="treino-atual-info">
-        <h3 id="nome-treino">Carregando...</h3>
-        <p id="foco-treino">Músculos: --</p>
-      </div>
+        <button type="submit" id="btn-submit-login" style="width: 100%; margin-top: 15px;">ENTRAR</button>
+      </form>
 
-      <div class="botoes-acao">
-        <button id="btn-iniciar" onclick="iniciarTreino()">INICIAR TREINO DO DIA</button>
-        <button id="btn-trocar" class="btn-secundario" onclick="trocarTreinoManual()">Pular para o Próximo Treino</button>
-      </div>
-    </section>
+      <p style="margin-top: 15px; font-size: 0.85rem; color: #a8a8b3;">
+        <span id="txt-alternar-login">Não tem conta?</span> 
+        <a href="#" id="link-alternar-login" onclick="alternarModoLogin(event)" style="color: #00e676;">Criar Conta</a>
+      </p>
+    </div>
+  </div>
 
-    <!-- ÁREA DE EXECUÇÃO -->
-    <section id="area-execucao" class="card hidden">
-      <h2>Exercícios do Treino</h2>
-      <div id="lista-exercicios"></div>
-      <button id="btn-concluir" style="margin-top: 15px; width: 100%;" onclick="concluirTreino()">CONCLUIR TREINO (CHECK-IN)</button>
-    </section>
+  <!-- INTERFACE PRINCIPAL DO APP -->
+  <div id="app-principal" class="hidden">
+    <header>
+      <h1>🔥 FitRotina</h1>
+      <p id="info-usuario-logado">Usuário: -- | Código: --</p>
+      <button onclick="deslogar()" class="btn-secundario" style="padding: 4px 10px; font-size: 0.75rem; margin-top: 5px;">Sair da Conta</button>
+    </header>
 
-    <!-- CALENDÁRIO / HISTÓRICO -->
-    <section class="card">
-      <h2>Calendário de Treinos</h2>
-      <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Clique no dia verde para ver o histórico do treino.</p>
-      <div id="calendario" class="calendario-grid"></div>
-    </section>
+    <main class="container">
 
-    <!-- CONFIGURAÇÃO DA ROTINA -->
-    <section class="card config-section">
-      <h2>Montagem da Rotina</h2>
-      <button onclick="abrirConfigRotina()" class="btn-alerta" style="width: 100%;">⚙️ Configurar Divisão (A, B, C...)</button>
-    </section>
+      <!-- ÁREA EXCLUSIVA DE TREINADOR (ACESSAR TREINO DE ALUNO) -->
+      <section id="card-treinador" class="card hidden" style="border-left: 4px solid #ff9800;">
+        <h2>⚡ Modo Treinador / Personal</h2>
+        <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Acesse e modifique os treinos do seu aluno:</p>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="input-codigo-aluno" placeholder="Código (Ex: ALUNO-A1B2)" style="flex: 1; text-transform: uppercase;" class="input-form">
+          <button onclick="carregarTreinoDoAluno()" class="btn-secundario">Acessar</button>
+        </div>
+        <p id="msg-aluno-carregado" style="font-size: 0.8rem; color: #00e676; margin-top: 8px;" class="hidden"></p>
+      </section>
 
-  </main>
+      <!-- BOTÃO ALONGAMENTO -->
+      <section class="card card-alongamento">
+        <div class="alongamento-topo">
+          <div>
+            <h2>🧘 Alongamento & Mobilidade</h2>
+            <p style="font-size: 0.8rem; color: #a8a8b3;">Mobilidade antes do treino</p>
+          </div>
+          <button id="btn-abrir-alongamento" class="btn-secundario">Ver Exercícios</button>
+        </div>
+      </section>
 
-  <!-- TELA DE ALONGAMENTO & MOBILIDADE -->
+      <!-- TREINO DO DIA -->
+      <section id="card-hoje" class="card">
+        <h2>Treino de Hoje</h2>
+        <div id="treino-atual-info">
+          <h3 id="nome-treino">Carregando...</h3>
+          <p id="foco-treino">Músculos: --</p>
+        </div>
+
+        <div class="botoes-acao">
+          <button id="btn-iniciar" onclick="iniciarTreino()">INICIAR TREINO DO DIA</button>
+          <button id="btn-trocar" class="btn-secundario" onclick="trocarTreinoManual()">Pular para o Próximo Treino</button>
+        </div>
+      </section>
+
+      <!-- ÁREA DE EXECUÇÃO -->
+      <section id="area-execucao" class="card hidden">
+        <h2>Exercícios do Treino</h2>
+        <div id="lista-exercicios"></div>
+        <button id="btn-concluir" style="margin-top: 15px; width: 100%;" onclick="concluirTreino()">CONCLUIR TREINO (CHECK-IN)</button>
+      </section>
+
+      <!-- CALENDÁRIO / HISTÓRICO -->
+      <section class="card">
+        <h2>Calendário de Treinos</h2>
+        <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Clique no dia verde para ver o histórico do treino.</p>
+        <div id="calendario" class="calendario-grid"></div>
+      </section>
+
+      <!-- CONFIGURAÇÃO DA ROTINA -->
+      <section class="card config-section">
+        <h2>Montagem da Rotina</h2>
+        <button onclick="abrirConfigRotina()" class="btn-alerta" style="width: 100%;">⚙️ Configurar Divisão e Exercícios</button>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL DE ALONGAMENTO -->
   <div id="modal-alongamento" class="modal hidden">
     <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
       <span class="close" onclick="fecharModalAlongamento()">&times;</span>
       <h3>🧘 Alongamento & Mobilidade</h3>
-      <p style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 15px;">Exercícios de aquecimento e preparação pré-treino:</p>
+      <p style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 15px;">Exercícios de aquecimento pré-treino:</p>
       <div id="lista-alongamento"></div>
-      <button onclick="fecharModalAlongamento()" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR À TELA INICIAL</button>
+      <button onclick="fecharModalAlongamento()" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR</button>
     </div>
   </div>
 
@@ -93,7 +140,7 @@
     </div>
   </div>
 
-  <!-- MODAL CONFIGURAÇÃO ROTINA -->
+  <!-- MODAL CONFIGURAÇÃO DA ROTINA -->
   <div id="modal-config-rotina" class="modal hidden">
     <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
       <span class="close" onclick="fecharModalConfig()">&times;</span>
@@ -102,7 +149,7 @@
       
       <div style="margin: 12px 0;">
         <input type="text" id="input-divisao-letras" value="ABC" placeholder="Ex: ABC" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #323238; background: #121214; color: #fff; text-align: center; font-weight: bold; font-size: 1.1rem; text-transform: uppercase;">
-        <button onclick="gerarCamposConfig()" class="btn-secundario" style="width: 100%; margin-top: 8px;">Gerar Músculos de Cada Treino</button>
+        <button onclick="gerarCamposConfig()" class="btn-secundario" style="width: 100%; margin-top: 8px;">Montar Músculos e Exercícios</button>
       </div>
 
       <div id="container-config-dias"></div>
