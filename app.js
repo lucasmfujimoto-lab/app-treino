@@ -139,6 +139,10 @@ let indiceTreinoAtual = 0;
 let historicoTreinos = {};
 let modoCadastro = false;
 
+// ESTADO DE EQUIPES
+let equipesDoUsuario = [];
+let equipeAtiva = null;
+
 // REGISTRO DE EVENTOS SEGUROS
 document.addEventListener("DOMContentLoaded", () => {
   // Login / Cadastro
@@ -159,12 +163,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnIniciar = document.getElementById('btn-iniciar');
   if (btnIniciar) btnIniciar.addEventListener('click', iniciarTreino);
 
-    // Botão Pular / Trocar Treino
   const btnTrocar = document.getElementById('btn-trocar');
-  if (btnTrocar) {
-    btnTrocar.addEventListener('click', trocarTreinoManual);
-  }
-
+  if (btnTrocar) btnTrocar.addEventListener('click', trocarTreinoManual);
 
   const btnConcluir = document.getElementById('btn-concluir');
   if (btnConcluir) btnConcluir.addEventListener('click', concluirTreino);
@@ -185,7 +185,26 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('modal-alongamento').classList.remove('hidden');
   });
 
+  // Equipes
+  const btnAbrirEq = document.getElementById('btn-abrir-equipes');
+  if (btnAbrirEq) btnAbrirEq.addEventListener('click', abrirModalEquipes);
+
+  const btnCriarEq = document.getElementById('btn-criar-equipe');
+  if (btnCriarEq) btnCriarEq.addEventListener('click', criarEquipe);
+
+  const btnVoltarListaEq = document.getElementById('btn-voltar-lista-equipes');
+  if (btnVoltarListaEq) btnVoltarListaEq.addEventListener('click', voltarParaListaEquipes);
+
+  const btnAddMembro = document.getElementById('btn-add-membro');
+  if (btnAddMembro) btnAddMembro.addEventListener('click', adicionarMembroEquipe);
+
+  const btnSairEqAtiva = document.getElementById('btn-sair-equipe-ativa');
+  if (btnSairEqAtiva) btnSairEqAtiva.addEventListener('click', sairDaEquipeAtiva);
+
   // Fechar Modais
+  document.getElementById('btn-fechar-modal-equipes').addEventListener('click', fecharModalEquipes);
+  document.getElementById('btn-fechar-equipes-btn').addEventListener('click', fecharModalEquipes);
+
   document.getElementById('btn-fechar-modal-alongamento').addEventListener('click', fecharModalAlongamento);
   document.getElementById('btn-voltar-alongamento').addEventListener('click', fecharModalAlongamento);
 
@@ -374,6 +393,227 @@ function calcularEstatisticasEOfensiva() {
   document.getElementById("stat-ofensiva").innerText = `🔥 ${streak} ${streak === 1 ? "dia" : "dias"}`;
 }
 
+// LÓGICA DE GERENCIAMENTO DE EQUIPES (ATÉ 5 POR USUÁRIO)
+async function abrirModalEquipes() {
+  document.getElementById('modal-equipes').classList.remove('hidden');
+  voltarParaListaEquipes();
+  await carregarEquipesDoUsuario();
+}
+
+function fecharModalEquipes() {
+  document.getElementById('modal-equipes').classList.add('hidden');
+}
+
+function voltarParaListaEquipes() {
+  document.getElementById('view-lista-equipes').classList.remove('hidden');
+  document.getElementById('view-detalhes-equipe').classList.add('hidden');
+  equipeAtiva = null;
+}
+
+async function carregarEquipesDoUsuario() {
+  if (!usuarioLogado) return;
+
+  const container = document.getElementById('container-lista-equipes');
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando equipes...</p>";
+
+  try {
+    const snap = await db.collection("equipes").where("membrosUids", "array-contains", usuarioLogado.uid).get();
+    equipesDoUsuario = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    document.getElementById('contador-equipes-texto').innerText = `Você participa de ${equipesDoUsuario.length}/5 equipes`;
+
+    if (equipesDoUsuario.length === 0) {
+      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Você ainda não participa de nenhuma equipe.</p>";
+      return;
+    }
+
+    let html = "";
+    equipesDoUsuario.forEach(eq => {
+      html += `
+        <div class="equipe-item-card" onclick="abrirDetalhesEquipe('${eq.id}')">
+          <div>
+            <div class="equipe-item-nome">👥 ${eq.nome}</div>
+            <div class="equipe-item-membros-count">${eq.membrosUids.length} membro(s)</div>
+          </div>
+          <span style="color: #00e676; font-weight: bold;">➔</span>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (e) {
+    console.error("Erro ao carregar equipes:", e);
+    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar equipes.</p>";
+  }
+}
+
+async function criarEquipe() {
+  if (!usuarioLogado) return;
+
+  if (equipesDoUsuario.length >= 5) {
+    return alert("Você atingiu o limite de 5 equipes ativas!");
+  }
+
+  const inputNome = document.getElementById("input-nome-equipe");
+  const nome = inputNome.value.trim();
+
+  if (!nome) return alert("Digite um nome para a equipe.");
+
+  try {
+    const novaEquipe = {
+      nome: nome,
+      criadorUid: usuarioLogado.uid,
+      membrosUids: [usuarioLogado.uid]
+    };
+
+    await db.collection("equipes").add(novaEquipe);
+    inputNome.value = "";
+    await carregarEquipesDoUsuario();
+    alert("Equipe criada com sucesso!");
+  } catch (e) {
+    alert("Erro ao criar equipe: " + e.message);
+  }
+}
+
+async function abrirDetalhesEquipe(equipeId) {
+  equipeAtiva = equipesDoUsuario.find(eq => eq.id === equipeId);
+  if (!equipeAtiva) return;
+
+  document.getElementById('view-lista-equipes').classList.add('hidden');
+  document.getElementById('view-detalhes-equipe').classList.remove('hidden');
+  document.getElementById('titulo-equipe-ativa').innerText = `👥 ${equipeAtiva.nome}`;
+
+  await renderizarMembrosEquipe();
+}
+
+async function renderizarMembrosEquipe() {
+  if (!equipeAtiva) return;
+
+  const container = document.getElementById("container-membros-equipe");
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando membros da equipe...</p>";
+
+  let html = "";
+
+  for (const uid of equipeAtiva.membrosUids) {
+    let userData = { email: "Usuário", codigo: "--" };
+    try {
+      const userDoc = await db.collection("usuarios").doc(uid).get();
+      if (userDoc.exists) userData = userDoc.data();
+    } catch(e){}
+
+    let historico = {};
+    try {
+      const histDoc = await db.collection("historicos").doc(uid).get();
+      if (histDoc.exists) historico = histDoc.data();
+    } catch(e){}
+
+    const stats = calcularStatsMembro(historico);
+
+    html += `
+      <div class="membro-card">
+        <div class="membro-info">
+          <span class="membro-email">${userData.email.split('@')[0]} ${uid === usuarioLogado.uid ? '(Você)' : ''}</span>
+          <span class="membro-codigo">${userData.codigo}</span>
+        </div>
+        <div class="membro-stats">
+          <span class="stat-badge" title="Dias Seguidos">🔥 ${stats.streak}d</span>
+          <span class="stat-badge" style="color: #e1e1e6;" title="Total de Treinos">📊 ${stats.total}t</span>
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+}
+
+function calcularStatsMembro(historico) {
+  const datas = Object.keys(historico).sort();
+  const total = datas.length;
+
+  if (total === 0) return { streak: 0, total: 0 };
+
+  let streak = 0;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  let dataChecagem = new Date(hoje);
+  const hojeIso = dataChecagem.toISOString().split("T")[0];
+
+  if (!historico[hojeIso]) {
+    dataChecagem.setDate(dataChecagem.getDate() - 1);
+  }
+
+  while (true) {
+    const iso = dataChecagem.toISOString().split("T")[0];
+    if (historico[iso]) {
+      streak++;
+      dataChecagem.setDate(dataChecagem.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  return { streak, total };
+}
+
+async function adicionarMembroEquipe() {
+  if (!equipeAtiva) return;
+
+  const inputCodigo = document.getElementById("input-codigo-membro");
+  const codigo = inputCodigo.value.trim().toUpperCase();
+
+  if (!codigo) return alert("Digite o código do aluno.");
+
+  try {
+    const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
+    if (snap.empty) {
+      return alert("Nenhum aluno encontrado com este código.");
+    }
+
+    const alunoDoc = snap.docs[0];
+    const uidNovoMembro = alunoDoc.id;
+
+    if (equipeAtiva.membrosUids.includes(uidNovoMembro)) {
+      return alert("Este aluno já faz parte desta equipe.");
+    }
+
+    equipeAtiva.membrosUids.push(uidNovoMembro);
+    await db.collection("equipes").doc(equipeAtiva.id).update({
+      membrosUids: equipeAtiva.membrosUids
+    });
+
+    inputCodigo.value = "";
+    await renderizarMembrosEquipe();
+    alert("Membro adicionado com sucesso!");
+  } catch (e) {
+    alert("Erro ao adicionar membro: " + e.message);
+  }
+}
+
+async function sairDaEquipeAtiva() {
+  if (!equipeAtiva) return;
+
+  if (!confirm(`Deseja realmente sair da equipe "${equipeAtiva.nome}"?`)) return;
+
+  try {
+    equipeAtiva.membrosUids = equipeAtiva.membrosUids.filter(uid => uid !== usuarioLogado.uid);
+
+    if (equipeAtiva.membrosUids.length === 0) {
+      await db.collection("equipes").doc(equipeAtiva.id).delete();
+    } else {
+      await db.collection("equipes").doc(equipeAtiva.id).update({
+        membrosUids: equipeAtiva.membrosUids
+      });
+    }
+
+    voltarParaListaEquipes();
+    await carregarEquipesDoUsuario();
+    alert("Você saiu da equipe.");
+  } catch (e) {
+    alert("Erro ao sair da equipe: " + e.message);
+  }
+}
+
 function fecharModalAlongamento() {
   document.getElementById('modal-alongamento').classList.add('hidden');
 }
@@ -410,6 +650,72 @@ function atualizarTelaInicial() {
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
   document.getElementById('nome-treino').innerText = `TREINO ${treinoAtual.letra}`;
   document.getElementById('foco-treino').innerText = `Músculos: ${treinoAtual.grupos.join(', ')}`;
+}
+
+function iniciarTreino() {
+  const areaExecucao = document.getElementById('area-execucao');
+  const listaContainer = document.getElementById('lista-exercicios');
+  listaContainer.innerHTML = '';
+
+  const treinoAtual = configuracaoTreino[indiceTreinoAtual];
+
+  if (!treinoAtual) return;
+
+  treinoAtual.grupos.forEach(grupo => {
+    const exerciciosGrupo = catalogoExercicios[grupo] || [];
+    const selecionados = treinoAtual.exerciciosFixos || [];
+    const exerciciosExibir = exerciciosGrupo.filter(ex => selecionados.length === 0 || selecionados.includes(ex.nome));
+
+    if (exerciciosExibir.length > 0) {
+      const tituloGrupo = document.createElement('h3');
+      tituloGrupo.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
+      tituloGrupo.innerText = `● ${grupo}`;
+      listaContainer.appendChild(tituloGrupo);
+    }
+
+    exerciciosExibir.forEach(ex => {
+      const cardEx = document.createElement('div');
+      cardEx.className = 'item-exercicio';
+      
+      const topo = document.createElement('div');
+      topo.className = 'exercicio-topo';
+      
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${ex.nome}" checked> <strong>${ex.nome}</strong>`;
+      
+      const btnVid = document.createElement('button');
+      btnVid.className = 'btn-secundario';
+      btnVid.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
+      btnVid.innerText = '▶ Vídeo';
+      btnVid.addEventListener('click', () => verVideo(ex.nome, ex.video));
+
+      topo.appendChild(label);
+      topo.appendChild(btnVid);
+
+      const inputs = document.createElement('div');
+      inputs.className = 'inputs-treino';
+      inputs.innerHTML = `
+        <div class="input-group">
+          <label>Séries</label>
+          <input type="number" value="3" class="input-series">
+        </div>
+        <div class="input-group">
+          <label>Reps</label>
+          <input type="text" value="8-10" class="input-reps">
+        </div>
+        <div class="input-group" style="flex: 1.2; min-width: 100px;">
+          <label>Carga (kg)</label>
+          <input type="number" placeholder="Opcional" class="input-carga">
+        </div>
+      `;
+
+      cardEx.appendChild(topo);
+      cardEx.appendChild(inputs);
+      listaContainer.appendChild(cardEx);
+    });
+  });
+
+  areaExecucao.classList.remove('hidden');
 }
 
 async function concluirTreino() {
@@ -460,10 +766,8 @@ async function concluirTreino() {
 async function trocarTreinoManual() {
   if (!configuracaoTreino || configuracaoTreino.length === 0) return;
 
-  // Avança para a próxima letra (A -> B -> C -> A)
   indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
 
-  // Atualiza no banco de dados do Firebase
   if (uidAlvoTrabalho) {
     try {
       await db.collection("rotinas").doc(uidAlvoTrabalho).set({
@@ -475,16 +779,13 @@ async function trocarTreinoManual() {
     }
   }
 
-  // Esconde a área de execução caso estivesse aberta
   const areaExecucao = document.getElementById('area-execucao');
   if (areaExecucao) {
     areaExecucao.classList.add('hidden');
   }
 
-  // Atualiza o texto na tela inicial
   atualizarTelaInicial();
 }
-
 
 function renderizarCalendario() {
   const cal = document.getElementById('calendario');
@@ -547,82 +848,7 @@ function fecharModalDetalhes() {
 
 function abrirConfigRotina() {
   document.getElementById('modal-config-rotina').classList.remove('hidden');
-  gerarCamposConfig();
-}
-
-// 1. Renderização dos campos do treino com layout adaptável (Séries, Reps e Carga)
-function iniciarTreino() {
-  const areaExecucao = document.getElementById('area-execucao');
-  const listaContainer = document.getElementById('lista-exercicios');
-  listaContainer.innerHTML = '';
-
-  const treinoAtual = configuracaoTreino[indiceTreinoAtual];
-
-  if (!treinoAtual) return;
-
-  treinoAtual.grupos.forEach(grupo => {
-    const exerciciosGrupo = catalogoExercicios[grupo] || [];
-    const selecionados = treinoAtual.exerciciosFixos || [];
-    const exerciciosExibir = exerciciosGrupo.filter(ex => selecionados.length === 0 || selecionados.includes(ex.nome));
-
-    if (exerciciosExibir.length > 0) {
-      const tituloGrupo = document.createElement('h3');
-      tituloGrupo.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
-      tituloGrupo.innerText = `● ${grupo}`;
-      listaContainer.appendChild(tituloGrupo);
-    }
-
-    exerciciosExibir.forEach(ex => {
-      const cardEx = document.createElement('div');
-      cardEx.className = 'item-exercicio';
-      
-      const topo = document.createElement('div');
-      topo.className = 'exercicio-topo';
-      
-      const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${ex.nome}" checked> <strong>${ex.nome}</strong>`;
-      
-      const btnVid = document.createElement('button');
-      btnVid.className = 'btn-secundario';
-      btnVid.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
-      btnVid.innerText = '▶ Vídeo';
-      btnVid.addEventListener('click', () => verVideo(ex.nome, ex.video));
-
-      topo.appendChild(label);
-      topo.appendChild(btnVid);
-
-      // Estrutura adaptável com rótulos
-      const inputs = document.createElement('div');
-      inputs.className = 'inputs-treino';
-      inputs.innerHTML = `
-        <div class="input-group">
-          <label>Séries</label>
-          <input type="number" value="3" class="input-series">
-        </div>
-        <div class="input-group">
-          <label>Reps</label>
-          <input type="text" value="8-10" class="input-reps">
-        </div>
-        <div class="input-group" style="flex: 1.2; min-width: 100px;">
-          <label>Carga (kg)</label>
-          <input type="number" placeholder="Opcional" class="input-carga">
-        </div>
-      `;
-
-      cardEx.appendChild(topo);
-      cardEx.appendChild(inputs);
-      listaContainer.appendChild(cardEx);
-    });
-  });
-
-  areaExecucao.classList.remove('hidden');
-}
-
-// 2. Abrir configurações puxando os dados já salvos
-function abrirConfigRotina() {
-  document.getElementById('modal-config-rotina').classList.remove('hidden');
   
-  // Pré-preenche o campo da divisão com as letras salvas atuais (ex: ABC)
   if (configuracaoTreino && configuracaoTreino.length > 0) {
     const letrasSalvas = configuracaoTreino.map(t => t.letra).join('');
     document.getElementById('input-divisao-letras').value = letrasSalvas;
@@ -631,7 +857,6 @@ function abrirConfigRotina() {
   gerarCamposConfig();
 }
 
-// 3. Gerar montagem marcando automaticamente grupos e exercícios já salvos
 function gerarCamposConfig() {
   const inputDiv = document.getElementById('input-divisao-letras').value.toUpperCase().trim();
   const container = document.getElementById('container-config-dias');
@@ -642,7 +867,6 @@ function gerarCamposConfig() {
   const letras = inputDiv.split('');
 
   letras.forEach((letra) => {
-    // Procura se já existe configuração para esta letra
     const treinoSalvo = configuracaoTreino.find(t => t.letra === letra);
     const gruposSalvos = treinoSalvo ? treinoSalvo.grupos : [];
 
@@ -666,7 +890,6 @@ function gerarCamposConfig() {
     bloco.innerHTML = html;
     container.appendChild(bloco);
 
-    // Carrega a lista de exercícios para os grupos já marcados
     todosGrupos.forEach(grupo => {
       if (gruposSalvos.includes(grupo)) {
         const cbMock = { checked: true };
@@ -678,7 +901,6 @@ function gerarCamposConfig() {
   document.getElementById('btn-salvar-rotina').classList.remove('hidden');
 }
 
-// 4. Exibir exercícios com marcação prévia
 function toggleExerciciosMontagem(cb, letra, grupo) {
   const containerExs = document.getElementById(`exs-${letra}-${grupo}`);
   if (!containerExs) return;
@@ -691,7 +913,6 @@ function toggleExerciciosMontagem(cb, letra, grupo) {
     containerExs.innerHTML = `<strong style='font-size: 0.75rem; color: #00e676;'>Exercícios de ${grupo}:</strong>`;
     
     catalogoExercicios[grupo].forEach(ex => {
-      // Se não havia lista prévia salva, marca todos por padrão. Se havia, marca os salvos.
       const marcado = (exerciciosFixosSalvos.length === 0 || exerciciosFixosSalvos.includes(ex.nome)) ? 'checked' : '';
       containerExs.innerHTML += `
         <label style='font-weight: normal;'>
@@ -765,174 +986,3 @@ function fecharModalVideo() {
   document.getElementById('modal-video').classList.add('hidden');
   document.getElementById('video-container').innerHTML = '';
 }
-
-let equipeAtual = null;
-
-// Vincular eventos no DOMContentLoaded
-document.addEventListener("DOMContentLoaded", () => {
-  // ... (manter ouvintes anteriores) ...
-
-  const btnCriarEq = document.getElementById('btn-criar-equipe');
-  if (btnCriarEq) btnCriarEq.addEventListener('click', criarEquipe);
-
-  const btnAddMembro = document.getElementById('btn-add-membro');
-  if (btnAddMembro) btnAddMembro.addEventListener('click', adicionarMembroEquipe);
-
-  const btnSairEq = document.getElementById('btn-sair-equipe');
-  if (btnSairEq) btnSairEq.addEventListener('click', sairDaEquipe);
-});
-
-// Carregar equipe do usuário ao iniciar
-async function carregarEquipeUsuario() {
-  if (!usuarioLogado) return;
-
-  try {
-    const docEq = await db.collection("equipes").where("membrosUids", "array-contains", usuarioLogado.uid).get();
-
-    if (!docEq.empty) {
-      const eqDoc = docEq.docs[0];
-      equipeAtual = { id: eqDoc.id, ...eqDoc.data() };
-      renderizarEquipe();
-    } else {
-      equipeAtual = null;
-      document.getElementById("equipe-sem-grupo").classList.remove("hidden");
-      document.getElementById("equipe-com-grupo").classList.add("hidden");
-    }
-  } catch (e) {
-    console.error("Erro ao carregar equipe:", e);
-  }
-}
-
-// Criar nova equipe
-async function criarEquipe() {
-  const nome = document.getElementById("input-nome-equipe").value.trim();
-  if (!nome) return alert("Digite um nome para a equipe!");
-
-  const novaEquipe = {
-    nome: nome,
-    criadorUid: usuarioLogado.uid,
-    membrosUids: [usuarioLogado.uid]
-  };
-
-  const docRef = await db.collection("equipes").add(novaEquipe);
-  equipeAtual = { id: docRef.id, ...novaEquipe };
-  document.getElementById("input-nome-equipe").value = "";
-  renderizarEquipe();
-}
-
-// Adicionar membro pelo código de aluno
-async function adicionarMembroEquipe() {
-  const codigo = document.getElementById("input-codigo-membro").value.trim().toUpperCase();
-  if (!codigo) return alert("Digite o código do aluno!");
-
-  const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
-  if (snap.empty) {
-    return alert("Nenhum aluno encontrado com este código.");
-  }
-
-  const alunoDoc = snap.docs[0];
-  const uidNovoMembro = alunoDoc.id;
-
-  if (equipeAtual.membrosUids.includes(uidNovoMembro)) {
-    return alert("Este aluno já faz parte da equipe!");
-  }
-
-  equipeAtual.membrosUids.push(uidNovoMembro);
-  await db.collection("equipes").doc(equipeAtual.id).update({
-    membrosUids: equipeAtual.membrosUids
-  });
-
-  document.getElementById("input-codigo-membro").value = "";
-  renderizarEquipe();
-}
-
-// Renderizar painel da equipe e calcular a ofensiva/total de cada membro
-async function renderizarEquipe() {
-  if (!equipeAtual) return;
-
-  document.getElementById("equipe-sem-grupo").classList.add("hidden");
-  document.getElementById("equipe-com-grupo").classList.remove("hidden");
-  document.getElementById("nome-equipe-titulo").innerText = `👥 ${equipeAtual.nome}`;
-
-  const listaContainer = document.getElementById("lista-membros-equipe");
-  listaContainer.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando membros...</p>";
-
-  let html = "";
-
-  for (const uid of equipeAtual.membrosUids) {
-    // Buscar perfil do usuário
-    const userDoc = await db.collection("usuarios").doc(uid).get();
-    const userData = userDoc.exists ? userDoc.data() : { email: "Usuário", codigo: "--" };
-
-    // Buscar histórico de treinos para calcular ofensiva e total
-    const histDoc = await db.collection("historicos").doc(uid).get();
-    const historico = histDoc.exists ? histDoc.data() : {};
-
-    const stats = calcularStatsMembro(historico);
-
-    html += `
-      <div class="membro-card">
-        <div class="membro-info">
-          <span class="membro-email">${userData.email.split('@')[0]} ${uid === usuarioLogado.uid ? '(Você)' : ''}</span>
-          <span class="membro-codigo">${userData.codigo}</span>
-        </div>
-        <div class="membro-stats">
-          <span class="stat-badge" title="Dias Seguidos">🔥 ${stats.streak}d</span>
-          <span class="stat-badge" style="color: #e1e1e6;" title="Total de Treinos">📊 ${stats.total}t</span>
-        </div>
-      </div>
-    `;
-  }
-
-  listaContainer.innerHTML = html;
-}
-
-// Função auxiliar para calcular ofensiva e total de um histórico
-function calcularStatsMembro(historico) {
-  const datas = Object.keys(historico).sort();
-  const total = datas.length;
-
-  if (total === 0) return { streak: 0, total: 0 };
-
-  let streak = 0;
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-
-  let dataChecagem = new Date(hoje);
-  const hojeIso = dataChecagem.toISOString().split("T")[0];
-
-  if (!historico[hojeIso]) {
-    dataChecagem.setDate(dataChecagem.getDate() - 1);
-  }
-
-  while (true) {
-    const iso = dataChecagem.toISOString().split("T")[0];
-    if (historico[iso]) {
-      streak++;
-      dataChecagem.setDate(dataChecagem.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-
-  return { streak, total };
-}
-
-// Sair da equipe
-async function sairDaEquipe() {
-  if (!confirm("Deseja realmente sair da equipe?")) return;
-
-  equipeAtual.membrosUids = equipeAtual.membrosUids.filter(uid => uid !== usuarioLogado.uid);
-
-  if (equipeAtual.membrosUids.length === 0) {
-    await db.collection("equipes").doc(equipeAtual.id).delete();
-  } else {
-    await db.collection("equipes").doc(equipeAtual.id).update({
-      membrosUids: equipeAtual.membrosUids
-    });
-  }
-
-  equipeAtual = null;
-  carregarEquipeUsuario();
-}
-
