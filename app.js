@@ -159,8 +159,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnIniciar = document.getElementById('btn-iniciar');
   if (btnIniciar) btnIniciar.addEventListener('click', iniciarTreino);
 
+    // Botão Pular / Trocar Treino
   const btnTrocar = document.getElementById('btn-trocar');
-  if (btnTrocar) btnTrocar.addEventListener('click', trocarTreinoManual);
+  if (btnTrocar) {
+    btnTrocar.addEventListener('click', trocarTreinoManual);
+  }
+
 
   const btnConcluir = document.getElementById('btn-concluir');
   if (btnConcluir) btnConcluir.addEventListener('click', concluirTreino);
