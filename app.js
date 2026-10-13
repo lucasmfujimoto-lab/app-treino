@@ -190,9 +190,15 @@ function alternarModoLogin(e) {
 }
 
 async function autenticarUsuario(e) {
-  e.preventDefault();
-  const email = document.getElementById("login-email").value.trim();
-  const senha = document.getElementById("login-senha").value;
+  e.preventDefault(); // Impede o recarregamento da página
+
+  const emailInput = document.getElementById("login-email");
+  const senhaInput = document.getElementById("login-senha");
+
+  if (!emailInput || !senhaInput) return;
+
+  const email = emailInput.value.trim();
+  const senha = senhaInput.value;
 
   try {
     if (modoCadastro) {
@@ -210,13 +216,11 @@ async function autenticarUsuario(e) {
       await auth.signInWithEmailAndPassword(email, senha);
     }
   } catch (err) {
-    console.error("Erro no login/cadastro:", err);
+    console.error("Erro na autenticação:", err);
     if (err.code === "auth/email-already-in-use") {
-      alert("Este e-mail já está cadastrado! Alterne para 'Fazer Login'.");
+      alert("Este e-mail já está em uso!");
     } else if (err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
       alert("E-mail ou senha incorretos.");
-    } else if (err.code === "auth/weak-password") {
-      alert("A senha deve ter pelo menos 6 caracteres.");
     } else {
       alert("Erro na autenticação: " + err.message);
     }
