@@ -508,19 +508,23 @@ function abrirDetalhesDia(dataIso) {
     corpo.innerHTML = "<p style='color: #a8a8b3;'>Nenhum treino registrado neste dia.</p>";
   } else {
     let html = `<p style='margin-bottom: 10px;'><strong>Treino ${treinoFeito.letra}</strong> (${treinoFeito.grupos.join(', ')})</p>`;
+    html += "<div style='max-height: 50vh; overflow-y: auto; padding-right: 5px;'>";
     html += "<ul style='list-style: none; padding: 0;'>";
     
     treinoFeito.exercicios.forEach(ex => {
       html += `
-        <li style='background: #121214; padding: 8px; border-radius: 6px; margin-bottom: 6px; font-size: 0.85rem;'>
+        <li style='background: #121214; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 0.85rem; border: 1px solid #29292e;'>
           <strong>${ex.nome}</strong><br>
           <span style='color: #a8a8b3;'>${ex.series} séries x ${ex.reps} reps | Carga: ${ex.carga}</span>
         </li>
       `;
     });
-    html += "</ul>";
+    html += "</ul></div>";
     corpo.innerHTML = html;
   }
+
+  modal.classList.remove('hidden');
+}
 
   modal.classList.remove('hidden');
 }
