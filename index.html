@@ -81,6 +81,36 @@
           <small class="stat-sub" id="stat-inicio">desde --</small>
         </div>
       </section>
+<!-- CARD DE EQUIPE -->
+<section id="card-equipe" class="card">
+  <h2>👥 Minha Equipe</h2>
+  
+  <!-- Se o usuário ainda não tiver equipe -->
+  <div id="equipe-sem-grupo">
+    <p style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 10px;">Crie ou entre em uma equipe usando o código de amigos:</p>
+    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+      <input type="text" id="input-nome-equipe" placeholder="Nome da Equipe" class="input-form" style="margin: 0;">
+      <button id="btn-criar-equipe" class="btn-secundario">Criar</button>
+    </div>
+  </div>
+
+  <!-- Se o usuário já tiver equipe -->
+  <div id="equipe-com-grupo" class="hidden">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <h3 id="nome-equipe-titulo" style="color: #00e676; font-size: 1.1rem;">Minha Equipe</h3>
+      <button id="btn-sair-equipe" class="btn-alerta" style="padding: 4px 8px; font-size: 0.75rem;">Sair</button>
+    </div>
+
+    <!-- Adicionar membro pelo código do aluno -->
+    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+      <input type="text" id="input-codigo-membro" placeholder="Código do Aluno (Ex: ALUNO-A1B2)" class="input-form" style="margin: 0; text-transform: uppercase;">
+      <button id="btn-add-membro" class="btn-secundario">Adicionar</button>
+    </div>
+
+    <!-- Lista dos Membros da Equipe -->
+    <div id="lista-membros-equipe"></div>
+  </div>
+</section>
 
       <!-- MODO TREINADOR -->
       <section id="card-treinador" class="card hidden" style="border-left: 4px solid #ff9800;">
