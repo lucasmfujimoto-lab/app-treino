@@ -143,9 +143,8 @@ let modoCadastro = false;
 let equipesDoUsuario = [];
 let equipeAtiva = null;
 
-// REGISTRO DE EVENTOS SEGUROS
+// REGISTRO DE EVENTOS
 document.addEventListener("DOMContentLoaded", () => {
-  // Login / Cadastro
   const formLogin = document.getElementById('form-login');
   if (formLogin) formLogin.addEventListener('submit', autenticarUsuario);
 
@@ -155,11 +154,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnDeslogar = document.getElementById('btn-deslogar');
   if (btnDeslogar) btnDeslogar.addEventListener('click', () => auth.signOut());
 
-  // Treinador
   const btnAcessarAluno = document.getElementById('btn-acessar-aluno');
   if (btnAcessarAluno) btnAcessarAluno.addEventListener('click', carregarTreinoDoAluno);
 
-  // Treino
   const btnIniciar = document.getElementById('btn-iniciar');
   if (btnIniciar) btnIniciar.addEventListener('click', iniciarTreino);
 
@@ -169,7 +166,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnConcluir = document.getElementById('btn-concluir');
   if (btnConcluir) btnConcluir.addEventListener('click', concluirTreino);
 
-  // Configuração
   const btnAbrirConfig = document.getElementById('btn-abrir-config');
   if (btnAbrirConfig) btnAbrirConfig.addEventListener('click', abrirConfigRotina);
 
@@ -179,13 +175,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSalvarRotina = document.getElementById('btn-salvar-rotina');
   if (btnSalvarRotina) btnSalvarRotina.addEventListener('click', salvarNovaConfig);
 
-  // Alongamento
   const btnAbrirAlong = document.getElementById('btn-abrir-alongamento');
   if (btnAbrirAlong) btnAbrirAlong.addEventListener('click', () => {
     document.getElementById('modal-alongamento').classList.remove('hidden');
   });
 
-  // Equipes
   const btnAbrirEq = document.getElementById('btn-abrir-equipes');
   if (btnAbrirEq) btnAbrirEq.addEventListener('click', abrirModalEquipes);
 
@@ -232,7 +226,6 @@ auth.onAuthStateChanged(async (user) => {
         await db.collection("usuarios").doc(user.uid).set(perfilUsuario);
       }
     } catch (e) {
-      console.log("Erro ao obter dados do usuário:", e);
       perfilUsuario = { email: user.email, tipo: "aluno", codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() };
     }
 
@@ -295,35 +288,8 @@ async function autenticarUsuario(e) {
       await auth.signInWithEmailAndPassword(email, senha);
     }
   } catch (err) {
-    console.error("Erro na autenticação:", err);
-    if (err.code === "auth/email-already-in-use") {
-      alert("Este e-mail já está em uso!");
-    } else if (err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
-      alert("E-mail ou senha incorretos.");
-    } else {
-      alert("Erro na autenticação: " + err.message);
-    }
+    alert("Erro na autenticação: " + err.message);
   }
-}
-
-async function carregarTreinoDoAluno() {
-  const codigo = document.getElementById("input-codigo-aluno").value.trim().toUpperCase();
-  if (!codigo) return alert("Digite o código do aluno.");
-
-  const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
-  if (snap.empty) {
-    return alert("Nenhum aluno encontrado com este código.");
-  }
-
-  const docAluno = snap.docs[0];
-  uidAlvoTrabalho = docAluno.id;
-  const dadosAluno = docAluno.data();
-
-  const msg = document.getElementById("msg-aluno-carregado");
-  msg.innerText = `Editando/Visualizando treino do aluno: ${dadosAluno.email}`;
-  msg.classList.remove("hidden");
-
-  carregarDadosDoServidor();
 }
 
 async function carregarDadosDoServidor() {
@@ -362,6 +328,7 @@ function calcularEstatisticasEOfensiva() {
   if (totalTreinos === 0) {
     document.getElementById("stat-inicio").innerText = "desde o início";
     document.getElementById("stat-ofensiva").innerText = "🔥 0 dias";
+    renderizarConquistas(0, 0);
     return;
   }
 
@@ -391,9 +358,39 @@ function calcularEstatisticasEOfensiva() {
   }
 
   document.getElementById("stat-ofensiva").innerText = `🔥 ${streak} ${streak === 1 ? "dia" : "dias"}`;
+  renderizarConquistas(streak, totalTreinos);
 }
 
-// LÓGICA DE GERENCIAMENTO DE EQUIPES (ATÉ 5 POR USUÁRIO)
+// RENDERIZAR EMBLEMAS / CONQUISTAS (ESTILO GYM RATS)
+function renderizarConquistas(streak, total) {
+  const container = document.getElementById("container-conquistas");
+  if (!container) return;
+
+  const badges = [
+    { id: 1, nome: "Primeiro Treino", icon: "🌱", condicao: total >= 1 },
+    { id: 2, nome: "Foco Total (5t)", icon: "🥊", condicao: total >= 5 },
+    { id: 3, nome: "Monstro (15t)", icon: "🏋️", condicao: total >= 15 },
+    { id: 4, nome: "Lenda (30t)", icon: "👑", condicao: total >= 30 },
+    { id: 5, nome: "Chama 3 Dias", icon: "⚡", condicao: streak >= 3 },
+    { id: 6, nome: "Ofensiva 7 Dias", icon: "🔥", condicao: streak >= 7 },
+    { id: 7, nome: "Imparável 14d", icon: "🚀", condicao: streak >= 14 },
+    { id: 8, nome: "Titan 30 Dias", icon: "💎", condicao: streak >= 30 }
+  ];
+
+  let html = "";
+  badges.forEach(b => {
+    html += `
+      <div class="badge-item ${b.condicao ? 'desbloqueado' : ''}" title="${b.nome}">
+        <span class="badge-icon">${b.icon}</span>
+        <span class="badge-nome">${b.nome}</span>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// GERENCIAMENTO DE EQUIPES (GYM RATS)
 async function abrirModalEquipes() {
   document.getElementById('modal-equipes').classList.remove('hidden');
   voltarParaListaEquipes();
@@ -442,7 +439,6 @@ async function carregarEquipesDoUsuario() {
 
     container.innerHTML = html;
   } catch (e) {
-    console.error("Erro ao carregar equipes:", e);
     container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar equipes.</p>";
   }
 }
@@ -483,14 +479,31 @@ async function abrirDetalhesEquipe(equipeId) {
   document.getElementById('view-detalhes-equipe').classList.remove('hidden');
   document.getElementById('titulo-equipe-ativa').innerText = `👥 ${equipeAtiva.nome}`;
 
-  await renderizarMembrosEquipe();
+  mudarAbaEquipe('membros');
+}
+
+function mudarAbaEquipe(aba) {
+  document.getElementById('aba-membros').classList.remove('ativa');
+  document.getElementById('aba-ranking').classList.remove('ativa');
+  document.getElementById('aba-feed').classList.remove('ativa');
+
+  document.getElementById('conteudo-aba-membros').classList.add('hidden');
+  document.getElementById('conteudo-aba-ranking').classList.add('hidden');
+  document.getElementById('conteudo-aba-feed').classList.add('hidden');
+
+  document.getElementById(`aba-${aba}`).classList.add('ativa');
+  document.getElementById(`conteudo-aba-${aba}`).classList.remove('hidden');
+
+  if (aba === 'membros') renderizarMembrosEquipe();
+  if (aba === 'ranking') renderizarRankingEquipe();
+  if (aba === 'feed') renderizarFeedEquipe();
 }
 
 async function renderizarMembrosEquipe() {
   if (!equipeAtiva) return;
 
   const container = document.getElementById("container-membros-equipe");
-  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando membros da equipe...</p>";
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando membros...</p>";
 
   let html = "";
 
@@ -524,6 +537,140 @@ async function renderizarMembrosEquipe() {
   }
 
   container.innerHTML = html;
+}
+
+// RANKING DA EQUIPE
+async function renderizarRankingEquipe() {
+  if (!equipeAtiva) return;
+
+  const container = document.getElementById("container-ranking-equipe");
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Gerando ranking da equipe...</p>";
+
+  const listaMembros = [];
+
+  for (const uid of equipeAtiva.membrosUids) {
+    let userData = { email: "Usuário" };
+    try {
+      const userDoc = await db.collection("usuarios").doc(uid).get();
+      if (userDoc.exists) userData = userDoc.data();
+    } catch(e){}
+
+    let historico = {};
+    try {
+      const histDoc = await db.collection("historicos").doc(uid).get();
+      if (histDoc.exists) historico = histDoc.data();
+    } catch(e){}
+
+    const stats = calcularStatsMembro(historico);
+    // Pontuação = (Total x 10) + (Streak x 25)
+    const pontos = (stats.total * 10) + (stats.streak * 25);
+
+    listaMembros.push({
+      nome: userData.email.split('@')[0],
+      isVoce: uid === usuarioLogado.uid,
+      streak: stats.streak,
+      total: stats.total,
+      pontos: pontos
+    });
+  }
+
+  // Ordena por pontuação maior
+  listaMembros.sort((a, b) => b.pontos - a.pontos);
+
+  let html = "";
+  const trofeus = ["🥇", "🥈", "🥉"];
+
+  listaMembros.forEach((membro, index) => {
+    const posi = trofeus[index] || `#${index + 1}`;
+    html += `
+      <div class="membro-card" style="${index === 0 ? 'border-color: #ffb703;' : ''}">
+        <div class="membro-info">
+          <span class="membro-email">${posi} ${membro.nome} ${membro.isVoce ? '(Você)' : ''}</span>
+          <span class="membro-codigo">${membro.pontos} Pts (🔥${membro.streak}d | 📊${membro.total}t)</span>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+// FEED EM TEMPO REAL DA EQUIPE (GYM RATS)
+async function renderizarFeedEquipe() {
+  if (!equipeAtiva) return;
+
+  const container = document.getElementById("container-feed-equipe");
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando feed de treinos...</p>";
+
+  try {
+    const snapFeed = await db.collection("feed_treinos")
+      .where("equipeId", "==", equipeAtiva.id)
+      .orderBy("dataIso", "desc")
+      .limit(10)
+      .get();
+
+    if (snapFeed.empty) {
+      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Nenhum treino publicado no feed da equipe ainda.</p>";
+      return;
+    }
+
+    let html = "";
+    snapFeed.docs.forEach(docFeed => {
+      const post = docFeed.data();
+      const idPost = docFeed.id;
+      const reacoes = post.reacoes || {};
+
+      const reacaoFogo = reacoes['🔥'] ? reacoes['🔥'].length : 0;
+      const reacaoBraco = reacoes['💪'] ? reacoes['💪'].length : 0;
+      const reacaoPalma = reacoes['👏'] ? reacoes['👏'].length : 0;
+
+      html += `
+        <div class="feed-card">
+          <div class="feed-header">
+            <span class="feed-usuario">🏋️ ${post.usuarioNome}</span>
+            <span class="feed-data">${post.dataIso}</span>
+          </div>
+          <div class="feed-treino-titulo">Treino ${post.letra} (${post.grupos.join(', ')})</div>
+          <div class="feed-exercicios-resumo">${post.qtdExercicios} exercícios concluídos</div>
+          <div class="feed-reacoes">
+            <button class="btn-reacao" onclick="reagirPost('${idPost}', '🔥')">🔥 ${reacaoFogo}</button>
+            <button class="btn-reacao" onclick="reagirPost('${idPost}', '💪')">💪 ${reacaoBraco}</button>
+            <button class="btn-reacao" onclick="reagirPost('${idPost}', '👏')">👏 ${reacaoPalma}</button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Faça treinos para movimentar o feed da equipe!</p>";
+  }
+}
+
+async function reagirPost(postId, emoji) {
+  if (!usuarioLogado) return;
+
+  try {
+    const postRef = db.collection("feed_treinos").doc(postId);
+    const doc = await postRef.get();
+
+    if (doc.exists) {
+      const data = doc.data();
+      const reacoes = data.reacoes || {};
+      if (!reacoes[emoji]) reacoes[emoji] = [];
+
+      if (!reacoes[emoji].includes(usuarioLogado.uid)) {
+        reacoes[emoji].push(usuarioLogado.uid);
+      } else {
+        reacoes[emoji] = reacoes[emoji].filter(uid => uid !== usuarioLogado.uid);
+      }
+
+      await postRef.update({ reacoes: reacoes });
+      renderizarFeedEquipe();
+    }
+  } catch (e) {
+    console.error("Erro ao reagir:", e);
+  }
 }
 
 function calcularStatsMembro(historico) {
@@ -749,6 +896,25 @@ async function concluirTreino() {
   };
 
   await db.collection("historicos").doc(uidAlvoTrabalho).set(historicoTreinos);
+
+  // PUBLICAR NO FEED DAS EQUIPES DO USUÁRIO
+  try {
+    const snapEq = await db.collection("equipes").where("membrosUids", "array-contains", usuarioLogado.uid).get();
+    for (const docEq of snapEq.docs) {
+      await db.collection("feed_treinos").add({
+        equipeId: docEq.id,
+        usuarioUid: usuarioLogado.uid,
+        usuarioNome: usuarioLogado.email.split('@')[0],
+        dataIso: hoje,
+        letra: treinoAtual.letra,
+        grupos: treinoAtual.grupos,
+        qtdExercicios: exerciciosConcluidos.length,
+        reacoes: {}
+      });
+    }
+  } catch(e) {
+    console.log("Erro ao publicar no feed:", e);
+  }
 
   indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
   await db.collection("rotinas").doc(uidAlvoTrabalho).set({
