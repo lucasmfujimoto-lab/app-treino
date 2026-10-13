@@ -82,10 +82,16 @@
         </div>
       </section>
 
+      <!-- EMBLEMAS / CONQUISTAS (ESTILO GYM RATS) -->
+      <section class="card">
+        <h2>🏆 Conquistas</h2>
+        <div id="container-conquistas" class="conquistas-grid"></div>
+      </section>
+
       <!-- BOTÃO MINHAS EQUIPES (TELA INICIAL) -->
       <section class="card card-equipes-btn">
         <button id="btn-abrir-equipes" class="btn-secundario" style="width: 100%; font-size: 1rem; padding: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          👥 Minhas Equipes
+          👥 Minhas Equipes & Gym Rats Feed
         </button>
       </section>
 
@@ -148,12 +154,12 @@
     </main>
   </div>
 
-  <!-- MODAL MINHAS EQUIPES -->
+  <!-- MODAL MINHAS EQUIPES & GYM RATS FEED -->
   <div id="modal-equipes" class="modal hidden">
     <div class="modal-content modal-scroll">
       <span class="close" id="btn-fechar-modal-equipes">&times;</span>
       
-      <!-- NÍVEL 1: LISTA DAS EQUIPES E CRIAR -->
+      <!-- NÍVEL 1: LISTA DAS EQUIPES -->
       <div id="view-lista-equipes">
         <h3>👥 Minhas Equipes</h3>
         <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 12px;" id="contador-equipes-texto">Limite de 5 equipes por usuário</p>
@@ -166,7 +172,7 @@
         <div id="container-lista-equipes"></div>
       </div>
 
-      <!-- NÍVEL 2: DETALHES DA EQUIPE SELECIONADA E MEMBROS -->
+      <!-- NÍVEL 2: VISÃO INTERNA DA EQUIPE (MEMBROS, RANKING E FEED GYM RATS) -->
       <div id="view-detalhes-equipe" class="hidden">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
           <button id="btn-voltar-lista-equipes" class="btn-secundario" style="padding: 4px 8px; font-size: 0.75rem;">← Voltar</button>
@@ -174,13 +180,34 @@
           <button id="btn-sair-equipe-ativa" class="btn-alerta" style="padding: 4px 8px; font-size: 0.75rem;">Sair</button>
         </div>
 
-        <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Adicione amigos pelo código do aluno:</p>
-        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-          <input type="text" id="input-codigo-membro" placeholder="Código (Ex: ALUNO-A1B2)" class="input-form" style="margin: 0; text-transform: uppercase;">
-          <button id="btn-add-membro" class="btn-secundario">Adicionar</button>
+        <!-- ABAS DA EQUIPE: MEMBROS / RANKING / FEED -->
+        <div class="abas-equipe">
+          <button id="aba-membros" class="aba-btn ativa" onclick="mudarAbaEquipe('membros')">Membros</button>
+          <button id="aba-ranking" class="aba-btn" onclick="mudarAbaEquipe('ranking')">👑 Ranking</button>
+          <button id="aba-feed" class="aba-btn" onclick="mudarAbaEquipe('feed')">🔥 Feed Rats</button>
         </div>
 
-        <div id="container-membros-equipe"></div>
+        <!-- CONTEÚDO ABA MEMBROS -->
+        <div id="conteudo-aba-membros">
+          <p style="font-size: 0.8rem; color: #a8a8b3; margin: 10px 0 5px 0;">Adicionar amigo pelo código:</p>
+          <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+            <input type="text" id="input-codigo-membro" placeholder="Código (Ex: ALUNO-A1B2)" class="input-form" style="margin: 0; text-transform: uppercase;">
+            <button id="btn-add-membro" class="btn-secundario">Adicionar</button>
+          </div>
+          <div id="container-membros-equipe"></div>
+        </div>
+
+        <!-- CONTEÚDO ABA RANKING -->
+        <div id="conteudo-aba-ranking" class="hidden">
+          <p style="font-size: 0.8rem; color: #a8a8b3; margin: 10px 0;">Ranking semanal baseado em constância e pontos:</p>
+          <div id="container-ranking-equipe"></div>
+        </div>
+
+        <!-- CONTEÚDO ABA FEED (GYM RATS) -->
+        <div id="conteudo-aba-feed" class="hidden">
+          <p style="font-size: 0.8rem; color: #a8a8b3; margin: 10px 0;">Treinos recentes dos seus parceiros de equipe:</p>
+          <div id="container-feed-equipe"></div>
+        </div>
       </div>
 
       <button id="btn-fechar-equipes-btn" class="btn-secundario" style="width: 100%; margin-top: 15px;">FECHAR</button>
