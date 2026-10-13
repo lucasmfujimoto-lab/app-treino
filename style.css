@@ -297,3 +297,27 @@ button:active {
   font-size: 0.8rem;
   margin-bottom: 4px;
 }
+
+/* Limita a altura do modal e adiciona barra de rolagem interna */
+.modal-content.modal-scroll {
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Garante que o botão '×' fique fixo e visível no topo direito ao rolar */
+.modal-content .close {
+  position: sticky;
+  top: 0;
+  right: 0;
+  align-self: flex-end;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #a8a8b3;
+  z-index: 20;
+  background: #202024;
+  padding: 0 5px;
+  border-radius: 4px;
+}
