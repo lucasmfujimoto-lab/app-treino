@@ -1,4 +1,4 @@
-// CONFIGURAÇÃO DO FIREBASE (Insira os dados do seu projeto Firebase)
+// Configuração do Firebase com suas credenciais reais
 const firebaseConfig = {
   apiKey: "AIzaSyALJh4FgI8Tk-_POXcjadiEGF3CKtxOuBA",
   authDomain: "app-treino-4b6da.firebaseapp.com",
@@ -7,7 +7,6 @@ const firebaseConfig = {
   messagingSenderId: "170368119250",
   appId: "1:170368119250:web:e703af3232219bedd9980b"
 };
-
 
 // Inicializar Firebase
 if (!firebase.apps.length) {
@@ -100,7 +99,7 @@ const catalogoExercicios = {
     { id: 607, nome: "Stiff com Halteres", video: "https://www.youtube.com/embed/e_Z_8LqJd0M" },
     { id: 608, nome: "Afundo / Passada com Halteres", video: "https://www.youtube.com/embed/U3HlEF_E9so" },
     { id: 609, nome: "Cadeira Adutora", video: "https://www.youtube.com/embed/yZmx_Ac3880" },
-    { id: 10, nome: "Gêmeos em Pé (Panturrilha)", video: "https://www.youtube.com/embed/N3awlEyY980" }
+    { id: 610, nome: "Gêmeos em Pé (Panturrilha)", video: "https://www.youtube.com/embed/N3awlEyY980" }
   ],
   Abdomen: [
     { id: 701, nome: "Abdominal Infra Solo", video: "https://www.youtube.com/embed/l41NoxJ3I1U" },
@@ -130,10 +129,10 @@ const catalogoExercicios = {
 
 const todosGrupos = ["Peito", "Costas", "Biceps", "Triceps", "Ombro", "Perna", "Abdomen", "Cardio"];
 
-// Estado da Aplicação
+// Estado Global
 let usuarioLogado = null;
-let perfilUsuario = null; // { tipo: 'aluno'|'treinador', codigo: 'ALUNO-1234' }
-let uidAlvoTrabalho = null; // UID do usuário cujos treinos estamos editando/visualizando
+let perfilUsuario = null;
+let uidAlvoTrabalho = null;
 
 let configuracaoTreino = [];
 let indiceTreinoAtual = 0;
@@ -170,7 +169,6 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-// Alternar entre Login e Cadastro
 function alternarModoLogin(e) {
   e.preventDefault();
   modoCadastro = !modoCadastro;
@@ -186,7 +184,6 @@ function alternarModoLogin(e) {
   }
 }
 
-// Autenticação Firebase
 async function autenticarUsuario(e) {
   e.preventDefault();
   const email = document.getElementById("login-email").value;
@@ -216,7 +213,6 @@ function deslogar() {
   auth.signOut();
 }
 
-// Treinador carregar aluno pelo código
 async function carregarTreinoDoAluno() {
   const codigo = document.getElementById("input-codigo-aluno").value.trim().toUpperCase();
   if (!codigo) return alert("Digite o código do aluno.");
@@ -237,7 +233,6 @@ async function carregarTreinoDoAluno() {
   carregarDadosDoServidor();
 }
 
-// Carregar Dados do Firestore
 async function carregarDadosDoServidor() {
   const docRotina = await db.collection("rotinas").doc(uidAlvoTrabalho).get();
   if (docRotina.exists) {
@@ -313,8 +308,6 @@ function iniciarTreino() {
 
   treinoAtual.grupos.forEach(grupo => {
     const exerciciosGrupo = catalogoExercicios[grupo] || [];
-    
-    // Filtrar apenas os selecionados na configuração se existirem
     const selecionados = treinoAtual.exerciciosFixos || [];
     const exerciciosExibir = exerciciosGrupo.filter(ex => selecionados.length === 0 || selecionados.includes(ex.nome));
 
@@ -399,7 +392,7 @@ async function concluirTreino() {
     indiceAtual: indiceTreinoAtual
   });
 
-  alert('Treino concluído e salvo na nuvem!');
+  alert('Treino concluído e salvo com sucesso!');
   document.getElementById('area-execucao').classList.add('hidden');
   atualizarTelaInicial();
   renderizarCalendario();
