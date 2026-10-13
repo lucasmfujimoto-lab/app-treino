@@ -1,4 +1,4 @@
-// Configuração do Firebase com suas credenciais reais
+// CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyALJh4FgI8Tk-_POXcjadiEGF3CKtxOuBA",
   authDomain: "app-treino-4b6da.firebaseapp.com",
@@ -145,12 +145,17 @@ auth.onAuthStateChanged(async (user) => {
     usuarioLogado = user;
     uidAlvoTrabalho = user.uid;
 
-    const docUser = await db.collection("usuarios").doc(user.uid).get();
-    if (docUser.exists) {
-      perfilUsuario = docUser.data();
-    } else {
-      perfilUsuario = { tipo: "aluno", codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() };
-      await db.collection("usuarios").doc(user.uid).set(perfilUsuario);
+    try {
+      const docUser = await db.collection("usuarios").doc(user.uid).get();
+      if (docUser.exists) {
+        perfilUsuario = docUser.data();
+      } else {
+        perfilUsuario = { email: user.email, tipo: "aluno", codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() };
+        await db.collection("usuarios").doc(user.uid).set(perfilUsuario);
+      }
+    } catch (e) {
+      console.log("Criando novo perfil...", e);
+      perfilUsuario = { email: user.email, tipo: "aluno", codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() };
     }
 
     document.getElementById("tela-login").classList.add("hidden");
@@ -192,20 +197,15 @@ async function autenticarUsuario(e) {
   try {
     if (modoCadastro) {
       const tipoPerfil = document.getElementById("login-tipo-perfil").value;
-      
-      // 1. Cria o usuário no Auth
       const res = await auth.createUserWithEmailAndPassword(email, senha);
       const codigoGerado = "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase();
       
-      // 2. Salva o perfil no Firestore
       await db.collection("usuarios").doc(res.user.uid).set({
         email: email,
         tipo: tipoPerfil,
         codigo: codigoGerado
       });
-
-      alert("Conta criada com sucesso! Entrando no app...");
-      // O listener auth.onAuthStateChanged vai detectar e logar automaticamente
+      alert("Conta criada com sucesso!");
     } else {
       await auth.signInWithEmailAndPassword(email, senha);
     }
@@ -248,25 +248,74 @@ async function carregarTreinoDoAluno() {
 }
 
 async function carregarDadosDoServidor() {
-  const docRotina = await db.collection("rotinas").doc(uidAlvoTrabalho).get();
-  if (docRotina.exists) {
-    const d = docRotina.data();
-    configuracaoTreino = d.rotina || [];
-    indiceTreinoAtual = d.indiceAtual || 0;
-  } else {
-    configuracaoTreino = [
-      { letra: "A", grupos: ["Peito", "Triceps"], exerciciosFixos: ["Supino Reto com Barra", "Tríceps Pulley Corda"] },
-      { letra: "B", grupos: ["Costas", "Biceps"], exerciciosFixos: ["Puxada Frontal Aberta", "Rosca Direta Barra W"] }
-    ];
-    indiceTreinoAtual = 0;
-  }
+  try {
+    const docRotina = await db.collection("rotinas").doc(uidAlvoTrabalho).get();
+    if (docRotina.exists) {
+      const d = docRotina.data();
+      configuracaoTreino = d.rotina || [];
+      indiceTreinoAtual = d.indiceAtual || 0;
+    } else {
+      configuracaoTreino = [
+        { letra: "A", grupos: ["Peito", "Triceps"], exerciciosFixos: ["Supino Reto com Barra", "Tríceps Pulley Corda"] },
+        { letra: "B", grupos: ["Costas", "Biceps"], exerciciosFixos: ["Puxada Frontal Aberta", "Rosca Direta Barra W"] }
+      ];
+      indiceTreinoAtual = 0;
+    }
 
-  const docHist = await db.collection("historicos").doc(uidAlvoTrabalho).get();
-  historicoTreinos = docHist.exists ? docHist.data() : {};
+    const docHist = await db.collection("historicos").doc(uidAlvoTrabalho).get();
+    historicoTreinos = docHist.exists ? docHist.data() : {};
+  } catch (e) {
+    console.error("Erro ao carregar dados do servidor:", e);
+  }
 
   atualizarTelaInicial();
   renderizarCalendario();
   carregarBlocoAlongamento();
+  calcularEstatisticasEOfensiva();
+}
+
+// CÁLCULO DE OFENSIVA (STREAK) E TOTAL
+function calcularEstatisticasEOfensiva() {
+  const datasTreinadas = Object.keys(historicoTreinos).sort(); // Ordenar cronologicamente
+  const totalTreinos = datasTreinadas.length;
+
+  document.getElementById("stat-total").innerText = `📊 ${totalTreinos} treinos`;
+
+  if (totalTreinos === 0) {
+    document.getElementById("stat-inicio").innerText = "desde o início";
+    document.getElementById("stat-ofensiva").innerText = "🔥 0 dias";
+    return;
+  }
+
+  // Primeiro dia de treino
+  const primeiraDataPartes = datasTreinadas[0].split("-");
+  const dataFormatada = `${primeiraDataPartes[2]}/${primeiraDataPartes[1]}/${primeiraDataPartes[0]}`;
+  document.getElementById("stat-inicio").innerText = `desde ${dataFormatada}`;
+
+  // Cálculo da ofensiva (dias seguidos)
+  let streak = 0;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  let dataChecagem = new Date(hoje);
+
+  // Se não treinou hoje, verifica se treinou ontem para manter a chama acesa
+  const hojeIso = dataChecagem.toISOString().split("T")[0];
+  if (!historicoTreinos[hojeIso]) {
+    dataChecagem.setDate(dataChecagem.getDate() - 1);
+  }
+
+  while (true) {
+    const iso = dataChecagem.toISOString().split("T")[0];
+    if (historicoTreinos[iso]) {
+      streak++;
+      dataChecagem.setDate(dataChecagem.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  document.getElementById("stat-ofensiva").innerText = `🔥 ${streak} ${streak === 1 ? "dia" : "dias"}`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -406,10 +455,11 @@ async function concluirTreino() {
     indiceAtual: indiceTreinoAtual
   });
 
-  alert('Treino concluído e salvo com sucesso!');
+  alert('Treino do Dia concluído com sucesso! 👏');
   document.getElementById('area-execucao').classList.add('hidden');
   atualizarTelaInicial();
   renderizarCalendario();
+  calcularEstatisticasEOfensiva();
 }
 
 async function trocarTreinoManual() {
@@ -576,7 +626,7 @@ async function salvarNovaConfig() {
     
     atualizarTelaInicial();
     fecharModalConfig();
-    alert('Nova rotina com exercícios fixos salva com sucesso!');
+    alert('Nova rotina salva com sucesso!');
   } else {
     alert('Marque pelo menos um músculo para cada treino.');
   }
