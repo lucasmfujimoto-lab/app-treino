@@ -765,3 +765,174 @@ function fecharModalVideo() {
   document.getElementById('modal-video').classList.add('hidden');
   document.getElementById('video-container').innerHTML = '';
 }
+
+let equipeAtual = null;
+
+// Vincular eventos no DOMContentLoaded
+document.addEventListener("DOMContentLoaded", () => {
+  // ... (manter ouvintes anteriores) ...
+
+  const btnCriarEq = document.getElementById('btn-criar-equipe');
+  if (btnCriarEq) btnCriarEq.addEventListener('click', criarEquipe);
+
+  const btnAddMembro = document.getElementById('btn-add-membro');
+  if (btnAddMembro) btnAddMembro.addEventListener('click', adicionarMembroEquipe);
+
+  const btnSairEq = document.getElementById('btn-sair-equipe');
+  if (btnSairEq) btnSairEq.addEventListener('click', sairDaEquipe);
+});
+
+// Carregar equipe do usuário ao iniciar
+async function carregarEquipeUsuario() {
+  if (!usuarioLogado) return;
+
+  try {
+    const docEq = await db.collection("equipes").where("membrosUids", "array-contains", usuarioLogado.uid).get();
+
+    if (!docEq.empty) {
+      const eqDoc = docEq.docs[0];
+      equipeAtual = { id: eqDoc.id, ...eqDoc.data() };
+      renderizarEquipe();
+    } else {
+      equipeAtual = null;
+      document.getElementById("equipe-sem-grupo").classList.remove("hidden");
+      document.getElementById("equipe-com-grupo").classList.add("hidden");
+    }
+  } catch (e) {
+    console.error("Erro ao carregar equipe:", e);
+  }
+}
+
+// Criar nova equipe
+async function criarEquipe() {
+  const nome = document.getElementById("input-nome-equipe").value.trim();
+  if (!nome) return alert("Digite um nome para a equipe!");
+
+  const novaEquipe = {
+    nome: nome,
+    criadorUid: usuarioLogado.uid,
+    membrosUids: [usuarioLogado.uid]
+  };
+
+  const docRef = await db.collection("equipes").add(novaEquipe);
+  equipeAtual = { id: docRef.id, ...novaEquipe };
+  document.getElementById("input-nome-equipe").value = "";
+  renderizarEquipe();
+}
+
+// Adicionar membro pelo código de aluno
+async function adicionarMembroEquipe() {
+  const codigo = document.getElementById("input-codigo-membro").value.trim().toUpperCase();
+  if (!codigo) return alert("Digite o código do aluno!");
+
+  const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
+  if (snap.empty) {
+    return alert("Nenhum aluno encontrado com este código.");
+  }
+
+  const alunoDoc = snap.docs[0];
+  const uidNovoMembro = alunoDoc.id;
+
+  if (equipeAtual.membrosUids.includes(uidNovoMembro)) {
+    return alert("Este aluno já faz parte da equipe!");
+  }
+
+  equipeAtual.membrosUids.push(uidNovoMembro);
+  await db.collection("equipes").doc(equipeAtual.id).update({
+    membrosUids: equipeAtual.membrosUids
+  });
+
+  document.getElementById("input-codigo-membro").value = "";
+  renderizarEquipe();
+}
+
+// Renderizar painel da equipe e calcular a ofensiva/total de cada membro
+async function renderizarEquipe() {
+  if (!equipeAtual) return;
+
+  document.getElementById("equipe-sem-grupo").classList.add("hidden");
+  document.getElementById("equipe-com-grupo").classList.remove("hidden");
+  document.getElementById("nome-equipe-titulo").innerText = `👥 ${equipeAtual.nome}`;
+
+  const listaContainer = document.getElementById("lista-membros-equipe");
+  listaContainer.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando membros...</p>";
+
+  let html = "";
+
+  for (const uid of equipeAtual.membrosUids) {
+    // Buscar perfil do usuário
+    const userDoc = await db.collection("usuarios").doc(uid).get();
+    const userData = userDoc.exists ? userDoc.data() : { email: "Usuário", codigo: "--" };
+
+    // Buscar histórico de treinos para calcular ofensiva e total
+    const histDoc = await db.collection("historicos").doc(uid).get();
+    const historico = histDoc.exists ? histDoc.data() : {};
+
+    const stats = calcularStatsMembro(historico);
+
+    html += `
+      <div class="membro-card">
+        <div class="membro-info">
+          <span class="membro-email">${userData.email.split('@')[0]} ${uid === usuarioLogado.uid ? '(Você)' : ''}</span>
+          <span class="membro-codigo">${userData.codigo}</span>
+        </div>
+        <div class="membro-stats">
+          <span class="stat-badge" title="Dias Seguidos">🔥 ${stats.streak}d</span>
+          <span class="stat-badge" style="color: #e1e1e6;" title="Total de Treinos">📊 ${stats.total}t</span>
+        </div>
+      </div>
+    `;
+  }
+
+  listaContainer.innerHTML = html;
+}
+
+// Função auxiliar para calcular ofensiva e total de um histórico
+function calcularStatsMembro(historico) {
+  const datas = Object.keys(historico).sort();
+  const total = datas.length;
+
+  if (total === 0) return { streak: 0, total: 0 };
+
+  let streak = 0;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  let dataChecagem = new Date(hoje);
+  const hojeIso = dataChecagem.toISOString().split("T")[0];
+
+  if (!historico[hojeIso]) {
+    dataChecagem.setDate(dataChecagem.getDate() - 1);
+  }
+
+  while (true) {
+    const iso = dataChecagem.toISOString().split("T")[0];
+    if (historico[iso]) {
+      streak++;
+      dataChecagem.setDate(dataChecagem.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  return { streak, total };
+}
+
+// Sair da equipe
+async function sairDaEquipe() {
+  if (!confirm("Deseja realmente sair da equipe?")) return;
+
+  equipeAtual.membrosUids = equipeAtual.membrosUids.filter(uid => uid !== usuarioLogado.uid);
+
+  if (equipeAtual.membrosUids.length === 0) {
+    await db.collection("equipes").doc(equipeAtual.id).delete();
+  } else {
+    await db.collection("equipes").doc(equipeAtual.id).update({
+      membrosUids: equipeAtual.membrosUids
+    });
+  }
+
+  equipeAtual = null;
+  carregarEquipeUsuario();
+}
+
