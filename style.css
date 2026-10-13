@@ -110,6 +110,44 @@ header h1 {
   color: #7c7c8a;
 }
 
+/* GRID DE CONQUISTAS / EMBLEMAS */
+.conquistas-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.badge-item {
+  background: #121214;
+  border: 1px solid #29292e;
+  border-radius: 8px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0.3;
+}
+
+.badge-item.desbloqueado {
+  opacity: 1;
+  border-color: #00e676;
+  box-shadow: 0 0 6px rgba(0, 230, 118, 0.2);
+}
+
+.badge-icon {
+  font-size: 1.4rem;
+}
+
+.badge-nome {
+  font-size: 0.65rem;
+  color: #e1e1e6;
+  margin-top: 4px;
+  font-weight: bold;
+}
+
 .card {
   background-color: #202024;
   border-radius: 12px;
@@ -185,7 +223,6 @@ button:active {
   font-size: 0.9rem;
 }
 
-/* LISTA DE EXERCÍCIOS ADAPTÁVEL */
 .item-exercicio {
   background-color: #121214;
   border-radius: 8px;
@@ -243,7 +280,6 @@ button:active {
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  transition: border-color 0.2s;
 }
 
 .equipe-item-card:hover {
@@ -261,7 +297,90 @@ button:active {
   color: #a8a8b3;
 }
 
-/* CARDS DE MEMBROS DA EQUIPE */
+/* ABAS DA EQUIPE (MEMBROS / RANKING / FEED) */
+.abas-equipe {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #29292e;
+  padding-bottom: 8px;
+}
+
+.aba-btn {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 0.8rem;
+  background: #121214;
+  color: #a8a8b3;
+  border-radius: 6px;
+}
+
+.aba-btn.ativa {
+  background: #00e676;
+  color: #000;
+  font-weight: bold;
+}
+
+/* CARDS DO FEED DA EQUIPE (GYM RATS) */
+.feed-card {
+  background: #121214;
+  border: 1px solid #29292e;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.feed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.feed-usuario {
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: #00e676;
+}
+
+.feed-data {
+  font-size: 0.7rem;
+  color: #7c7c8a;
+}
+
+.feed-treino-titulo {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.feed-exercicios-resumo {
+  font-size: 0.75rem;
+  color: #a8a8b3;
+  margin-bottom: 8px;
+}
+
+.feed-reacoes {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-reacao {
+  background: #202024;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid #29292e;
+}
+
+.btn-reacao.reagido {
+  border-color: #00e676;
+  background: rgba(0,230,118,0.1);
+}
+
+/* CARDS DE MEMBROS E RANKING */
 .membro-card {
   background-color: #121214;
   border-radius: 8px;
