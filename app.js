@@ -15,7 +15,7 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// CATÁLOGO EXPANDIDO COM 10 EXERCÍCIOS POR MÚSCULO
+// CATÁLOGO EXPANDIDO DE EXERCÍCIOS
 const catalogoExercicios = {
   Alongamento: [
     { id: 1, nome: "Mobilidade de Ombro (Bastão)", video: "https://www.youtube.com/embed/S2pG37y-Jls" },
@@ -129,7 +129,7 @@ const catalogoExercicios = {
 
 const todosGrupos = ["Peito", "Costas", "Biceps", "Triceps", "Ombro", "Perna", "Abdomen", "Cardio"];
 
-// Estado Global
+// ESTADO GLOBAL
 let usuarioLogado = null;
 let perfilUsuario = null;
 let uidAlvoTrabalho = null;
@@ -139,7 +139,62 @@ let indiceTreinoAtual = 0;
 let historicoTreinos = {};
 let modoCadastro = false;
 
-// Observador de Autenticação
+// REGISTRO DE EVENTOS SEGUROS
+document.addEventListener("DOMContentLoaded", () => {
+  // Login / Cadastro
+  const formLogin = document.getElementById('form-login');
+  if (formLogin) formLogin.addEventListener('submit', autenticarUsuario);
+
+  const linkAlternar = document.getElementById('link-alternar-login');
+  if (linkAlternar) linkAlternar.addEventListener('click', alternarModoLogin);
+
+  const btnDeslogar = document.getElementById('btn-deslogar');
+  if (btnDeslogar) btnDeslogar.addEventListener('click', () => auth.signOut());
+
+  // Treinador
+  const btnAcessarAluno = document.getElementById('btn-acessar-aluno');
+  if (btnAcessarAluno) btnAcessarAluno.addEventListener('click', carregarTreinoDoAluno);
+
+  // Treino
+  const btnIniciar = document.getElementById('btn-iniciar');
+  if (btnIniciar) btnIniciar.addEventListener('click', iniciarTreino);
+
+  const btnTrocar = document.getElementById('btn-trocar');
+  if (btnTrocar) btnTrocar.addEventListener('click', trocarTreinoManual);
+
+  const btnConcluir = document.getElementById('btn-concluir');
+  if (btnConcluir) btnConcluir.addEventListener('click', concluirTreino);
+
+  // Configuração
+  const btnAbrirConfig = document.getElementById('btn-abrir-config');
+  if (btnAbrirConfig) btnAbrirConfig.addEventListener('click', abrirConfigRotina);
+
+  const btnGerarConfig = document.getElementById('btn-gerar-config');
+  if (btnGerarConfig) btnGerarConfig.addEventListener('click', gerarCamposConfig);
+
+  const btnSalvarRotina = document.getElementById('btn-salvar-rotina');
+  if (btnSalvarRotina) btnSalvarRotina.addEventListener('click', salvarNovaConfig);
+
+  // Alongamento
+  const btnAbrirAlong = document.getElementById('btn-abrir-alongamento');
+  if (btnAbrirAlong) btnAbrirAlong.addEventListener('click', () => {
+    document.getElementById('modal-alongamento').classList.remove('hidden');
+  });
+
+  // Fechar Modais
+  document.getElementById('btn-fechar-modal-alongamento').addEventListener('click', fecharModalAlongamento);
+  document.getElementById('btn-voltar-alongamento').addEventListener('click', fecharModalAlongamento);
+
+  document.getElementById('btn-fechar-modal-video').addEventListener('click', fecharModalVideo);
+  document.getElementById('btn-fechar-video-btn').addEventListener('click', fecharModalVideo);
+
+  document.getElementById('btn-fechar-modal-detalhes').addEventListener('click', fecharModalDetalhes);
+  document.getElementById('btn-fechar-detalhes-btn').addEventListener('click', fecharModalDetalhes);
+
+  document.getElementById('btn-fechar-modal-config').addEventListener('click', fecharModalConfig);
+});
+
+// OBSERVADOR DE AUTENTICAÇÃO
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     usuarioLogado = user;
@@ -154,7 +209,7 @@ auth.onAuthStateChanged(async (user) => {
         await db.collection("usuarios").doc(user.uid).set(perfilUsuario);
       }
     } catch (e) {
-      console.log("Criando novo perfil...", e);
+      console.log("Erro ao obter dados do usuário:", e);
       perfilUsuario = { email: user.email, tipo: "aluno", codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() };
     }
 
@@ -175,8 +230,9 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 function alternarModoLogin(e) {
-  e.preventDefault();
+  if (e) e.preventDefault();
   modoCadastro = !modoCadastro;
+  
   document.getElementById("login-subtitulo").innerText = modoCadastro ? "Crie sua conta para começar" : "Acesse sua conta para continuar";
   document.getElementById("btn-submit-login").innerText = modoCadastro ? "CRIAR CONTA" : "ENTRAR";
   document.getElementById("txt-alternar-login").innerText = modoCadastro ? "Já tem uma conta?" : "Não tem conta?";
@@ -190,8 +246,8 @@ function alternarModoLogin(e) {
 }
 
 async function autenticarUsuario(e) {
-  e.preventDefault(); // Impede o recarregamento da página
-
+  if (e) e.preventDefault();
+  
   const emailInput = document.getElementById("login-email");
   const senhaInput = document.getElementById("login-senha");
 
@@ -225,10 +281,6 @@ async function autenticarUsuario(e) {
       alert("Erro na autenticação: " + err.message);
     }
   }
-}
-
-function deslogar() {
-  auth.signOut();
 }
 
 async function carregarTreinoDoAluno() {
@@ -278,9 +330,8 @@ async function carregarDadosDoServidor() {
   calcularEstatisticasEOfensiva();
 }
 
-// CÁLCULO DE OFENSIVA (STREAK) E TOTAL
 function calcularEstatisticasEOfensiva() {
-  const datasTreinadas = Object.keys(historicoTreinos).sort(); // Ordenar cronologicamente
+  const datasTreinadas = Object.keys(historicoTreinos).sort();
   const totalTreinos = datasTreinadas.length;
 
   document.getElementById("stat-total").innerText = `📊 ${totalTreinos} treinos`;
@@ -291,20 +342,17 @@ function calcularEstatisticasEOfensiva() {
     return;
   }
 
-  // Primeiro dia de treino
   const primeiraDataPartes = datasTreinadas[0].split("-");
   const dataFormatada = `${primeiraDataPartes[2]}/${primeiraDataPartes[1]}/${primeiraDataPartes[0]}`;
   document.getElementById("stat-inicio").innerText = `desde ${dataFormatada}`;
 
-  // Cálculo da ofensiva (dias seguidos)
   let streak = 0;
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
 
   let dataChecagem = new Date(hoje);
-
-  // Se não treinou hoje, verifica se treinou ontem para manter a chama acesa
   const hojeIso = dataChecagem.toISOString().split("T")[0];
+
   if (!historicoTreinos[hojeIso]) {
     dataChecagem.setDate(dataChecagem.getDate() - 1);
   }
@@ -321,26 +369,6 @@ function calcularEstatisticasEOfensiva() {
 
   document.getElementById("stat-ofensiva").innerText = `🔥 ${streak} ${streak === 1 ? "dia" : "dias"}`;
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Botão de alongamento
-  const btnAlongamento = document.getElementById('btn-abrir-alongamento');
-  if (btnAlongamento) {
-    btnAlongamento.addEventListener('click', () => {
-      document.getElementById('modal-alongamento').classList.remove('hidden');
-    });
-  }
-
-  // Evento de Login/Cadastro seguro
-  const formLogin = document.getElementById('form-login');
-  if (formLogin) {
-    formLogin.addEventListener('submit', autenticarUsuario);
-  }
-});
-  document.getElementById('btn-abrir-alongamento').addEventListener('click', () => {
-    document.getElementById('modal-alongamento').classList.remove('hidden');
-  });
-});
 
 function fecharModalAlongamento() {
   document.getElementById('modal-alongamento').classList.add('hidden');
@@ -540,9 +568,6 @@ function abrirDetalhesDia(dataIso) {
     html += "</ul></div>";
     corpo.innerHTML = html;
   }
-
-  modal.classList.remove('hidden');
-}
 
   modal.classList.remove('hidden');
 }
