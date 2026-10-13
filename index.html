@@ -15,7 +15,6 @@
   <!-- TELA DE LOGIN / CADASTRO -->
   <div id="tela-login" class="modal">
     <div class="modal-content">
-      <!-- LOGO MARCA -->
       <div class="logo-container">
         <svg class="logo-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="6" y="26" width="8" height="12" rx="3" fill="#00e676"/>
@@ -45,7 +44,7 @@
 
       <p style="margin-top: 15px; font-size: 0.85rem; color: #a8a8b3;">
         <span id="txt-alternar-login">Não tem conta?</span> 
-        <a href="#" id="link-alternar-login" onclick="alternarModoLogin(event)" style="color: #00e676;">Criar Conta</a>
+        <a href="#" id="link-alternar-login" style="color: #00e676;">Criar Conta</a>
       </p>
     </div>
   </div>
@@ -64,12 +63,12 @@
         <h1>Treino Do Dia</h1>
       </div>
       <p id="info-usuario-logado">Usuário: -- | Código: --</p>
-      <button onclick="deslogar()" class="btn-secundario" style="padding: 4px 10px; font-size: 0.75rem; margin-top: 6px;">Sair da Conta</button>
+      <button id="btn-deslogar" class="btn-secundario" style="padding: 4px 10px; font-size: 0.75rem; margin-top: 6px;">Sair da Conta</button>
     </header>
 
     <main class="container">
 
-      <!-- CARDS DE ESTATÍSTICAS / OFENSIVA -->
+      <!-- ESTATÍSTICAS / OFENSIVA -->
       <section class="card-estatisticas">
         <div class="stat-box">
           <span class="stat-titulo">Ofensiva</span>
@@ -83,13 +82,13 @@
         </div>
       </section>
 
-      <!-- ÁREA EXCLUSIVA DE TREINADOR -->
+      <!-- MODO TREINADOR -->
       <section id="card-treinador" class="card hidden" style="border-left: 4px solid #ff9800;">
         <h2>⚡ Modo Treinador / Personal</h2>
         <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Acesse e modifique os treinos do seu aluno:</p>
         <div style="display: flex; gap: 8px;">
           <input type="text" id="input-codigo-aluno" placeholder="Código (Ex: ALUNO-A1B2)" style="flex: 1; text-transform: uppercase;" class="input-form">
-          <button onclick="carregarTreinoDoAluno()" class="btn-secundario">Acessar</button>
+          <button id="btn-acessar-aluno" class="btn-secundario">Acessar</button>
         </div>
         <p id="msg-aluno-carregado" style="font-size: 0.8rem; color: #00e676; margin-top: 8px;" class="hidden"></p>
       </section>
@@ -114,8 +113,8 @@
         </div>
 
         <div class="botoes-acao">
-          <button id="btn-iniciar" onclick="iniciarTreino()">INICIAR TREINO DO DIA</button>
-          <button id="btn-trocar" class="btn-secundario" onclick="trocarTreinoManual()">Pular para o Próximo Treino</button>
+          <button id="btn-iniciar">INICIAR TREINO DO DIA</button>
+          <button id="btn-trocar" class="btn-secundario">Pular para o Próximo Treino</button>
         </div>
       </section>
 
@@ -123,7 +122,7 @@
       <section id="area-execucao" class="card hidden">
         <h2>Exercícios do Treino</h2>
         <div id="lista-exercicios"></div>
-        <button id="btn-concluir" style="margin-top: 15px; width: 100%;" onclick="concluirTreino()">CONCLUIR TREINO (CHECK-IN)</button>
+        <button id="btn-concluir" style="margin-top: 15px; width: 100%;">CONCLUIR TREINO (CHECK-IN)</button>
       </section>
 
       <!-- CALENDÁRIO / HISTÓRICO -->
@@ -136,7 +135,7 @@
       <!-- CONFIGURAÇÃO DA ROTINA -->
       <section class="card config-section">
         <h2>Montagem da Rotina</h2>
-        <button onclick="abrirConfigRotina()" class="btn-alerta" style="width: 100%;">⚙️ Configurar Divisão e Exercícios</button>
+        <button id="btn-abrir-config" class="btn-alerta" style="width: 100%;">⚙️ Configurar Divisão e Exercícios</button>
       </section>
 
     </main>
@@ -144,51 +143,50 @@
 
   <!-- MODAL DE ALONGAMENTO -->
   <div id="modal-alongamento" class="modal hidden">
-    <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
-      <span class="close" onclick="fecharModalAlongamento()">&times;</span>
+    <div class="modal-content modal-scroll">
+      <span class="close" id="btn-fechar-modal-alongamento">&times;</span>
       <h3>🧘 Alongamento & Mobilidade</h3>
       <p style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 15px;">Exercícios de aquecimento pré-treino:</p>
       <div id="lista-alongamento"></div>
-      <button onclick="fecharModalAlongamento()" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR</button>
+      <button id="btn-voltar-alongamento" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR</button>
     </div>
   </div>
 
   <!-- MODAL DE VÍDEO -->
   <div id="modal-video" class="modal hidden">
     <div class="modal-content">
-      <span class="close" onclick="fecharModalVideo()">&times;</span>
+      <span class="close" id="btn-fechar-modal-video">&times;</span>
       <h3 id="video-titulo">Como Executar</h3>
       <div id="video-container" style="margin-top: 10px;"></div>
-      <button onclick="fecharModalVideo()" class="btn-secundario" style="width: 100%; margin-top: 15px;">FECHAR VÍDEO</button>
+      <button id="btn-fechar-video-btn" class="btn-secundario" style="width: 100%; margin-top: 15px;">FECHAR VÍDEO</button>
     </div>
   </div>
 
   <!-- MODAL DETALHES -->
-  <!-- MODAL DETALHES DO TREINO (COM ROLAGEM CORRIGIDA) -->
   <div id="modal-detalhes" class="modal hidden">
     <div class="modal-content modal-scroll">
-      <span class="close" onclick="fecharModalDetalhes()">&times;</span>
+      <span class="close" id="btn-fechar-modal-detalhes">&times;</span>
       <h3 id="detalhes-data">Treino Realizado</h3>
       <div id="detalhes-corpo" style="margin-top: 15px; text-align: left;"></div>
-      <button onclick="fecharModalDetalhes()" class="btn-secundario" style="width: 100%; margin-top: 15px; position: sticky; bottom: 0; z-index: 10;">FECHAR</button>
+      <button id="btn-fechar-detalhes-btn" class="btn-secundario" style="width: 100%; margin-top: 15px;">FECHAR</button>
     </div>
   </div>
 
   <!-- MODAL CONFIGURAÇÃO DA ROTINA -->
   <div id="modal-config-rotina" class="modal hidden">
-    <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
-      <span class="close" onclick="fecharModalConfig()">&times;</span>
+    <div class="modal-content modal-scroll">
+      <span class="close" id="btn-fechar-modal-config">&times;</span>
       <h3>Configurar Rotina</h3>
       <p style="font-size: 0.85rem; color: #a8a8b3; margin-top: 5px;">Digite a sequência desejada (Ex: ABC, ABCD, AB):</p>
       
       <div style="margin: 12px 0;">
         <input type="text" id="input-divisao-letras" value="ABC" placeholder="Ex: ABC" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #323238; background: #121214; color: #fff; text-align: center; font-weight: bold; font-size: 1.1rem; text-transform: uppercase;">
-        <button onclick="gerarCamposConfig()" class="btn-secundario" style="width: 100%; margin-top: 8px;">Montar Músculos e Exercícios</button>
+        <button id="btn-gerar-config" class="btn-secundario" style="width: 100%; margin-top: 8px;">Montar Músculos e Exercícios</button>
       </div>
 
       <div id="container-config-dias"></div>
       
-      <button id="btn-salvar-rotina" onclick="salvarNovaConfig()" class="hidden" style="margin-top: 15px; width: 100%;">Salvar Nova Rotina</button>
+      <button id="btn-salvar-rotina" class="hidden" style="margin-top: 15px; width: 100%;">Salvar Nova Rotina</button>
     </div>
   </div>
 
