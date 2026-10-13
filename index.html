@@ -164,12 +164,13 @@
   </div>
 
   <!-- MODAL DETALHES -->
+  <!-- MODAL DETALHES DO TREINO (COM ROLAGEM CORRIGIDA) -->
   <div id="modal-detalhes" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-content modal-scroll">
       <span class="close" onclick="fecharModalDetalhes()">&times;</span>
       <h3 id="detalhes-data">Treino Realizado</h3>
       <div id="detalhes-corpo" style="margin-top: 15px; text-align: left;"></div>
-      <button onclick="fecharModalDetalhes()" class="btn-secundario" style="width: 100%; margin-top: 15px;">FECHAR</button>
+      <button onclick="fecharModalDetalhes()" class="btn-secundario" style="width: 100%; margin-top: 15px; position: sticky; bottom: 0; z-index: 10;">FECHAR</button>
     </div>
   </div>
 
