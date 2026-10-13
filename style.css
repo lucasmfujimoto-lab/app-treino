@@ -322,3 +322,48 @@ button:active {
   font-size: 0.8rem;
   margin-bottom: 4px;
 }
+
+/* Cards dos Membros na Equipe */
+.membro-card {
+  background-color: #121214;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 1px solid #29292e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.membro-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.membro-email {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.membro-codigo {
+  font-size: 0.7rem;
+  color: #7c7c8a;
+}
+
+.membro-stats {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.stat-badge {
+  font-size: 0.8rem;
+  font-weight: bold;
+  background: #202024;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #00e676;
+}
+
