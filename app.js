@@ -412,61 +412,6 @@ function atualizarTelaInicial() {
   document.getElementById('foco-treino').innerText = `Músculos: ${treinoAtual.grupos.join(', ')}`;
 }
 
-function iniciarTreino() {
-  const areaExecucao = document.getElementById('area-execucao');
-  const listaContainer = document.getElementById('lista-exercicios');
-  listaContainer.innerHTML = '';
-
-  const treinoAtual = configuracaoTreino[indiceTreinoAtual];
-
-  treinoAtual.grupos.forEach(grupo => {
-    const exerciciosGrupo = catalogoExercicios[grupo] || [];
-    const selecionados = treinoAtual.exerciciosFixos || [];
-    const exerciciosExibir = exerciciosGrupo.filter(ex => selecionados.length === 0 || selecionados.includes(ex.nome));
-
-    if (exerciciosExibir.length > 0) {
-      const tituloGrupo = document.createElement('h3');
-      tituloGrupo.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
-      tituloGrupo.innerText = `● ${grupo}`;
-      listaContainer.appendChild(tituloGrupo);
-    }
-
-    exerciciosExibir.forEach(ex => {
-      const cardEx = document.createElement('div');
-      cardEx.className = 'item-exercicio';
-      
-      const topo = document.createElement('div');
-      topo.className = 'exercicio-topo';
-      
-      const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${ex.nome}" checked> <strong>${ex.nome}</strong>`;
-      
-      const btnVid = document.createElement('button');
-      btnVid.className = 'btn-secundario';
-      btnVid.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
-      btnVid.innerText = '▶ Vídeo';
-      btnVid.addEventListener('click', () => verVideo(ex.nome, ex.video));
-
-      topo.appendChild(label);
-      topo.appendChild(btnVid);
-
-      const inputs = document.createElement('div');
-      inputs.className = 'inputs-treino';
-      inputs.innerHTML = `
-        <input type="number" placeholder="Séries" value="3" class="input-series">
-        <input type="text" placeholder="Reps" value="8-10" class="input-reps">
-        <input type="number" placeholder="Carga (kg)" class="input-carga">
-      `;
-
-      cardEx.appendChild(topo);
-      cardEx.appendChild(inputs);
-      listaContainer.appendChild(cardEx);
-    });
-  });
-
-  areaExecucao.classList.remove('hidden');
-}
-
 async function concluirTreino() {
   const hoje = new Date().toISOString().split('T')[0];
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
@@ -605,6 +550,88 @@ function abrirConfigRotina() {
   gerarCamposConfig();
 }
 
+// 1. Renderização dos campos do treino com layout adaptável (Séries, Reps e Carga)
+function iniciarTreino() {
+  const areaExecucao = document.getElementById('area-execucao');
+  const listaContainer = document.getElementById('lista-exercicios');
+  listaContainer.innerHTML = '';
+
+  const treinoAtual = configuracaoTreino[indiceTreinoAtual];
+
+  if (!treinoAtual) return;
+
+  treinoAtual.grupos.forEach(grupo => {
+    const exerciciosGrupo = catalogoExercicios[grupo] || [];
+    const selecionados = treinoAtual.exerciciosFixos || [];
+    const exerciciosExibir = exerciciosGrupo.filter(ex => selecionados.length === 0 || selecionados.includes(ex.nome));
+
+    if (exerciciosExibir.length > 0) {
+      const tituloGrupo = document.createElement('h3');
+      tituloGrupo.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
+      tituloGrupo.innerText = `● ${grupo}`;
+      listaContainer.appendChild(tituloGrupo);
+    }
+
+    exerciciosExibir.forEach(ex => {
+      const cardEx = document.createElement('div');
+      cardEx.className = 'item-exercicio';
+      
+      const topo = document.createElement('div');
+      topo.className = 'exercicio-topo';
+      
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${ex.nome}" checked> <strong>${ex.nome}</strong>`;
+      
+      const btnVid = document.createElement('button');
+      btnVid.className = 'btn-secundario';
+      btnVid.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
+      btnVid.innerText = '▶ Vídeo';
+      btnVid.addEventListener('click', () => verVideo(ex.nome, ex.video));
+
+      topo.appendChild(label);
+      topo.appendChild(btnVid);
+
+      // Estrutura adaptável com rótulos
+      const inputs = document.createElement('div');
+      inputs.className = 'inputs-treino';
+      inputs.innerHTML = `
+        <div class="input-group">
+          <label>Séries</label>
+          <input type="number" value="3" class="input-series">
+        </div>
+        <div class="input-group">
+          <label>Reps</label>
+          <input type="text" value="8-10" class="input-reps">
+        </div>
+        <div class="input-group" style="flex: 1.2; min-width: 100px;">
+          <label>Carga (kg)</label>
+          <input type="number" placeholder="Opcional" class="input-carga">
+        </div>
+      `;
+
+      cardEx.appendChild(topo);
+      cardEx.appendChild(inputs);
+      listaContainer.appendChild(cardEx);
+    });
+  });
+
+  areaExecucao.classList.remove('hidden');
+}
+
+// 2. Abrir configurações puxando os dados já salvos
+function abrirConfigRotina() {
+  document.getElementById('modal-config-rotina').classList.remove('hidden');
+  
+  // Pré-preenche o campo da divisão com as letras salvas atuais (ex: ABC)
+  if (configuracaoTreino && configuracaoTreino.length > 0) {
+    const letrasSalvas = configuracaoTreino.map(t => t.letra).join('');
+    document.getElementById('input-divisao-letras').value = letrasSalvas;
+  }
+  
+  gerarCamposConfig();
+}
+
+// 3. Gerar montagem marcando automaticamente grupos e exercícios já salvos
 function gerarCamposConfig() {
   const inputDiv = document.getElementById('input-divisao-letras').value.toUpperCase().trim();
   const container = document.getElementById('container-config-dias');
@@ -615,6 +642,10 @@ function gerarCamposConfig() {
   const letras = inputDiv.split('');
 
   letras.forEach((letra) => {
+    // Procura se já existe configuração para esta letra
+    const treinoSalvo = configuracaoTreino.find(t => t.letra === letra);
+    const gruposSalvos = treinoSalvo ? treinoSalvo.grupos : [];
+
     const bloco = document.createElement('div');
     bloco.style.cssText = "margin-bottom: 15px; border-bottom: 1px solid #29292e; padding-bottom: 10px;";
     
@@ -623,33 +654,48 @@ function gerarCamposConfig() {
     html += `<div class='grupo-checkboxes' data-letra='${letra}'>`;
     
     todosGrupos.forEach(grupo => {
+      const estaMarcado = gruposSalvos.includes(grupo) ? 'checked' : '';
       html += `
         <label>
-          <input type='checkbox' value='${grupo}' onchange='toggleExerciciosMontagem(this, "${letra}", "${grupo}")'> ${grupo}
+          <input type='checkbox' value='${grupo}' ${estaMarcado} onchange='toggleExerciciosMontagem(this, "${letra}", "${grupo}")'> ${grupo}
         </label>
-        <div id='exs-${letra}-${grupo}' class='seletor-exercicios-montagem hidden'></div>
+        <div id='exs-${letra}-${grupo}' class='seletor-exercicios-montagem ${estaMarcado ? '' : 'hidden'}'></div>
       `;
     });
     html += `</div>`;
     bloco.innerHTML = html;
     container.appendChild(bloco);
+
+    // Carrega a lista de exercícios para os grupos já marcados
+    todosGrupos.forEach(grupo => {
+      if (gruposSalvos.includes(grupo)) {
+        const cbMock = { checked: true };
+        toggleExerciciosMontagem(cbMock, letra, grupo);
+      }
+    });
   });
 
   document.getElementById('btn-salvar-rotina').classList.remove('hidden');
 }
 
+// 4. Exibir exercícios com marcação prévia
 function toggleExerciciosMontagem(cb, letra, grupo) {
   const containerExs = document.getElementById(`exs-${letra}-${grupo}`);
   if (!containerExs) return;
+
+  const treinoSalvo = configuracaoTreino.find(t => t.letra === letra);
+  const exerciciosFixosSalvos = treinoSalvo ? (treinoSalvo.exerciciosFixos || []) : [];
 
   if (cb.checked) {
     containerExs.classList.remove('hidden');
     containerExs.innerHTML = `<strong style='font-size: 0.75rem; color: #00e676;'>Exercícios de ${grupo}:</strong>`;
     
     catalogoExercicios[grupo].forEach(ex => {
+      // Se não havia lista prévia salva, marca todos por padrão. Se havia, marca os salvos.
+      const marcado = (exerciciosFixosSalvos.length === 0 || exerciciosFixosSalvos.includes(ex.nome)) ? 'checked' : '';
       containerExs.innerHTML += `
         <label style='font-weight: normal;'>
-          <input type='checkbox' class='cb-ex-fixo' data-letra='${letra}' data-grupo='${grupo}' value='${ex.nome}' checked> ${ex.nome}
+          <input type='checkbox' class='cb-ex-fixo' data-letra='${letra}' data-grupo='${grupo}' value='${ex.nome}' ${marcado}> ${ex.nome}
         </label>
       `;
     });
