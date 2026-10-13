@@ -186,26 +186,40 @@ function alternarModoLogin(e) {
 
 async function autenticarUsuario(e) {
   e.preventDefault();
-  const email = document.getElementById("login-email").value;
+  const email = document.getElementById("login-email").value.trim();
   const senha = document.getElementById("login-senha").value;
 
   try {
     if (modoCadastro) {
       const tipoPerfil = document.getElementById("login-tipo-perfil").value;
+      
+      // 1. Cria o usuário no Auth
       const res = await auth.createUserWithEmailAndPassword(email, senha);
       const codigoGerado = "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase();
       
+      // 2. Salva o perfil no Firestore
       await db.collection("usuarios").doc(res.user.uid).set({
         email: email,
         tipo: tipoPerfil,
         codigo: codigoGerado
       });
-      alert("Conta criada com sucesso!");
+
+      alert("Conta criada com sucesso! Entrando no app...");
+      // O listener auth.onAuthStateChanged vai detectar e logar automaticamente
     } else {
       await auth.signInWithEmailAndPassword(email, senha);
     }
   } catch (err) {
-    alert("Erro na autenticação: " + err.message);
+    console.error("Erro no login/cadastro:", err);
+    if (err.code === "auth/email-already-in-use") {
+      alert("Este e-mail já está cadastrado! Alterne para 'Fazer Login'.");
+    } else if (err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
+      alert("E-mail ou senha incorretos.");
+    } else if (err.code === "auth/weak-password") {
+      alert("A senha deve ter pelo menos 6 caracteres.");
+    } else {
+      alert("Erro na autenticação: " + err.message);
+    }
   }
 }
 
