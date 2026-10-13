@@ -319,6 +319,20 @@ function calcularEstatisticasEOfensiva() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Botão de alongamento
+  const btnAlongamento = document.getElementById('btn-abrir-alongamento');
+  if (btnAlongamento) {
+    btnAlongamento.addEventListener('click', () => {
+      document.getElementById('modal-alongamento').classList.remove('hidden');
+    });
+  }
+
+  // Evento de Login/Cadastro seguro
+  const formLogin = document.getElementById('form-login');
+  if (formLogin) {
+    formLogin.addEventListener('submit', autenticarUsuario);
+  }
+});
   document.getElementById('btn-abrir-alongamento').addEventListener('click', () => {
     document.getElementById('modal-alongamento').classList.remove('hidden');
   });
