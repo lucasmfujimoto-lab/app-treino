@@ -509,13 +509,33 @@ async function concluirTreino() {
 }
 
 async function trocarTreinoManual() {
+  if (!configuracaoTreino || configuracaoTreino.length === 0) return;
+
+  // Avança para a próxima letra (A -> B -> C -> A)
   indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
-  await db.collection("rotinas").doc(uidAlvoTrabalho).set({
-    rotina: configuracaoTreino,
-    indiceAtual: indiceTreinoAtual
-  });
+
+  // Atualiza no banco de dados do Firebase
+  if (uidAlvoTrabalho) {
+    try {
+      await db.collection("rotinas").doc(uidAlvoTrabalho).set({
+        rotina: configuracaoTreino,
+        indiceAtual: indiceTreinoAtual
+      }, { merge: true });
+    } catch (e) {
+      console.error("Erro ao atualizar o treino no banco:", e);
+    }
+  }
+
+  // Esconde a área de execução caso estivesse aberta
+  const areaExecucao = document.getElementById('area-execucao');
+  if (areaExecucao) {
+    areaExecucao.classList.add('hidden');
+  }
+
+  // Atualiza o texto na tela inicial
   atualizarTelaInicial();
 }
+
 
 function renderizarCalendario() {
   const cal = document.getElementById('calendario');
