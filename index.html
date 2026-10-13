@@ -81,36 +81,13 @@
           <small class="stat-sub" id="stat-inicio">desde --</small>
         </div>
       </section>
-<!-- CARD DE EQUIPE -->
-<section id="card-equipe" class="card">
-  <h2>👥 Minha Equipe</h2>
-  
-  <!-- Se o usuário ainda não tiver equipe -->
-  <div id="equipe-sem-grupo">
-    <p style="font-size: 0.85rem; color: #a8a8b3; margin-bottom: 10px;">Crie ou entre em uma equipe usando o código de amigos:</p>
-    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-      <input type="text" id="input-nome-equipe" placeholder="Nome da Equipe" class="input-form" style="margin: 0;">
-      <button id="btn-criar-equipe" class="btn-secundario">Criar</button>
-    </div>
-  </div>
 
-  <!-- Se o usuário já tiver equipe -->
-  <div id="equipe-com-grupo" class="hidden">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-      <h3 id="nome-equipe-titulo" style="color: #00e676; font-size: 1.1rem;">Minha Equipe</h3>
-      <button id="btn-sair-equipe" class="btn-alerta" style="padding: 4px 8px; font-size: 0.75rem;">Sair</button>
-    </div>
-
-    <!-- Adicionar membro pelo código do aluno -->
-    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-      <input type="text" id="input-codigo-membro" placeholder="Código do Aluno (Ex: ALUNO-A1B2)" class="input-form" style="margin: 0; text-transform: uppercase;">
-      <button id="btn-add-membro" class="btn-secundario">Adicionar</button>
-    </div>
-
-    <!-- Lista dos Membros da Equipe -->
-    <div id="lista-membros-equipe"></div>
-  </div>
-</section>
+      <!-- BOTÃO MINHAS EQUIPES (TELA INICIAL) -->
+      <section class="card card-equipes-btn">
+        <button id="btn-abrir-equipes" class="btn-secundario" style="width: 100%; font-size: 1rem; padding: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          👥 Minhas Equipes
+        </button>
+      </section>
 
       <!-- MODO TREINADOR -->
       <section id="card-treinador" class="card hidden" style="border-left: 4px solid #ff9800;">
@@ -171,6 +148,45 @@
     </main>
   </div>
 
+  <!-- MODAL MINHAS EQUIPES -->
+  <div id="modal-equipes" class="modal hidden">
+    <div class="modal-content modal-scroll">
+      <span class="close" id="btn-fechar-modal-equipes">&times;</span>
+      
+      <!-- NÍVEL 1: LISTA DAS EQUIPES E CRIAR -->
+      <div id="view-lista-equipes">
+        <h3>👥 Minhas Equipes</h3>
+        <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 12px;" id="contador-equipes-texto">Limite de 5 equipes por usuário</p>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+          <input type="text" id="input-nome-equipe" placeholder="Nome da nova equipe" class="input-form" style="margin: 0;">
+          <button id="btn-criar-equipe" class="btn-secundario" style="white-space: nowrap;">Criar Equipe</button>
+        </div>
+
+        <div id="container-lista-equipes"></div>
+      </div>
+
+      <!-- NÍVEL 2: DETALHES DA EQUIPE SELECIONADA E MEMBROS -->
+      <div id="view-detalhes-equipe" class="hidden">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <button id="btn-voltar-lista-equipes" class="btn-secundario" style="padding: 4px 8px; font-size: 0.75rem;">← Voltar</button>
+          <h3 id="titulo-equipe-ativa" style="color: #00e676; margin: 0; font-size: 1.1rem;">Nome da Equipe</h3>
+          <button id="btn-sair-equipe-ativa" class="btn-alerta" style="padding: 4px 8px; font-size: 0.75rem;">Sair</button>
+        </div>
+
+        <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Adicione amigos pelo código do aluno:</p>
+        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+          <input type="text" id="input-codigo-membro" placeholder="Código (Ex: ALUNO-A1B2)" class="input-form" style="margin: 0; text-transform: uppercase;">
+          <button id="btn-add-membro" class="btn-secundario">Adicionar</button>
+        </div>
+
+        <div id="container-membros-equipe"></div>
+      </div>
+
+      <button id="btn-fechar-equipes-btn" class="btn-secundario" style="width: 100%; margin-top: 15px;">FECHAR</button>
+    </div>
+  </div>
+
   <!-- MODAL DE ALONGAMENTO -->
   <div id="modal-alongamento" class="modal hidden">
     <div class="modal-content modal-scroll">
@@ -192,7 +208,7 @@
     </div>
   </div>
 
-  <!-- MODAL DETALHES -->
+  <!-- MODAL DETALHES DO DIA -->
   <div id="modal-detalhes" class="modal hidden">
     <div class="modal-content modal-scroll">
       <span class="close" id="btn-fechar-modal-detalhes">&times;</span>
