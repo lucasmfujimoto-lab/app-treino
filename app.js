@@ -1699,3 +1699,271 @@ if (inputFoto && spanNomeArquivo) {
   });
 }
 
+// VARIÁVEIS E NAVEGAÇÃO DOS MODAIS
+const modalAmigos = document.getElementById('modal-amigos');
+const modalFeedAmigos = document.getElementById('modal-feed-amigos');
+
+document.getElementById('btn-amigos')?.addEventListener('click', () => {
+  modalAmigos.classList.remove('hidden');
+  carregarAmigosEConvites();
+});
+
+document.getElementById('btn-fechar-amigos')?.addEventListener('click', () => {
+  modalAmigos.classList.add('hidden');
+});
+
+document.getElementById('btn-feed-amigos')?.addEventListener('click', () => {
+  modalFeedAmigos.classList.remove('hidden');
+  carregarFeedAmigos();
+});
+
+document.getElementById('btn-fechar-feed-amigos')?.addEventListener('click', () => {
+  modalFeedAmigos.classList.add('hidden');
+});
+
+// -------------------------------------------------------------
+// 1. SISTEMA DE ADICIONAR E ACEITAR AMIGOS
+// -------------------------------------------------------------
+
+// Enviar convite de amizade
+document.getElementById('btn-enviar-convite')?.addEventListener('click', async () => {
+  const codigoDigitado = document.getElementById('input-codigo-amigo').value.trim().toUpperCase();
+  const userAtual = auth.currentUser;
+
+  if (!codigoDigitado) return alert("Digite o código do seu amigo.");
+
+  try {
+    // Busca usuário pelo código
+    const snap = await db.collection("usuarios").where("codigo", "==", codigoDigitado).get();
+    if (snap.empty) return alert("Usuário não encontrado com esse código.");
+
+    const amigoDoc = snap.docs[0];
+    const amigoData = amigoDoc.data();
+    const amigoId = amigoDoc.id;
+
+    if (amigoId === userAtual.uid) return alert("Você não pode adicionar a si mesmo.");
+
+    // Envia convite
+    await db.collection("convites_amizade").add({
+      remetenteId: userAtual.uid,
+      destinatarioId: amigoId,
+      status: "pendente",
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    alert(`Convite enviado para ${amigoData.nomeExibicao || 'usuário'}!`);
+    document.getElementById('input-codigo-amigo').value = "";
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao enviar convite: " + err.message);
+  }
+});
+
+// Carregar lista de amigos e convites pendentes
+async function carregarAmigosEConvites() {
+  const userAtual = auth.currentUser;
+  if (!userAtual) return;
+
+  // Carregar Convites Recebidos
+  const convitesSnap = await db.collection("convites_amizade")
+    .where("destinatarioId", "==", userAtual.uid)
+    .where("status", "==", "pendente")
+    .get();
+
+  const containerConvites = document.getElementById('container-convites-pendentes');
+  const listaConvites = document.getElementById('lista-convites');
+  listaConvites.innerHTML = "";
+
+  if (!convitesSnap.empty) {
+    containerConvites.classList.remove('hidden');
+    for (let doc of convitesSnap.docs) {
+      const convite = doc.data();
+      const remetenteDoc = await db.collection("usuarios").doc(convite.remetenteId).get();
+      const remetente = remetenteDoc.data();
+
+      const div = document.createElement('div');
+      div.className = 'item-convite';
+      div.innerHTML = `
+        <span><b>${remetente?.nomeExibicao || 'Usuário'}</b> quer ser seu amigo.</span>
+        <button onclick="aceitarAmigo('${doc.id}', '${convite.remetenteId}')" class="btn-primario" style="padding: 4px 10px; font-size: 0.8rem;">Aceitar</button>
+      `;
+      listaConvites.appendChild(div);
+    }
+  } else {
+    containerConvites.classList.add('hidden');
+  }
+
+  // Carregar Amigos Confirmados
+  const amigosSnap = await db.collection("amizades")
+    .where("usuarios", "array-contains", userAtual.uid)
+    .get();
+
+  const listaAmigos = document.getElementById('lista-amigos');
+  listaAmigos.innerHTML = "";
+
+  if (amigosSnap.empty) {
+    listaAmigos.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem;">Você ainda não possui amigos adicionados.</p>`;
+    return;
+  }
+
+  for (let doc of amigosSnap.docs) {
+    const amizade = doc.data();
+    const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
+    const amigoDoc = await db.collection("usuarios").doc(amigoId).get();
+    const amigoData = amigoDoc.data() || {};
+
+    // Obtém estatísticas do amigo
+    const ofensiva = amigoData.ofensiva || 0;
+    const totalTreinos = amigoData.totalTreinos || 0;
+
+    const div = document.createElement('div');
+    div.className = 'item-amigo';
+    div.innerHTML = `
+      <div>
+        <strong>${amigoData.nomeExibicao || 'Amigo'}</strong>
+        <div class="info-amigo-stats">🔥 ${ofensiva} dias seguidos | 📊 ${totalTreinos} treinos</div>
+      </div>
+    `;
+    listaAmigos.appendChild(div);
+  }
+}
+
+// Aceitar Convite de Amizade
+async function aceitarAmigo(conviteId, remetenteId) {
+  const userAtual = auth.currentUser;
+  try {
+    // Cria o registro de amizade
+    await db.collection("amizades").add({
+      usuarios: [userAtual.uid, remetenteId],
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Atualiza status do convite
+    await db.collection("convites_amizade").doc(conviteId).update({ status: "aceito" });
+
+    alert("Convite aceito!");
+    carregarAmigosEConvites();
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao aceitar convite: " + err.message);
+  }
+}
+
+// -------------------------------------------------------------
+// 2. FEED DE CHECK-IN DIÁRIO COM CÂMERA
+// -------------------------------------------------------------
+
+const inputFotoCheckin = document.getElementById('input-foto-checkin');
+const nomeFotoCheckin = document.getElementById('nome-foto-checkin');
+
+inputFotoCheckin?.addEventListener('change', (e) => {
+  if (e.target.files.length > 0) {
+    nomeFotoCheckin.textContent = "Foto capturada ✓";
+    nomeFotoCheckin.style.color = "#00e676";
+  }
+});
+
+// Postar foto no feed
+document.getElementById('btn-postar-checkin')?.addEventListener('click', async () => {
+  const file = inputFotoCheckin.files[0];
+  const userAtual = auth.currentUser;
+
+  if (!file) return alert("Tire uma foto antes de postar.");
+
+  const hoje = new Date().toISOString().split('T')[0];
+
+  try {
+    // Verifica se já postou hoje
+    const checkHoje = await db.collection("feed_amigos")
+      .where("usuarioId", "==", userAtual.uid)
+      .where("dataData", "==", hoje)
+      .get();
+
+    if (!checkHoje.empty) {
+      return alert("Você já realizou o seu check-in diário de hoje!");
+    }
+
+    // Converte a imagem em base64 e salva no Firestore
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const base64Image = e.target.result;
+      const userDoc = await db.collection("usuarios").doc(userAtual.uid).get();
+      const userData = userDoc.data();
+
+      const agora = new Date();
+      const dataFormatada = agora.toLocaleDateString('pt-BR');
+      const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      await db.collection("feed_amigos").add({
+        usuarioId: userAtual.uid,
+        nomeUsuario: userData?.nomeExibicao || 'Usuário',
+        fotoUrl: base64Image,
+        dataData: hoje,
+        dataExibicao: `${dataFormatada} às ${horaFormatada}`,
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      alert("Check-in postado com sucesso!");
+      inputFotoCheckin.value = "";
+      nomeFotoCheckin.textContent = "Nenhuma foto capturada";
+      nomeFotoCheckin.style.color = "#a1a1aa";
+      carregarFeedAmigos();
+    };
+    reader.readAsDataURL(file);
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao postar check-in: " + err.message);
+  }
+});
+
+// Carregar feed compartilhado entre amigos
+async function carregarFeedAmigos() {
+  const userAtual = auth.currentUser;
+  if (!userAtual) return;
+
+  // Busca lista de IDs dos amigos
+  const amizadesSnap = await db.collection("amizades")
+    .where("usuarios", "array-contains", userAtual.uid)
+    .get();
+
+  const idsPermitidos = [userAtual.uid];
+  amizadesSnap.forEach(doc => {
+    const amizade = doc.data();
+    const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
+    if (amigoId) idsPermitidos.push(amigoId);
+  });
+
+  // Busca os posts dos amigos
+  const feedSnap = await db.collection("feed_amigos")
+    .orderBy("criadoEm", "desc")
+    .limit(20)
+    .get();
+
+  const containerFeed = document.getElementById('container-feed-fotos');
+  containerFeed.innerHTML = "";
+
+  let postsEncontrados = 0;
+
+  feedSnap.forEach(doc => {
+    const post = doc.data();
+    if (idsPermitidos.includes(post.usuarioId)) {
+      postsEncontrados++;
+      const div = document.createElement('div');
+      div.className = 'post-feed-card';
+      div.innerHTML = `
+        <div class="post-feed-header">
+          <span><b>📸 ${post.nomeUsuario}</b> fez o check-in</span>
+          <span style="color: #a1a1aa;">${post.dataExibicao}</span>
+        </div>
+        <img src="${post.fotoUrl}" class="post-feed-img" alt="Check-in">
+      `;
+      containerFeed.appendChild(div);
+    }
+  });
+
+  if (postsEncontrados === 0) {
+    containerFeed.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem; text-align: center;">Nenhum check-in postado recentemente pelos seus amigos.</p>`;
+  }
+}
+
