@@ -1801,7 +1801,7 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
 });
 
 
-// Carregar lista de amigos e convites pendentes
+// Carregar Amigos Confirmados (com botão de remover amizade)
 async function carregarAmigosEConvites() {
   const userAtual = auth.currentUser;
   if (!userAtual) return;
@@ -1835,7 +1835,7 @@ async function carregarAmigosEConvites() {
     containerConvites.classList.add('hidden');
   }
 
-  // Carregar Amigos Confirmados
+  // Carregar Amigos
   const amigosSnap = await db.collection("amizades")
     .where("usuarios", "array-contains", userAtual.uid)
     .get();
@@ -1854,6 +1854,48 @@ async function carregarAmigosEConvites() {
     const amigoDoc = await db.collection("usuarios").doc(amigoId).get();
     const amigoData = amigoDoc.data() || {};
 
+    const nomeAmigo = amigoData.nomeExibicao || 'Amigo';
+    const ofensiva = amigoData.ofensiva || 0;
+    const totalTreinos = amigoData.totalTreinos || 0;
+
+    const div = document.createElement('div');
+    div.className = 'item-amigo';
+    div.innerHTML = `
+      <div style="flex: 1;">
+        <strong>${nomeAmigo}</strong>
+        <div class="info-amigo-stats">🔥 ${ofensiva} dias seguidos | 📊 ${totalTreinos} treinos</div>
+      </div>
+      <button 
+        onclick="removerAmizade('${doc.id}', '${nomeAmigo.replace(/'/g, "\\'")}')" 
+        title="Remover Amigo"
+        style="background: transparent; border: none; color: #ef4444; font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 4px;"
+      >
+        ✖
+      </button>
+    `;
+    listaAmigos.appendChild(div);
+  }
+}
+
+// Função para remover a amizade (para ambos os usuários)
+async function removerAmizade(amizadeDocId, nomeAmigo) {
+  const confirmar = confirm(`Quer remover amizade com ${nomeAmigo}?`);
+  
+  if (!confirmar) return;
+
+  try {
+    // Apaga o documento de amizade do Firestore (remove de ambos)
+    await db.collection("amizades").doc(amizadeDocId).delete();
+
+    alert(`Amizade com ${nomeAmigo} foi removida.`);
+    
+    // Atualiza a lista na tela
+    carregarAmigosEConvites();
+  } catch (err) {
+    console.error("Erro ao remover amizade:", err);
+    alert("Erro ao remover amizade: " + err.message);
+  }
+}
     // Obtém estatísticas do amigo
     const ofensiva = amigoData.ofensiva || 0;
     const totalTreinos = amigoData.totalTreinos || 0;
