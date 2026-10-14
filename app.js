@@ -782,39 +782,69 @@ async function renderizarMembrosEquipe() {
   const container = document.getElementById("container-membros-equipe");
   container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando membros...</p>";
 
-  let html = "";
+  try {
+    // Busca os dados de todos os membros em paralelo com segurança
+    const promessasMembros = equipeAtiva.membrosUids.map(async (uid) => {
+      let userData = { email: "Usuário", codigo: "--", nomeExibicao: "" };
+      let historico = {};
 
-  for (const uid of equipeAtiva.membrosUids) {
-    let userData = { email: "Usuário", codigo: "--" };
-    try {
-      const userDoc = await db.collection("usuarios").doc(uid).get();
-      if (userDoc.exists) userData = userDoc.data();
-    } catch(e){}
+      try {
+        const userDoc = await db.collection("usuarios").doc(uid).get();
+        if (userDoc.exists) {
+          userData = userDoc.data();
+        }
+      } catch (e) {
+        console.warn("Erro ao buscar dados do usuário:", uid, e);
+      }
 
-    let historico = {};
-    try {
-      const histDoc = await db.collection("historicos").doc(uid).get();
-      if (histDoc.exists) historico = histDoc.data();
-    } catch(e){}
+      try {
+        const histDoc = await db.collection("historicos").doc(uid).get();
+        if (histDoc.exists) {
+          historico = histDoc.data();
+        }
+      } catch (e) {
+        console.warn("Erro ao buscar histórico do usuário:", uid, e);
+      }
 
-    const stats = calcularStatsMembro(historico);
-    const nomeExibicao = userData.nomeExibicao || userData.email.split('@')[0];
+      const stats = calcularStatsMembro(historico);
+      const nomeExibicao = userData.nomeExibicao || (userData.email ? userData.email.split('@')[0] : "Usuário");
 
-    html += `
-      <div class="membro-card">
-        <div class="membro-info">
-          <span class="membro-email">${nomeExibicao} ${uid === usuarioLogado.uid ? '(Você)' : ''}</span>
-          <span class="membro-codigo">${userData.codigo}</span>
+      return {
+        uid,
+        nomeExibicao,
+        codigo: userData.codigo || "--",
+        stats
+      };
+    });
+
+    const membros = await Promise.all(promessasMembros);
+
+    if (membros.length === 0) {
+      container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Nenhum membro encontrado.</p>";
+      return;
+    }
+
+    let html = "";
+    membros.forEach(m => {
+      html += `
+        <div class="membro-card">
+          <div class="membro-info">
+            <span class="membro-email">${m.nomeExibicao} ${m.uid === usuarioLogado.uid ? '(Você)' : ''}</span>
+            <span class="membro-codigo">${m.codigo}</span>
+          </div>
+          <div class="membro-stats">
+            <span class="stat-badge" title="Dias Seguidos">🔥 ${m.stats.streak}d</span>
+            <span class="stat-badge" style="color: #e1e1e6;" title="Total de Treinos">📊 ${m.stats.total}t</span>
+          </div>
         </div>
-        <div class="membro-stats">
-          <span class="stat-badge" title="Dias Seguidos">🔥 ${stats.streak}d</span>
-          <span class="stat-badge" style="color: #e1e1e6;" title="Total de Treinos">📊 ${stats.total}t</span>
-        </div>
-      </div>
-    `;
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (e) {
+    console.error("Erro ao carregar membros:", e);
+    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar membros do grupo.</p>";
   }
-
-  container.innerHTML = html;
 }
 
 async function renderizarRankingEquipe() {
@@ -823,32 +853,59 @@ async function renderizarRankingEquipe() {
   const container = document.getElementById("container-ranking-equipe");
   container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Gerando ranking da equipe...</p>";
 
-  const listaMembros = [];
+  try {
+    const promessasMembros = equipeAtiva.membrosUids.map(async (uid) => {
+      let userData = { email: "Usuário", nomeExibicao: "" };
+      let historico = {};
 
-  for (const uid of equipeAtiva.membrosUids) {
-    let userData = { email: "Usuário" };
-    try {
-      const userDoc = await db.collection("usuarios").doc(uid).get();
-      if (userDoc.exists) userData = userDoc.data();
-    } catch(e){}
+      try {
+        const userDoc = await db.collection("usuarios").doc(uid).get();
+        if (userDoc.exists) userData = userDoc.data();
+      } catch (e) {}
 
-    let historico = {};
-    try {
-      const histDoc = await db.collection("historicos").doc(uid).get();
-      if (histDoc.exists) historico = histDoc.data();
-    } catch(e){}
+      try {
+        const histDoc = await db.collection("historicos").doc(uid).get();
+        if (histDoc.exists) historico = histDoc.data();
+      } catch (e) {}
 
-    const stats = calcularStatsMembro(historico);
-    const pontos = (stats.total * 10) + (stats.streak * 25);
+      const stats = calcularStatsMembro(historico);
+      const pontos = (stats.total * 10) + (stats.streak * 25);
+      const nome = userData.nomeExibicao || (userData.email ? userData.email.split('@')[0] : "Usuário");
 
-    listaMembros.push({
-      nome: userData.nomeExibicao || userData.email.split('@')[0],
-      isVoce: uid === usuarioLogado.uid,
-      streak: stats.streak,
-      total: stats.total,
-      pontos: pontos
+      return {
+        nome,
+        isVoce: uid === usuarioLogado.uid,
+        streak: stats.streak,
+        total: stats.total,
+        pontos
+      };
     });
+
+    const listaMembros = await Promise.all(promessasMembros);
+    listaMembros.sort((a, b) => b.pontos - a.pontos);
+
+    let html = "";
+    const trofeus = ["🥇", "🥈", "🥉"];
+
+    listaMembros.forEach((membro, index) => {
+      const posi = trofeus[index] || `#${index + 1}`;
+      html += `
+        <div class="membro-card" style="${index === 0 ? 'border-color: #ffb703;' : ''}">
+          <div class="membro-info">
+            <span class="membro-email">${posi} ${membro.nome} ${membro.isVoce ? '(Você)' : ''}</span>
+            <span class="membro-codigo">${membro.pontos} Pts (🔥${membro.streak}d | 📊${membro.total}t)</span>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (e) {
+    console.error("Erro ao carregar ranking:", e);
+    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar o ranking.</p>";
   }
+}
+
 
   listaMembros.sort((a, b) => b.pontos - a.pontos);
 
