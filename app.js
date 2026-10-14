@@ -494,7 +494,7 @@ async function autenticarUsuario(e) {
   }
 }
 
-// PUBLICAR FOTO NO FEED
+// PUBLICAR FOTO NO FEED COM LIMITE DE 30 FOTOS POR EQUIPE
 async function publicarFotoNoFeed() {
   if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipe primeiro.");
 
@@ -517,11 +517,32 @@ async function publicarFotoNoFeed() {
     const mes = String(agora.getMonth() + 1).padStart(2, '0');
     const ano = agora.getFullYear();
     
-    const dataFormatada = `${dia}/${mes}/${ano}`; // Ex: 13/10/2026
+    const dataFormatada = `${dia}/${mes}/${ano}`;
     const horaAtual = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const nomeAutor = perfilUsuario.nomeExibicao || usuarioLogado.email.split('@')[0];
 
     try {
+      // 1. Verifica a quantidade de fotos da equipe no banco
+      const snapFeed = await db.collection("feed_fotos")
+        .where("equipeId", "==", equipeAtiva.id)
+        .get();
+
+      const posts = snapFeed.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      // 2. Se já houver 30 ou mais fotos, apaga a(s) mais antiga(s)
+      if (posts.length >= 30) {
+        // Ordena da mais antiga para a mais recente
+        posts.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+        // Quantidade de fotos excedentes que precisam ser removidas
+        const qtdParaDeletar = posts.length - 29; // Deixa espaço para a nova foto
+        
+        for (let i = 0; i < qtdParaDeletar; i++) {
+          await db.collection("feed_fotos").doc(posts[i].id).delete();
+        }
+      }
+
+      // 3. Adiciona a nova foto
       await db.collection("feed_fotos").add({
         equipeId: equipeAtiva.id,
         usuarioUid: usuarioLogado.uid,
@@ -546,6 +567,7 @@ async function publicarFotoNoFeed() {
     }
   });
 }
+
 
 // RENDERIZAR FEED
 async function renderizarFeedEquipe() {
