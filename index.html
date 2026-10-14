@@ -121,12 +121,21 @@
     </main>
   </div>
 
-  <!-- MODAL DE PERFIL (CENTRAL DE RECURSOS) -->
+  <!-- MODAL DE PERFIL -->
   <div id="modal-perfil" class="modal hidden">
     <div class="modal-content modal-scroll">
       <span class="close" id="btn-fechar-modal-perfil">&times;</span>
-      <h3>👤 Perfil & Opções</h3>
+      <h3>👤 Perfil & Configurações</h3>
       <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 15px;" id="perfil-email-destaque">usuario@email.com</p>
+
+      <!-- SEÇÃO ALTERAR NOME DE EXIBIÇÃO -->
+      <div style="background: #121214; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #29292e; text-align: left;">
+        <label style="font-size: 0.8rem; color: #a8a8b3; font-weight: bold;">Nome no Feed e Grupos:</label>
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <input type="text" id="input-nome-exibicao" placeholder="Seu nome ou apelido" class="input-form" style="margin: 0;">
+          <button id="btn-salvar-nome" class="btn-secundario" style="white-space: nowrap; font-size: 0.8rem;">Salvar</button>
+        </div>
+      </div>
 
       <div class="menu-perfil-grid">
         <button id="btn-perfil-conquistas" class="btn-menu-perfil">
@@ -138,7 +147,7 @@
         <button id="btn-perfil-alongamento" class="btn-menu-perfil">
           <span>🧘</span> Alongamento
         </button>
-        <button id="btn-perfil-treinador" class="btn-menu-perfil hidden" id="btn-opcao-treinador">
+        <button id="btn-perfil-treinador" class="btn-menu-perfil hidden">
           <span>⚡</span> Modo Treinador
         </button>
       </div>
@@ -206,19 +215,18 @@
           <div id="container-ranking-equipe"></div>
         </div>
 
-        <!-- CONTEÚDO ABA FEED (FOTOS E GOSTOS) -->
-<div id="conteudo-aba-feed" class="hidden">
-  <p style="font-size: 0.8rem; color: #a8a8b3; margin: 10px 0 5px 0;">Partilhe uma foto do seu treino com a equipa:</p>
-  
-  <!-- ÁREA DE PUBLICAR FOTO -->
-  <div style="background: #121214; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #29292e;">
-    <input type="file" id="input-foto-feed" accept="image/*" class="input-form" style="margin-top: 0; padding: 6px;">
-    <button id="btn-publicar-foto" class="btn-secundario" style="width: 100%; margin-top: 8px; background: #00e676; color: #000;">📸 Publicar Foto no Feed</button>
-  </div>
+        <!-- CONTEÚDO ABA FEED (FOTOS E CURTIDAS) -->
+        <div id="conteudo-aba-feed" class="hidden">
+          <p style="font-size: 0.8rem; color: #a8a8b3; margin: 10px 0 5px 0;">Compartilhe uma foto do seu treino com a equipe:</p>
+          
+          <div style="background: #121214; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #29292e;">
+            <input type="file" id="input-foto-feed" accept="image/*" class="input-form" style="margin-top: 0; padding: 6px;">
+            <button id="btn-publicar-foto" class="btn-secundario" style="width: 100%; margin-top: 8px; background: #00e676; color: #000;">📸 Publicar Foto no Feed</button>
+          </div>
 
-  <div id="container-feed-equipe"></div>
-</div>
-
+          <div id="container-feed-equipe"></div>
+        </div>
+      </div>
 
       <button id="btn-fechar-equipes-btn" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR AO PERFIL</button>
     </div>
@@ -229,10 +237,10 @@
     <div class="modal-content">
       <span class="close" id="btn-fechar-modal-treinador">&times;</span>
       <h2>⚡ Modo Treinador / Personal</h2>
-      <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Acesse e modifique os treinos do seu aluno:</p>
+      <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Informe o código do aluno para acessar e editar a montagem da rotina dele:</p>
       <div style="display: flex; gap: 8px;">
         <input type="text" id="input-codigo-aluno" placeholder="Código (Ex: ALUNO-A1B2)" style="flex: 1; text-transform: uppercase;" class="input-form">
-        <button id="btn-acessar-aluno" class="btn-secundario">Acessar</button>
+        <button id="btn-acessar-aluno" class="btn-secundario">Acessar Rotina</button>
       </div>
       <p id="msg-aluno-carregado" style="font-size: 0.8rem; color: #00e676; margin-top: 8px;" class="hidden"></p>
       <button id="btn-voltar-treinador" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR</button>
@@ -274,7 +282,7 @@
   <div id="modal-config-rotina" class="modal hidden">
     <div class="modal-content modal-scroll">
       <span class="close" id="btn-fechar-modal-config">&times;</span>
-      <h3>Configurar Rotina</h3>
+      <h3 id="titulo-modal-config">Configurar Rotina</h3>
       <p style="font-size: 0.85rem; color: #a8a8b3; margin-top: 5px;">Digite a sequência desejada (Ex: ABC, ABCD, AB):</p>
       
       <div style="margin: 12px 0;">
