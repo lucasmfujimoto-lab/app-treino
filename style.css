@@ -600,5 +600,51 @@ button:active {
   color: #a1a1aa;
   font-size: 0.85rem;
 }
+.box-adicionar-amigo, .box-postar-checkin {
+  background: #18181b;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #27272a;
+}
+
+.item-amigo, .item-convite {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #18181b;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top: 8px;
+  border: 1px solid #27272a;
+}
+
+.info-amigo-stats {
+  font-size: 0.8rem;
+  color: #00e676;
+  margin-top: 2px;
+}
+
+.post-feed-card {
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 15px;
+}
+
+.post-feed-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  color: #e4e4e7;
+}
+
+.post-feed-img {
+  width: 100%;
+  max-height: 350px;
+  object-fit: cover;
+  border-radius: 8px;
+}
 
 
