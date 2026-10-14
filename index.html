@@ -241,12 +241,25 @@
           
           <div style="background: #121214; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #29292e;">
            <!-- O atributo capture="environment" força a abertura da câmara traseira -->
-<input 
-  type="file" 
-  id="input-foto-feed" 
-  accept="image/*" 
-  capture="environment" 
->
+<div class="input-foto-container">
+  <!-- Input nativo escondido -->
+  <input 
+    type="file" 
+    id="input-foto-feed" 
+    accept="image/*" 
+    capture="environment" 
+    style="display: none;"
+  >
+
+  <!-- Botão customizado que ativa o input -->
+  <label for="input-foto-feed" class="btn-tirar-foto">
+    📸 Tirar uma foto
+  </label>
+
+  <!-- Texto dinâmico com o status da seleção -->
+  <span id="nome-arquivo-foto">Nenhuma foto selecionada</span>
+</div>
+
 
             <button id="btn-publicar-foto" class="btn-secundario" style="width: 100%; margin-top: 8px; background: #00e676; color: #000;">📸 Publicar Foto no Feed</button>
           </div>
