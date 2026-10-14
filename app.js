@@ -157,7 +157,44 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnPublicar) btnPublicar.addEventListener('click', publicarFotoNoFeed);
 });
 
-// Função para Converter Imagem em Base64 e Guardar
+// Função para Redimensionar e Comprimir Imagem
+function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = function(event) {
+    const img = new Image();
+    img.src = event.target.result;
+    img.onload = function() {
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Converte para JPEG comprimido
+      const base64Comprimido = canvas.toDataURL('image/jpeg', quality);
+      callback(base64Comprimido);
+    };
+  };
+}
+
+// Função para Publicar Foto Comprimida no Feed
 async function publicarFotoNoFeed() {
   if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipa primeiro.");
 
@@ -167,10 +204,15 @@ async function publicarFotoNoFeed() {
   }
 
   const file = fileInput.files[0];
-  const reader = new FileReader();
+  const btnPublicar = document.getElementById('btn-publicar-foto');
+  
+  if (btnPublicar) {
+    btnPublicar.disabled = true;
+    btnPublicar.innerText = "⏳ A comprimir e publicar...";
+  }
 
-  reader.onload = async function(e) {
-    const base64Image = e.target.result;
+  // Redimensiona para no máximo 800px e 70% de qualidade
+  comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
     const hoje = new Date().toISOString().split('T')[0];
 
     try {
@@ -178,10 +220,10 @@ async function publicarFotoNoFeed() {
         equipeId: equipeAtiva.id,
         usuarioUid: usuarioLogado.uid,
         usuarioNome: usuarioLogado.email.split('@')[0],
-        fotoUrl: base64Image,
+        fotoUrl: base64Comprimido,
         dataIso: hoje,
         dataHora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        curtidas: [] // Lista de UIDs que gostaram
+        curtidas: []
       });
 
       fileInput.value = "";
@@ -189,11 +231,15 @@ async function publicarFotoNoFeed() {
       renderizarFeedEquipe();
     } catch (err) {
       alert("Erro ao publicar foto: " + err.message);
+    } finally {
+      if (btnPublicar) {
+        btnPublicar.disabled = false;
+        btnPublicar.innerText = "📸 Publicar Foto no Feed";
+      }
     }
-  };
-
-  reader.readAsDataURL(file);
+  });
 }
+
 
 // Renderizar o Feed com Fotos e Botão de Gostar
 async function renderizarFeedEquipe() {
