@@ -153,6 +153,123 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const btnDeslogar = document.getElementById('btn-deslogar');
   if (btnDeslogar) btnDeslogar.addEventListener('click', () => auth.signOut());
+  const btnPublicar = document.getElementById('btn-publicar-foto');
+  if (btnPublicar) btnPublicar.addEventListener('click', publicarFotoNoFeed);
+});
+
+// Função para Converter Imagem em Base64 e Guardar
+async function publicarFotoNoFeed() {
+  if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipa primeiro.");
+
+  const fileInput = document.getElementById('input-foto-feed');
+  if (!fileInput.files || fileInput.files.length === 0) {
+    return alert("Selecione uma foto para publicar!");
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+
+  reader.onload = async function(e) {
+    const base64Image = e.target.result;
+    const hoje = new Date().toISOString().split('T')[0];
+
+    try {
+      await db.collection("feed_fotos").add({
+        equipeId: equipeAtiva.id,
+        usuarioUid: usuarioLogado.uid,
+        usuarioNome: usuarioLogado.email.split('@')[0],
+        fotoUrl: base64Image,
+        dataIso: hoje,
+        dataHora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        curtidas: [] // Lista de UIDs que gostaram
+      });
+
+      fileInput.value = "";
+      alert("Foto publicada com sucesso!");
+      renderizarFeedEquipe();
+    } catch (err) {
+      alert("Erro ao publicar foto: " + err.message);
+    }
+  };
+
+  reader.readAsDataURL(file);
+}
+
+// Renderizar o Feed com Fotos e Botão de Gostar
+async function renderizarFeedEquipe() {
+  if (!equipeAtiva) return;
+
+  const container = document.getElementById("container-feed-equipe");
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>A carregar fotos do feed...</p>";
+
+  try {
+    const snapFeed = await db.collection("feed_fotos")
+      .where("equipeId", "==", equipeAtiva.id)
+      .limit(20)
+      .get();
+
+    if (snapFeed.empty) {
+      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Ainda não há fotos publicadas nesta equipa. Seja o primeiro a publicar!</p>";
+      return;
+    }
+
+    // Ordenar manualmente pelas datas mais recentes
+    const posts = snapFeed.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    posts.sort((a, b) => (b.dataIso + b.dataHora) > (a.dataIso + a.dataHora) ? 1 : -1);
+
+    let html = "";
+    posts.forEach(post => {
+      const curtidas = post.curtidas || [];
+      const jaCurtiu = curtidas.includes(usuarioLogado.uid);
+
+      html += `
+        <div class="feed-foto-card">
+          <div class="feed-header">
+            <span class="feed-usuario">📸 ${post.usuarioNome}</span>
+            <span class="feed-data">${post.dataIso} às ${post.dataHora || ''}</span>
+          </div>
+          <img src="${post.fotoUrl}" class="feed-foto-img" alt="Foto do treino">
+          <div>
+            <button class="btn-curtir ${jaCurtiu ? 'curtido' : ''}" onclick="alternarCurtida('${post.id}')">
+              ❤️ ${curtidas.length} ${curtidas.length === 1 ? 'Gosto' : 'Gostos'}
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (e) {
+    console.error("Erro ao carregar feed:", e);
+    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar as fotos.</p>";
+  }
+}
+
+// Lógica para Adicionar/Remover Gosto (Curtida)
+async function alternarCurtida(postId) {
+  if (!usuarioLogado) return;
+
+  try {
+    const postRef = db.collection("feed_fotos").doc(postId);
+    const doc = await postRef.get();
+
+    if (doc.exists) {
+      const data = doc.data();
+      let curtidas = data.curtidas || [];
+
+      if (curtidas.includes(usuarioLogado.uid)) {
+        curtidas = curtidas.filter(uid => uid !== usuarioLogado.uid);
+      } else {
+        curtidas.push(usuarioLogado.uid);
+      }
+
+      await postRef.update({ curtidas: curtidas });
+      renderizarFeedEquipe();
+    }
+  } catch (e) {
+    console.error("Erro ao alterar gosto:", e);
+  }
+}
 
   // Perfil
   const btnAbrirPerfil = document.getElementById('btn-abrir-perfil');
