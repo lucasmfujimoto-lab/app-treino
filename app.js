@@ -1682,3 +1682,20 @@ async function autenticarComGoogle() {
     alert("Erro ao fazer login com o Google: " + error.message);
   }
 }
+
+const inputFoto = document.getElementById('input-foto-feed');
+const spanNomeArquivo = document.getElementById('nome-arquivo-foto');
+
+if (inputFoto && spanNomeArquivo) {
+  inputFoto.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // Exibe "Foto selecionada" ou o nome do arquivo carregado
+      spanNomeArquivo.textContent = "Foto carregada ✓";
+      spanNomeArquivo.style.color = "#00e676";
+    } else {
+      spanNomeArquivo.textContent = "Nenhuma foto selecionada";
+      spanNomeArquivo.style.color = "#a1a1aa";
+    }
+  });
+}
+
