@@ -273,6 +273,70 @@
       <button id="btn-fechar-equipes-btn" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR AO PERFIL</button>
     </div>
   </div>
+<!-- MODAL AMIGOS -->
+<div id="modal-amigos" class="modal hidden">
+  <div class="modal-conteudo card">
+    <div class="modal-header">
+      <h2>🤝 Amigos</h2>
+      <button class="btn-fechar" id="btn-fechar-amigos">&times;</button>
+    </div>
+
+    <!-- Adicionar por código -->
+    <div class="box-adicionar-amigo">
+      <label for="input-codigo-amigo">Adicionar amigo pelo código:</label>
+      <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <input type="text" id="input-codigo-amigo" placeholder="Ex: ALUNO-6WHFP8" style="text-transform: uppercase;">
+        <button id="btn-enviar-convite" class="btn-primario">Adicionar</button>
+      </div>
+    </div>
+
+    <!-- Solicitações Pendentes -->
+    <div id="container-convites-pendentes" class="hidden" style="margin-top: 15px;">
+      <h3>📩 Convites de Amizade</h3>
+      <div id="lista-convites"></div>
+    </div>
+
+    <hr style="border-color: #27272a; margin: 15px 0;">
+
+    <!-- Lista de Amigos -->
+    <h3>Seus Amigos</h3>
+    <div id="lista-amigos" class="lista-cards">
+      <p style="color: #a1a1aa; font-size: 0.85rem;">Carregando amigos...</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FEED DOS AMIGOS -->
+<div id="modal-feed-amigos" class="modal hidden">
+  <div class="modal-conteudo card">
+    <div class="modal-header">
+      <h2>📸 Feed dos Amigos</h2>
+      <button class="btn-fechar" id="btn-fechar-feed-amigos">&times;</button>
+    </div>
+
+    <!-- Área de Postar Check-in -->
+    <div class="box-postar-checkin">
+      <p style="font-size: 0.9rem; color: #a1a1aa; margin-bottom: 10px;">Poste o seu check-in diário:</p>
+      
+      <input type="file" id="input-foto-checkin" accept="image/*" capture="environment" style="display: none;">
+      
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+        <label for="input-foto-checkin" class="btn-secundario" style="cursor: pointer;">📸 Abrir Câmera</label>
+        <span id="nome-foto-checkin" style="font-size: 0.85rem; color: #a1a1aa;">Nenhuma foto capturada</span>
+      </div>
+
+      <button id="btn-postar-checkin" class="btn-primario" style="width: 100%;">Postar Check-in no Feed</button>
+    </div>
+
+    <hr style="border-color: #27272a; margin: 15px 0;">
+
+    <!-- Feed de Fotos -->
+    <div id="container-feed-fotos" class="feed-posts">
+      <p style="color: #a1a1aa; font-size: 0.85rem; text-align: center;">Nenhum check-in postado hoje.</p>
+    </div>
+  </div>
+</div>
+
 
   <!-- MODAL TREINADOR -->
   <div id="modal-treinador" class="modal hidden">
