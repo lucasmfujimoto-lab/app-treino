@@ -143,7 +143,22 @@ let modoCadastro = false;
 let equipesDoUsuario = [];
 let equipeAtiva = null;
 
-// FUNÇÕES UTILITÁRIAS (Definidas no topo para evitar erros de referência)
+// FUNÇÕES UTILITÁRIAS
+function obterDataLocalIso() {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, '0');
+  const dia = String(agora.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
+function obterDataFormatadaBR(dataIso) {
+  if (!dataIso) return '--/--/----';
+  const partes = dataIso.split('-');
+  if (partes.length < 3) return dataIso;
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
 function calcularStatsMembro(historico) {
   if (!historico) return { streak: 0, total: 0 };
   const datas = Object.keys(historico).sort();
@@ -152,18 +167,21 @@ function calcularStatsMembro(historico) {
   if (total === 0) return { streak: 0, total: 0 };
 
   let streak = 0;
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
+  const hojeIso = obterDataLocalIso();
 
-  let dataChecagem = new Date(hoje);
-  const hojeIso = dataChecagem.toISOString().split("T")[0];
+  let dataChecagem = new Date();
+  dataChecagem.setHours(0, 0, 0, 0);
 
   if (!historico[hojeIso]) {
     dataChecagem.setDate(dataChecagem.getDate() - 1);
   }
 
   while (true) {
-    const iso = dataChecagem.toISOString().split("T")[0];
+    const ano = dataChecagem.getFullYear();
+    const mes = String(dataChecagem.getMonth() + 1).padStart(2, '0');
+    const dia = String(dataChecagem.getDate()).padStart(2, '0');
+    const iso = `${ano}-${mes}-${dia}`;
+
     if (historico[iso]) {
       streak++;
       dataChecagem.setDate(dataChecagem.getDate() - 1);
@@ -494,8 +512,13 @@ async function publicarFotoNoFeed() {
   }
 
   comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
-    const hoje = new Date().toISOString().split('T')[0];
-    const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const agora = new Date();
+    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const ano = agora.getFullYear();
+    
+    const dataFormatada = `${dia}/${mes}/${ano}`; // Ex: 13/10/2026
+    const horaAtual = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const nomeAutor = perfilUsuario.nomeExibicao || usuarioLogado.email.split('@')[0];
 
     try {
@@ -504,9 +527,9 @@ async function publicarFotoNoFeed() {
         usuarioUid: usuarioLogado.uid,
         usuarioNome: nomeAutor,
         fotoUrl: base64Comprimido,
-        dataIso: hoje,
+        dataIso: dataFormatada,
         dataHora: horaAtual,
-        timestamp: Date.now(),
+        timestamp: agora.getTime(),
         curtidas: []
       });
 
@@ -638,23 +661,25 @@ function calcularEstatisticasEOfensiva() {
     return;
   }
 
-  const primeiraDataPartes = datasTreinadas[0].split("-");
-  const dataFormatada = `${primeiraDataPartes[2]}/${primeiraDataPartes[1]}/${primeiraDataPartes[0]}`;
-  document.getElementById("stat-inicio").innerText = `desde ${dataFormatada}`;
+  const primeiraDataFormatada = obterDataFormatadaBR(datasTreinadas[0]);
+  document.getElementById("stat-inicio").innerText = `desde ${primeiraDataFormatada}`;
 
   let streak = 0;
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
+  const hojeIso = obterDataLocalIso();
 
-  let dataChecagem = new Date(hoje);
-  const hojeIso = dataChecagem.toISOString().split("T")[0];
+  let dataChecagem = new Date();
+  dataChecagem.setHours(0, 0, 0, 0);
 
   if (!historicoTreinos[hojeIso]) {
     dataChecagem.setDate(dataChecagem.getDate() - 1);
   }
 
   while (true) {
-    const iso = dataChecagem.toISOString().split("T")[0];
+    const ano = dataChecagem.getFullYear();
+    const mes = String(dataChecagem.getMonth() + 1).padStart(2, '0');
+    const dia = String(dataChecagem.getDate()).padStart(2, '0');
+    const iso = `${ano}-${mes}-${dia}`;
+
     if (historicoTreinos[iso]) {
       streak++;
       dataChecagem.setDate(dataChecagem.getDate() - 1);
@@ -1088,7 +1113,7 @@ function iniciarTreino() {
 }
 
 async function concluirTreino() {
-  const hoje = new Date().toISOString().split('T')[0];
+  const hojeChave = obterDataLocalIso(); // YYYY-MM-DD no fuso local
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
 
   const itensEx = document.querySelectorAll('#lista-exercicios .item-exercicio');
@@ -1111,7 +1136,7 @@ async function concluirTreino() {
     }
   });
 
-  historicoTreinos[hoje] = {
+  historicoTreinos[hojeChave] = {
     letra: treinoAtual.letra,
     grupos: treinoAtual.grupos,
     exercicios: exerciciosConcluidos
@@ -1163,7 +1188,11 @@ function renderizarCalendario() {
   for (let i = 13; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const dataIso = d.toISOString().split('T')[0];
+    
+    const ano = d.getFullYear();
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    const dataIso = `${ano}-${mes}-${dia}`;
 
     const div = document.createElement('div');
     const treinoFeito = historicoTreinos[dataIso];
@@ -1183,9 +1212,7 @@ function abrirDetalhesDia(dataIso) {
   const treinoFeito = historicoTreinos[dataIso];
   const modal = document.getElementById('modal-detalhes');
   const corpo = document.getElementById('detalhes-corpo');
-  
-  const partesData = dataIso.split('-');
-  const dataFormatada = `${partesData[2]}/${partesData[1]}/${partesData[0]}`;
+  const dataFormatada = obterDataFormatadaBR(dataIso);
 
   document.getElementById('detalhes-data').innerText = `Treino de ${dataFormatada}`;
 
