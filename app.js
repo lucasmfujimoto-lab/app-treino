@@ -159,7 +159,7 @@ function obterDataFormatadaBR(dataIso) {
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
-// 2. AJUSTE DA OFENSIVA (Permite até 2 dias sem treino, zera com 3 dias ou mais sem treinar)
+// CÁLCULO DA OFENSIVA E ESTATÍSTICAS
 function calcularStatsMembro(historico) {
   if (!historico) return { streak: 0, total: 0 };
   const datas = Object.keys(historico).sort();
@@ -173,7 +173,6 @@ function calcularStatsMembro(historico) {
   let dataChecagem = new Date();
   dataChecagem.setHours(0, 0, 0, 0);
 
-  // Se o usuário não treinou hoje, verifica quantos dias se passaram desde o último treino
   if (!historico[hojeIso]) {
     let diasSemTreino = 0;
     let tempDate = new Date(dataChecagem);
@@ -191,16 +190,13 @@ function calcularStatsMembro(historico) {
       diasSemTreino++;
     }
 
-    // Se ficou 3 dias ou mais sem treinar a partir de hoje, a ofensiva zera
     if (diasSemTreino >= 3) {
       return { streak: 0, total };
     }
 
-    // Caso contrário, ajusta a data inicial de checagem para o dia do último treino encontrado
     dataChecagem.setDate(dataChecagem.getDate() - (diasSemTreino + 1));
   }
 
-  // Contagem do Streak permitindo até 2 folgas seguidas entre treinos registrados
   let folgasConsecutivas = 0;
 
   while (true) {
@@ -211,10 +207,9 @@ function calcularStatsMembro(historico) {
 
     if (historico[iso]) {
       streak++;
-      folgasConsecutivas = 0; // Reseta a contagem de folgas consecutivas ao achar um treino
+      folgasConsecutivas = 0;
     } else {
       folgasConsecutivas++;
-      // Se houver 3 dias seguidos sem treino no histórico, a contagem da sequência para
       if (folgasConsecutivas >= 3) {
         break;
       }
@@ -263,7 +258,7 @@ function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
 // REGISTRO DE EVENTOS
 document.addEventListener("DOMContentLoaded", () => {
   const btnGoogle = document.getElementById('btn-login-google');
-if (btnGoogle) btnGoogle.addEventListener('click', autenticarComGoogle);
+  if (btnGoogle) btnGoogle.addEventListener('click', autenticarComGoogle);
 
   const formLogin = document.getElementById('form-login');
   if (formLogin) formLogin.addEventListener('submit', autenticarUsuario);
@@ -271,37 +266,27 @@ if (btnGoogle) btnGoogle.addEventListener('click', autenticarComGoogle);
   const linkAlternar = document.getElementById('link-alternar-login');
   if (linkAlternar) linkAlternar.addEventListener('click', alternarModoLogin);
 
-  // EVENTO DO BOTÃO SAIR DA CONTA (btn-deslogar)
-const btnDeslogar = document.getElementById('btn-deslogar');
+  const btnDeslogar = document.getElementById('btn-deslogar');
+  if (btnDeslogar) {
+    btnDeslogar.addEventListener('click', async () => {
+      try {
+        await auth.signOut();
+        const modalPerfil = document.getElementById('modal-perfil');
+        if (modalPerfil) modalPerfil.classList.add('hidden');
 
-if (btnDeslogar) {
-  btnDeslogar.addEventListener('click', async () => {
-    try {
-      // 1. Faz logout no Firebase
-      await auth.signOut();
+        const telaPrincipal = document.getElementById('tela-principal');
+        const telaLogin = document.getElementById('tela-login');
 
-      // 2. Esconde o modal de Perfil se estiver aberto
-      const modalPerfil = document.getElementById('modal-perfil');
-      if (modalPerfil) {
-        modalPerfil.classList.add('hidden');
+        if (telaPrincipal) telaPrincipal.classList.add('hidden');
+        if (telaLogin) telaLogin.classList.remove('hidden');
+
+        window.location.reload();
+      } catch (error) {
+        console.error("Erro ao encerrar sessão:", error);
+        alert("Erro ao sair da conta: " + error.message);
       }
-
-      // 3. Garante que a tela principal esconde e a de login aparece
-      const telaPrincipal = document.getElementById('tela-principal');
-      const telaLogin = document.getElementById('tela-login');
-
-      if (telaPrincipal) telaPrincipal.classList.add('hidden');
-      if (telaLogin) telaLogin.classList.remove('hidden');
-
-      // 4. Recarrega a página para resetar o estado da aplicação
-      window.location.reload();
-    } catch (error) {
-      console.error("Erro ao encerrar sessão:", error);
-      alert("Erro ao sair da conta: " + error.message);
-    }
-  });
-}
-
+    });
+  }
 
   const btnPublicar = document.getElementById('btn-publicar-foto');
   if (btnPublicar) btnPublicar.addEventListener('click', publicarFotoNoFeed);
@@ -476,7 +461,6 @@ function fecharModalTreinoAvulso() {
   if (modal) modal.classList.add('hidden');
 }
 
-// 4. MONTAR E INICIAR TREINO AVULSO (Ativa a flag de avulso)
 function montarEIniciarTreinoAvulso() {
   const selecionados = document.querySelectorAll('.cb-ex-avulso:checked');
   
@@ -484,7 +468,7 @@ function montarEIniciarTreinoAvulso() {
     return alert("Selecione pelo menos um exercício para o treino avulso.");
   }
 
-  ehTreinoAvulsoAtivo = true; // Marca que o treino em execução é Avulso
+  ehTreinoAvulsoAtivo = true;
   const areaExecucao = document.getElementById('area-execucao');
   const listaContainer = document.getElementById('lista-exercicios');
   listaContainer.innerHTML = '';
@@ -566,7 +550,7 @@ auth.onAuthStateChanged(async (user) => {
       } else {
         perfilUsuario = { 
           email: user.email, 
-          nomeExibicao: user.email.split('@')[0], 
+          nomeExibicao: user.displayName || user.email.split('@')[0], 
           tipo: "aluno", 
           codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() 
         };
@@ -601,7 +585,6 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-// SALVAR NOVO NOME DE EXIBIÇÃO
 async function salvarNomeExibicao() {
   if (!usuarioLogado) return;
   const novoNome = document.getElementById("input-nome-exibicao").value.trim();
@@ -621,7 +604,6 @@ async function salvarNomeExibicao() {
   }
 }
 
-// MODO TREINADOR
 async function carregarTreinoDoAluno() {
   const codigoInput = document.getElementById("input-codigo-aluno");
   const codigo = codigoInput.value.trim().toUpperCase();
@@ -713,7 +695,6 @@ async function autenticarUsuario(e) {
   }
 }
 
-// PUBLICAR FOTO NO FEED COM LIMITE DE 30 FOTOS POR EQUIPE
 async function publicarFotoNoFeed() {
   if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipe primeiro.");
 
@@ -781,7 +762,6 @@ async function publicarFotoNoFeed() {
   });
 }
 
-// RENDERIZAR FEED
 async function renderizarFeedEquipe() {
   if (!equipeAtiva) return;
 
@@ -829,7 +809,6 @@ async function renderizarFeedEquipe() {
   }
 }
 
-// CURTIR FOTO
 async function alternarCurtida(postId) {
   if (!usuarioLogado) return;
 
@@ -883,12 +862,12 @@ async function carregarDadosDoServidor() {
 }
 
 function calcularEstatisticasEOfensiva() {
+  const stats = calcularStatsMembro(historicoTreinos);
   const datasTreinadas = Object.keys(historicoTreinos).sort();
-  const totalTreinos = datasTreinadas.length;
 
-  document.getElementById("stat-total").innerText = `📊 ${totalTreinos} treinos`;
+  document.getElementById("stat-total").innerText = `📊 ${stats.total} treinos`;
 
-  if (totalTreinos === 0) {
+  if (stats.total === 0) {
     document.getElementById("stat-inicio").innerText = "desde o início";
     document.getElementById("stat-ofensiva").innerText = "🔥 0 dias";
     renderizarConquistas(0, 0);
@@ -897,33 +876,9 @@ function calcularEstatisticasEOfensiva() {
 
   const primeiraDataFormatada = obterDataFormatadaBR(datasTreinadas[0]);
   document.getElementById("stat-inicio").innerText = `desde ${primeiraDataFormatada}`;
+  document.getElementById("stat-ofensiva").innerText = `🔥 ${stats.streak} ${stats.streak === 1 ? "dia" : "dias"}`;
 
-  let streak = 0;
-  const hojeIso = obterDataLocalIso();
-
-  let dataChecagem = new Date();
-  dataChecagem.setHours(0, 0, 0, 0);
-
-  if (!historicoTreinos[hojeIso]) {
-    dataChecagem.setDate(dataChecagem.getDate() - 1);
-  }
-
-  while (true) {
-    const ano = dataChecagem.getFullYear();
-    const mes = String(dataChecagem.getMonth() + 1).padStart(2, '0');
-    const dia = String(dataChecagem.getDate()).padStart(2, '0');
-    const iso = `${ano}-${mes}-${dia}`;
-
-    if (historicoTreinos[iso]) {
-      streak++;
-      dataChecagem.setDate(dataChecagem.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-
-  document.getElementById("stat-ofensiva").innerText = `🔥 ${streak} ${streak === 1 ? "dia" : "dias"}`;
-  renderizarConquistas(streak, totalTreinos);
+  renderizarConquistas(stats.streak, stats.total);
 }
 
 function renderizarConquistas(streak, total) {
@@ -1281,7 +1236,6 @@ function atualizarTelaInicial() {
   document.getElementById('foco-treino').innerText = `Músculos: ${treinoAtual.grupos.join(', ')}`;
 }
 
-// 3. INICIAR TREINO DA ROTINA (Reseta a flag de avulso)
 function iniciarTreino() {
   ehTreinoAvulsoAtivo = false;
   const areaExecucao = document.getElementById('area-execucao');
@@ -1348,7 +1302,6 @@ function iniciarTreino() {
   areaExecucao.classList.remove('hidden');
 }
 
-// 5. CONCLUIR TREINO (GRAVA "AV" NO BANCO CASO SEJA AVULSO)
 async function concluirTreino() {
   const hojeChave = obterDataLocalIso();
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
@@ -1384,7 +1337,6 @@ async function concluirTreino() {
 
   await db.collection("historicos").doc(usuarioLogado.uid).set(historicoTreinos);
 
-  // Só avança a rotina padrão A/B/C se NÃO for treino avulso
   if (!ehTreinoAvulsoAtivo && configuracaoTreino.length > 0) {
     indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
     await db.collection("rotinas").doc(usuarioLogado.uid).set({
@@ -1393,7 +1345,7 @@ async function concluirTreino() {
     });
   }
 
-  ehTreinoAvulsoAtivo = false; // Reseta o estado
+  ehTreinoAvulsoAtivo = false;
 
   alert('Treino concluído com sucesso! 👏');
   document.getElementById('area-execucao').classList.add('hidden');
@@ -1426,8 +1378,6 @@ async function trocarTreinoManual() {
   atualizarTelaInicial();
 }
 
-
-// 6. RENDERIZAR CALENDÁRIO (EXIBE "Treino AV" NO QUADRADINHO VERDE)
 function renderizarCalendario() {
   const cal = document.getElementById('calendario');
   if (!cal) return;
@@ -1623,11 +1573,9 @@ function fecharModalConfig() {
   uidAlvoTrabalho = usuarioLogado ? usuarioLogado.uid : null;
 }
 
-// CORREÇÃO DOS VÍDEOS EMBEDDED PARA FUNCIONAREM NO ANDROID / WEBVIEW
 function verVideo(titulo, url) {
   document.getElementById('video-titulo').innerText = titulo;
   
-  // Limpa e trata a URL do YouTube
   let urlFormatada = url;
   if (!urlFormatada.includes('?')) {
     urlFormatada += '?enablejsapi=1&rel=0';
@@ -1635,7 +1583,6 @@ function verVideo(titulo, url) {
     urlFormatada += '&enablejsapi=1&rel=0';
   }
 
-  // Define o iframe com os parâmetros corretos de política de origem (necessários no Android)
   document.getElementById('video-container').innerHTML = `
     <iframe 
       width="100%" 
@@ -1654,7 +1601,8 @@ function fecharModalVideo() {
   document.getElementById('modal-video').classList.add('hidden');
   document.getElementById('video-container').innerHTML = '';
 }
-// FUNÇÃO PARA LOGIN COM CONTA GOOGLE
+
+// LOGIN COM O GOOGLE
 async function autenticarComGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
   
@@ -1662,7 +1610,6 @@ async function autenticarComGoogle() {
     const result = await auth.signInWithPopup(provider);
     const user = result.user;
 
-    // Verifica se é o primeiro login do utilizador para criar o perfil na base de dados
     const docUser = await db.collection("usuarios").doc(user.uid).get();
     
     if (!docUser.exists) {
@@ -1683,57 +1630,37 @@ async function autenticarComGoogle() {
   }
 }
 
-const inputFoto = document.getElementById('input-foto-feed');
-const spanNomeArquivo = document.getElementById('nome-arquivo-foto');
-
-if (inputFoto && spanNomeArquivo) {
-  inputFoto.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      // Exibe "Foto selecionada" ou o nome do arquivo carregado
-      spanNomeArquivo.textContent = "Foto carregada ✓";
-      spanNomeArquivo.style.color = "#00e676";
-    } else {
-      spanNomeArquivo.textContent = "Nenhuma foto selecionada";
-      spanNomeArquivo.style.color = "#a1a1aa";
-    }
-  });
-}
-
-// VARIÁVEIS E NAVEGAÇÃO DOS MODAIS
+// AMIGOS E FEED DOS AMIGOS
 const modalAmigos = document.getElementById('modal-amigos');
 const modalFeedAmigos = document.getElementById('modal-feed-amigos');
 
 document.getElementById('btn-amigos')?.addEventListener('click', () => {
-  modalAmigos.classList.remove('hidden');
+  if (modalAmigos) modalAmigos.classList.remove('hidden');
   carregarAmigosEConvites();
 });
 
 document.getElementById('btn-fechar-amigos')?.addEventListener('click', () => {
-  modalAmigos.classList.add('hidden');
+  if (modalAmigos) modalAmigos.classList.add('hidden');
 });
 
 document.getElementById('btn-feed-amigos')?.addEventListener('click', () => {
-  modalFeedAmigos.classList.remove('hidden');
+  if (modalFeedAmigos) modalFeedAmigos.classList.remove('hidden');
   carregarFeedAmigos();
 });
 
 document.getElementById('btn-fechar-feed-amigos')?.addEventListener('click', () => {
-  modalFeedAmigos.classList.add('hidden');
+  if (modalFeedAmigos) modalFeedAmigos.classList.add('hidden');
 });
 
-// -------------------------------------------------------------
-// 1. SISTEMA DE ADICIONAR E ACEITAR AMIGOS
-// -------------------------------------------------------------
-
-// Enviar convite de amizade (com validação de duplicidade e amizade existente)
+// Enviar convite de amizade
 document.getElementById('btn-enviar-convite')?.addEventListener('click', async () => {
-  const codigoDigitado = document.getElementById('input-codigo-amigo').value.trim().toUpperCase();
+  const inputCodigo = document.getElementById('input-codigo-amigo');
+  const codigoDigitado = inputCodigo ? inputCodigo.value.trim().toUpperCase() : "";
   const userAtual = auth.currentUser;
 
   if (!codigoDigitado) return alert("Digite o código do seu amigo.");
 
   try {
-    // 1. Busca usuário pelo código informado
     const snap = await db.collection("usuarios").where("codigo", "==", codigoDigitado).get();
     if (snap.empty) return alert("Usuário não encontrado com esse código.");
 
@@ -1745,7 +1672,6 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
       return alert("Você não pode adicionar a si mesmo.");
     }
 
-    // 2. Verifica se JÁ SÃO AMIGOS
     const amizadeExistente = await db.collection("amizades")
       .where("usuarios", "array-contains", userAtual.uid)
       .get();
@@ -1762,7 +1688,6 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
       return alert(`Você e ${amigoData.nomeExibicao || 'essa pessoa'} já são amigos!`);
     }
 
-    // 3. Verifica se JÁ EXISTE CONVITE PENDENTE (enviado por você ou recebido de você)
     const convitesEnviados = await db.collection("convites_amizade")
       .where("remetenteId", "==", userAtual.uid)
       .where("destinatarioId", "==", amigoId)
@@ -1783,7 +1708,6 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
       return alert(`${amigoData.nomeExibicao || 'Esta pessoa'} já enviou um convite para você! Verifique a aba de convites pendentes.`);
     }
 
-    // 4. Se passou em todas as verificações, envia o convite
     await db.collection("convites_amizade").add({
       remetenteId: userAtual.uid,
       destinatarioId: amigoId,
@@ -1792,7 +1716,7 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
     });
 
     alert(`Convite enviado com sucesso para ${amigoData.nomeExibicao || 'o usuário'}!`);
-    document.getElementById('input-codigo-amigo').value = "";
+    if (inputCodigo) inputCodigo.value = "";
 
   } catch (err) {
     console.error("Erro ao enviar convite:", err);
@@ -1800,13 +1724,12 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
   }
 });
 
-
-// Carregar Amigos Confirmados (com botão de remover amizade)
+// Carregar Lista de Amigos e Convites
 async function carregarAmigosEConvites() {
   const userAtual = auth.currentUser;
   if (!userAtual) return;
 
-  // Carregar Convites Recebidos
+  // Convites Recebidos
   const convitesSnap = await db.collection("convites_amizade")
     .where("destinatarioId", "==", userAtual.uid)
     .where("status", "==", "pendente")
@@ -1814,10 +1737,10 @@ async function carregarAmigosEConvites() {
 
   const containerConvites = document.getElementById('container-convites-pendentes');
   const listaConvites = document.getElementById('lista-convites');
-  listaConvites.innerHTML = "";
+  if (listaConvites) listaConvites.innerHTML = "";
 
   if (!convitesSnap.empty) {
-    containerConvites.classList.remove('hidden');
+    if (containerConvites) containerConvites.classList.remove('hidden');
     for (let doc of convitesSnap.docs) {
       const convite = doc.data();
       const remetenteDoc = await db.collection("usuarios").doc(convite.remetenteId).get();
@@ -1829,18 +1752,19 @@ async function carregarAmigosEConvites() {
         <span><b>${remetente?.nomeExibicao || 'Usuário'}</b> quer ser seu amigo.</span>
         <button onclick="aceitarAmigo('${doc.id}', '${convite.remetenteId}')" class="btn-primario" style="padding: 4px 10px; font-size: 0.8rem;">Aceitar</button>
       `;
-      listaConvites.appendChild(div);
+      if (listaConvites) listaConvites.appendChild(div);
     }
   } else {
-    containerConvites.classList.add('hidden');
+    if (containerConvites) containerConvites.classList.add('hidden');
   }
 
-  // Carregar Amigos
+  // Lista de Amigos Confirmados
   const amigosSnap = await db.collection("amizades")
     .where("usuarios", "array-contains", userAtual.uid)
     .get();
 
   const listaAmigos = document.getElementById('lista-amigos');
+  if (!listaAmigos) return;
   listaAmigos.innerHTML = "";
 
   if (amigosSnap.empty) {
@@ -1851,19 +1775,24 @@ async function carregarAmigosEConvites() {
   for (let doc of amigosSnap.docs) {
     const amizade = doc.data();
     const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
+    
+    // Busca Dados do Perfil e Histórico do Amigo
     const amigoDoc = await db.collection("usuarios").doc(amigoId).get();
-    const amigoData = amigoDoc.data() || {};
+    const amigoHistDoc = await db.collection("historicos").doc(amigoId).get();
+    
+    const amigoData = amigoDoc.exists ? amigoDoc.data() : {};
+    const amigoHist = amigoHistDoc.exists ? amigoHistDoc.data() : {};
 
-    const nomeAmigo = amigoData.nomeExibicao || 'Amigo';
-    const ofensiva = amigoData.ofensiva || 0;
-    const totalTreinos = amigoData.totalTreinos || 0;
+    // Calcula as estatísticas exatas do amigo
+    const statsAmigo = calcularStatsMembro(amigoHist);
+    const nomeAmigo = amigoData.nomeExibicao || (amigoData.email ? amigoData.email.split('@')[0] : 'Amigo');
 
     const div = document.createElement('div');
     div.className = 'item-amigo';
     div.innerHTML = `
       <div style="flex: 1;">
         <strong>${nomeAmigo}</strong>
-        <div class="info-amigo-stats">🔥 ${ofensiva} dias seguidos | 📊 ${totalTreinos} treinos</div>
+        <div class="info-amigo-stats">🔥 ${statsAmigo.streak} dias seguidos | 📊 ${statsAmigo.total} treinos</div>
       </div>
       <button 
         onclick="removerAmizade('${doc.id}', '${nomeAmigo.replace(/'/g, "\\'")}')" 
@@ -1877,38 +1806,18 @@ async function carregarAmigosEConvites() {
   }
 }
 
-// Função para remover a amizade (para ambos os usuários)
+// Remover Amizade
 async function removerAmizade(amizadeDocId, nomeAmigo) {
   const confirmar = confirm(`Quer remover amizade com ${nomeAmigo}?`);
-  
   if (!confirmar) return;
 
   try {
-    // Apaga o documento de amizade do Firestore (remove de ambos)
     await db.collection("amizades").doc(amizadeDocId).delete();
-
     alert(`Amizade com ${nomeAmigo} foi removida.`);
-    
-    // Atualiza a lista na tela
     carregarAmigosEConvites();
   } catch (err) {
     console.error("Erro ao remover amizade:", err);
     alert("Erro ao remover amizade: " + err.message);
-  }
-}
-    // Obtém estatísticas do amigo
-    const ofensiva = amigoData.ofensiva || 0;
-    const totalTreinos = amigoData.totalTreinos || 0;
-
-    const div = document.createElement('div');
-    div.className = 'item-amigo';
-    div.innerHTML = `
-      <div>
-        <strong>${amigoData.nomeExibicao || 'Amigo'}</strong>
-        <div class="info-amigo-stats">🔥 ${ofensiva} dias seguidos | 📊 ${totalTreinos} treinos</div>
-      </div>
-    `;
-    listaAmigos.appendChild(div);
   }
 }
 
@@ -1916,48 +1825,45 @@ async function removerAmizade(amizadeDocId, nomeAmigo) {
 async function aceitarAmigo(conviteId, remetenteId) {
   const userAtual = auth.currentUser;
   try {
-    // Cria o registro de amizade
     await db.collection("amizades").add({
       usuarios: [userAtual.uid, remetenteId],
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    // Atualiza status do convite
     await db.collection("convites_amizade").doc(conviteId).update({ status: "aceito" });
 
     alert("Convite aceito!");
     carregarAmigosEConvites();
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao aceitar convite:", err);
     alert("Erro ao aceitar convite: " + err.message);
   }
 }
 
-// -------------------------------------------------------------
-// 2. FEED DE CHECK-IN DIÁRIO COM CÂMERA
-// -------------------------------------------------------------
-
+// FEED DOS AMIGOS (CHECK-IN)
 const inputFotoCheckin = document.getElementById('input-foto-checkin');
 const nomeFotoCheckin = document.getElementById('nome-foto-checkin');
 
-inputFotoCheckin?.addEventListener('change', (e) => {
-  if (e.target.files.length > 0) {
-    nomeFotoCheckin.textContent = "Foto capturada ✓";
-    nomeFotoCheckin.style.color = "#00e676";
-  }
-});
+if (inputFotoCheckin && nomeFotoCheckin) {
+  inputFotoCheckin.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      nomeFotoCheckin.textContent = "Foto capturada ✓";
+      nomeFotoCheckin.style.color = "#00e676";
+    }
+  });
+}
 
-// Postar foto no feed
+// Postar foto no feed de check-in dos amigos
 document.getElementById('btn-postar-checkin')?.addEventListener('click', async () => {
+  if (!inputFotoCheckin || !inputFotoCheckin.files.length) {
+    return alert("Tire uma foto antes de postar.");
+  }
+
   const file = inputFotoCheckin.files[0];
   const userAtual = auth.currentUser;
-
-  if (!file) return alert("Tire uma foto antes de postar.");
-
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = obterDataLocalIso();
 
   try {
-    // Verifica se já postou hoje
     const checkHoje = await db.collection("feed_amigos")
       .where("usuarioId", "==", userAtual.uid)
       .where("dataData", "==", hoje)
@@ -1967,10 +1873,7 @@ document.getElementById('btn-postar-checkin')?.addEventListener('click', async (
       return alert("Você já realizou o seu check-in diário de hoje!");
     }
 
-    // Converte a imagem em base64 e salva no Firestore
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-      const base64Image = e.target.result;
+    comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
       const userDoc = await db.collection("usuarios").doc(userAtual.uid).get();
       const userData = userDoc.data();
 
@@ -1981,7 +1884,7 @@ document.getElementById('btn-postar-checkin')?.addEventListener('click', async (
       await db.collection("feed_amigos").add({
         usuarioId: userAtual.uid,
         nomeUsuario: userData?.nomeExibicao || 'Usuário',
-        fotoUrl: base64Image,
+        fotoUrl: base64Comprimido,
         dataData: hoje,
         dataExibicao: `${dataFormatada} às ${horaFormatada}`,
         criadoEm: firebase.firestore.FieldValue.serverTimestamp()
@@ -1989,24 +1892,24 @@ document.getElementById('btn-postar-checkin')?.addEventListener('click', async (
 
       alert("Check-in postado com sucesso!");
       inputFotoCheckin.value = "";
-      nomeFotoCheckin.textContent = "Nenhuma foto capturada";
-      nomeFotoCheckin.style.color = "#a1a1aa";
+      if (nomeFotoCheckin) {
+        nomeFotoCheckin.textContent = "Nenhuma foto capturada";
+        nomeFotoCheckin.style.color = "#a1a1aa";
+      }
       carregarFeedAmigos();
-    };
-    reader.readAsDataURL(file);
+    });
 
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao postar check-in:", err);
     alert("Erro ao postar check-in: " + err.message);
   }
 });
 
-// Carregar feed compartilhado entre amigos
+// Carregar Feed de fotos dos amigos
 async function carregarFeedAmigos() {
   const userAtual = auth.currentUser;
   if (!userAtual) return;
 
-  // Busca lista de IDs dos amigos
   const amizadesSnap = await db.collection("amizades")
     .where("usuarios", "array-contains", userAtual.uid)
     .get();
@@ -2018,13 +1921,13 @@ async function carregarFeedAmigos() {
     if (amigoId) idsPermitidos.push(amigoId);
   });
 
-  // Busca os posts dos amigos
   const feedSnap = await db.collection("feed_amigos")
     .orderBy("criadoEm", "desc")
     .limit(20)
     .get();
 
   const containerFeed = document.getElementById('container-feed-fotos');
+  if (!containerFeed) return;
   containerFeed.innerHTML = "";
 
   let postsEncontrados = 0;
@@ -2050,4 +1953,3 @@ async function carregarFeedAmigos() {
     containerFeed.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem; text-align: center;">Nenhum check-in postado recentemente pelos seus amigos.</p>`;
   }
 }
-
