@@ -132,7 +132,7 @@ const todosGrupos = ["Peito", "Costas", "Biceps", "Triceps", "Ombro", "Perna", "
 // ESTADO GLOBAL
 let usuarioLogado = null;
 let perfilUsuario = null;
-let uidAlvoTrabalho = null;
+let uidAlvoTrabalho = null; // UID do usuário cujos treinos estão sendo exibidos/editados
 
 let configuracaoTreino = [];
 let indiceTreinoAtual = 0;
@@ -156,6 +156,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const btnPublicar = document.getElementById('btn-publicar-foto');
   if (btnPublicar) btnPublicar.addEventListener('click', publicarFotoNoFeed);
+
+  const btnSalvarNome = document.getElementById('btn-salvar-nome');
+  if (btnSalvarNome) btnSalvarNome.addEventListener('click', salvarNomeExibicao);
 
   // Perfil
   const btnAbrirPerfil = document.getElementById('btn-abrir-perfil');
@@ -205,7 +208,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Configuração
   const btnAbrirConfig = document.getElementById('btn-abrir-config');
-  if (btnAbrirConfig) btnAbrirConfig.addEventListener('click', abrirConfigRotina);
+  if (btnAbrirConfig) btnAbrirConfig.addEventListener('click', () => {
+    // Garante que se o usuário comum clicar, abre para si mesmo
+    uidAlvoTrabalho = usuarioLogado.uid;
+    document.getElementById('titulo-modal-config').innerText = "Configurar Minha Rotina";
+    abrirConfigRotina();
+  });
 
   const btnGerarConfig = document.getElementById('btn-gerar-config');
   if (btnGerarConfig) btnGerarConfig.addEventListener('click', gerarCamposConfig);
@@ -242,167 +250,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('btn-fechar-modal-config').addEventListener('click', fecharModalConfig);
 });
 
-// Função para Redimensionar e Comprimir Imagem
-function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
-  reader.onload = function(event) {
-    const img = new Image();
-    img.src = event.target.result;
-    img.onload = function() {
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height) {
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-      } else {
-        if (height > maxHeight) {
-          width = Math.round((width * maxHeight) / height);
-          height = maxHeight;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // Converte para JPEG comprimido
-      const base64Comprimido = canvas.toDataURL('image/jpeg', quality);
-      callback(base64Comprimido);
-    };
-  };
-}
-
-// Função para Publicar Foto Comprimida no Feed
-async function publicarFotoNoFeed() {
-  if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipe primeiro.");
-
-  const fileInput = document.getElementById('input-foto-feed');
-  if (!fileInput.files || fileInput.files.length === 0) {
-    return alert("Selecione uma foto para publicar!");
-  }
-
-  const file = fileInput.files[0];
-  const btnPublicar = document.getElementById('btn-publicar-foto');
-  
-  if (btnPublicar) {
-    btnPublicar.disabled = true;
-    btnPublicar.innerText = "⏳ A comprimir e publicar...";
-  }
-
-  comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
-    const hoje = new Date().toISOString().split('T')[0];
-    const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-    try {
-      await db.collection("feed_fotos").add({
-        equipeId: equipeAtiva.id,
-        usuarioUid: usuarioLogado.uid,
-        usuarioNome: usuarioLogado.email.split('@')[0],
-        fotoUrl: base64Comprimido,
-        dataIso: hoje,
-        dataHora: horaAtual,
-        timestamp: Date.now(),
-        curtidas: []
-      });
-
-      fileInput.value = "";
-      alert("Foto publicada com sucesso!");
-      
-      // Força a re-renderização do feed imediatamente
-      await renderizarFeedEquipe();
-    } catch (err) {
-      alert("Erro ao publicar foto: " + err.message);
-    } finally {
-      if (btnPublicar) {
-        btnPublicar.disabled = false;
-        btnPublicar.innerText = "📸 Publicar Foto no Feed";
-      }
-    }
-  });
-}
-
-// Renderizar o Feed com Ordenação Local (Sem necessidade de Índice no Firebase)
-async function renderizarFeedEquipe() {
-  if (!equipeAtiva) return;
-
-  const container = document.getElementById("container-feed-equipe");
-  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando fotos do feed...</p>";
-
-  try {
-    const snapFeed = await db.collection("feed_fotos")
-      .where("equipeId", "==", equipeAtiva.id)
-      .get();
-
-    if (snapFeed.empty) {
-      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Ainda não há fotos nesta equipe. Seja o primeiro a publicar!</p>";
-      return;
-    }
-
-    // Ordenação no próprio JavaScript (mais recente primeiro)
-    const posts = snapFeed.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-    let html = "";
-    posts.forEach(post => {
-      const curtidas = post.curtidas || [];
-      const jaCurtiu = usuarioLogado ? curtidas.includes(usuarioLogado.uid) : false;
-
-      html += `
-        <div class="feed-foto-card">
-          <div class="feed-header">
-            <span class="feed-usuario">📸 ${post.usuarioNome}</span>
-            <span class="feed-data">${post.dataIso} às ${post.dataHora || ''}</span>
-          </div>
-          <img src="${post.fotoUrl}" class="feed-foto-img" alt="Foto do treino">
-          <div>
-            <button class="btn-curtir ${jaCurtiu ? 'curtido' : ''}" onclick="alternarCurtida('${post.id}')">
-              ❤️ ${curtidas.length} ${curtidas.length === 1 ? 'Curtida' : 'Curtidas'}
-            </button>
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  } catch (e) {
-    console.error("Erro ao carregar feed:", e);
-    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar as fotos: " + e.message + "</p>";
-  }
-}
-
-// Lógica para Adicionar/Remover Curtida
-async function alternarCurtida(postId) {
-  if (!usuarioLogado) return;
-
-  try {
-    const postRef = db.collection("feed_fotos").doc(postId);
-    const doc = await postRef.get();
-
-    if (doc.exists) {
-      const data = doc.data();
-      let curtidas = data.curtidas || [];
-
-      if (curtidas.includes(usuarioLogado.uid)) {
-        curtidas = curtidas.filter(uid => uid !== usuarioLogado.uid);
-      } else {
-        curtidas.push(usuarioLogado.uid);
-      }
-
-      await postRef.update({ curtidas: curtidas });
-      renderizarFeedEquipe();
-    }
-  } catch (e) {
-    console.error("Erro ao alterar gosto:", e);
-  }
-}
-
 // OBSERVADOR DE AUTENTICAÇÃO
 auth.onAuthStateChanged(async (user) => {
   if (user) {
@@ -414,18 +261,31 @@ auth.onAuthStateChanged(async (user) => {
       if (docUser.exists) {
         perfilUsuario = docUser.data();
       } else {
-        perfilUsuario = { email: user.email, tipo: "aluno", codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() };
+        perfilUsuario = { 
+          email: user.email, 
+          nomeExibicao: user.email.split('@')[0], 
+          tipo: "aluno", 
+          codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() 
+        };
         await db.collection("usuarios").doc(user.uid).set(perfilUsuario);
       }
     } catch (e) {
-      perfilUsuario = { email: user.email, tipo: "aluno", codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() };
+      perfilUsuario = { 
+        email: user.email, 
+        nomeExibicao: user.email.split('@')[0], 
+        tipo: "aluno", 
+        codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() 
+      };
     }
+
+    const nomeExibir = perfilUsuario.nomeExibicao || user.email.split('@')[0];
 
     document.getElementById("tela-login").classList.add("hidden");
     document.getElementById("app-principal").classList.remove("hidden");
     
-    document.getElementById("info-usuario-logado").innerText = `Usuário: ${user.email} | Código: ${perfilUsuario.codigo}`;
+    document.getElementById("info-usuario-logado").innerText = `Olá, ${nomeExibir} | Código: ${perfilUsuario.codigo}`;
     document.getElementById("perfil-email-destaque").innerText = `${user.email} (${perfilUsuario.codigo})`;
+    document.getElementById("input-nome-exibicao").value = nomeExibir;
 
     if (perfilUsuario.tipo === "treinador") {
       document.getElementById("btn-perfil-treinador").classList.remove("hidden");
@@ -437,6 +297,64 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById("app-principal").classList.add("hidden");
   }
 });
+
+// SALVAR NOVO NOME DE EXIBIÇÃO
+async function salvarNomeExibicao() {
+  if (!usuarioLogado) return;
+  const novoNome = document.getElementById("input-nome-exibicao").value.trim();
+
+  if (!novoNome) return alert("Digite um nome válido.");
+
+  try {
+    perfilUsuario.nomeExibicao = novoNome;
+    await db.collection("usuarios").doc(usuarioLogado.uid).set({
+      nomeExibicao: novoNome
+    }, { merge: true });
+
+    document.getElementById("info-usuario-logado").innerText = `Olá, ${novoNome} | Código: ${perfilUsuario.codigo}`;
+    alert("Nome atualizado com sucesso!");
+  } catch (e) {
+    alert("Erro ao salvar nome: " + e.message);
+  }
+}
+
+// AÇÃO DO MODO TREINADOR (ACESSAR MONTAGEM DO ALUNO)
+async function carregarTreinoDoAluno() {
+  const codigoInput = document.getElementById("input-codigo-aluno");
+  const codigo = codigoInput.value.trim().toUpperCase();
+
+  if (!codigo) return alert("Digite o código do aluno.");
+
+  try {
+    const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
+    if (snap.empty) {
+      return alert("Nenhum aluno encontrado com este código.");
+    }
+
+    const docAluno = snap.docs[0];
+    uidAlvoTrabalho = docAluno.id;
+    const dadosAluno = docAluno.data();
+    const nomeAluno = dadosAluno.nomeExibicao || dadosAluno.email.split('@')[0];
+
+    document.getElementById("modal-treinador").classList.add("hidden");
+    codigoInput.value = "";
+
+    // Carrega a rotina do aluno e abre o modal de configuração de montagem
+    document.getElementById('titulo-modal-config').innerText = `⚙️ Montando Rotina de: ${nomeAluno}`;
+    
+    // Busca a rotina do aluno no banco
+    const docRotina = await db.collection("rotinas").doc(uidAlvoTrabalho).get();
+    if (docRotina.exists) {
+      configuracaoTreino = docRotina.data().rotina || [];
+    } else {
+      configuracaoTreino = [];
+    }
+
+    abrirConfigRotina();
+  } catch (e) {
+    alert("Erro ao buscar aluno: " + e.message);
+  }
+}
 
 function abrirModalPerfil() {
   document.getElementById('modal-perfil').classList.remove('hidden');
@@ -481,6 +399,7 @@ async function autenticarUsuario(e) {
       
       await db.collection("usuarios").doc(res.user.uid).set({
         email: email,
+        nomeExibicao: email.split('@')[0],
         tipo: tipoPerfil,
         codigo: codigoGerado
       });
@@ -493,9 +412,167 @@ async function autenticarUsuario(e) {
   }
 }
 
+// REDIMENSIONAR E COMPRIMIR IMAGEM
+function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = function(event) {
+    const img = new Image();
+    img.src = event.target.result;
+    img.onload = function() {
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const base64Comprimido = canvas.toDataURL('image/jpeg', quality);
+      callback(base64Comprimido);
+    };
+  };
+}
+
+// PUBLICAR FOTO NO FEED COM O NOME DO PERFIL
+async function publicarFotoNoFeed() {
+  if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipe primeiro.");
+
+  const fileInput = document.getElementById('input-foto-feed');
+  if (!fileInput.files || fileInput.files.length === 0) {
+    return alert("Selecione uma foto para publicar!");
+  }
+
+  const file = fileInput.files[0];
+  const btnPublicar = document.getElementById('btn-publicar-foto');
+  
+  if (btnPublicar) {
+    btnPublicar.disabled = true;
+    btnPublicar.innerText = "⏳ Comprimindo e publicando...";
+  }
+
+  comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
+    const hoje = new Date().toISOString().split('T')[0];
+    const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const nomeAutor = perfilUsuario.nomeExibicao || usuarioLogado.email.split('@')[0];
+
+    try {
+      await db.collection("feed_fotos").add({
+        equipeId: equipeAtiva.id,
+        usuarioUid: usuarioLogado.uid,
+        usuarioNome: nomeAutor,
+        fotoUrl: base64Comprimido,
+        dataIso: hoje,
+        dataHora: horaAtual,
+        timestamp: Date.now(),
+        curtidas: []
+      });
+
+      fileInput.value = "";
+      alert("Foto publicada com sucesso!");
+      await renderizarFeedEquipe();
+    } catch (err) {
+      alert("Erro ao publicar foto: " + err.message);
+    } finally {
+      if (btnPublicar) {
+        btnPublicar.disabled = false;
+        btnPublicar.innerText = "📸 Publicar Foto no Feed";
+      }
+    }
+  });
+}
+
+// RENDERIZAR FEED
+async function renderizarFeedEquipe() {
+  if (!equipeAtiva) return;
+
+  const container = document.getElementById("container-feed-equipe");
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando fotos do feed...</p>";
+
+  try {
+    const snapFeed = await db.collection("feed_fotos")
+      .where("equipeId", "==", equipeAtiva.id)
+      .get();
+
+    if (snapFeed.empty) {
+      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Ainda não há fotos nesta equipe. Seja o primeiro a publicar!</p>";
+      return;
+    }
+
+    const posts = snapFeed.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    let html = "";
+    posts.forEach(post => {
+      const curtidas = post.curtidas || [];
+      const jaCurtiu = usuarioLogado ? curtidas.includes(usuarioLogado.uid) : false;
+
+      html += `
+        <div class="feed-foto-card">
+          <div class="feed-header">
+            <span class="feed-usuario">📸 ${post.usuarioNome}</span>
+            <span class="feed-data">${post.dataIso} às ${post.dataHora || ''}</span>
+          </div>
+          <img src="${post.fotoUrl}" class="feed-foto-img" alt="Foto do treino">
+          <div>
+            <button class="btn-curtir ${jaCurtiu ? 'curtido' : ''}" onclick="alternarCurtida('${post.id}')">
+              ❤️ ${curtidas.length} ${curtidas.length === 1 ? 'Curtida' : 'Curtidas'}
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (e) {
+    console.error("Erro ao carregar feed:", e);
+    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar as fotos.</p>";
+  }
+}
+
+// LÓGICA DE CURTIR FOTO
+async function alternarCurtida(postId) {
+  if (!usuarioLogado) return;
+
+  try {
+    const postRef = db.collection("feed_fotos").doc(postId);
+    const doc = await postRef.get();
+
+    if (doc.exists) {
+      const data = doc.data();
+      let curtidas = data.curtidas || [];
+
+      if (curtidas.includes(usuarioLogado.uid)) {
+        curtidas = curtidas.filter(uid => uid !== usuarioLogado.uid);
+      } else {
+        curtidas.push(usuarioLogado.uid);
+      }
+
+      await postRef.update({ curtidas: curtidas });
+      renderizarFeedEquipe();
+    }
+  } catch (e) {
+    console.error("Erro ao alterar curtida:", e);
+  }
+}
+
 async function carregarDadosDoServidor() {
   try {
-    const docRotina = await db.collection("rotinas").doc(uidAlvoTrabalho).get();
+    const docRotina = await db.collection("rotinas").doc(usuarioLogado.uid).get();
     if (docRotina.exists) {
       const d = docRotina.data();
       configuracaoTreino = d.rotina || [];
@@ -508,7 +585,7 @@ async function carregarDadosDoServidor() {
       indiceTreinoAtual = 0;
     }
 
-    const docHist = await db.collection("historicos").doc(uidAlvoTrabalho).get();
+    const docHist = await db.collection("historicos").doc(usuarioLogado.uid).get();
     historicoTreinos = docHist.exists ? docHist.data() : {};
   } catch (e) {
     console.error("Erro ao carregar dados do servidor:", e);
@@ -721,11 +798,12 @@ async function renderizarMembrosEquipe() {
     } catch(e){}
 
     const stats = calcularStatsMembro(historico);
+    const nomeExibicao = userData.nomeExibicao || userData.email.split('@')[0];
 
     html += `
       <div class="membro-card">
         <div class="membro-info">
-          <span class="membro-email">${userData.email.split('@')[0]} ${uid === usuarioLogado.uid ? '(Você)' : ''}</span>
+          <span class="membro-email">${nomeExibicao} ${uid === usuarioLogado.uid ? '(Você)' : ''}</span>
           <span class="membro-codigo">${userData.codigo}</span>
         </div>
         <div class="membro-stats">
@@ -764,7 +842,7 @@ async function renderizarRankingEquipe() {
     const pontos = (stats.total * 10) + (stats.streak * 25);
 
     listaMembros.push({
-      nome: userData.email.split('@')[0],
+      nome: userData.nomeExibicao || userData.email.split('@')[0],
       isVoce: uid === usuarioLogado.uid,
       streak: stats.streak,
       total: stats.total,
@@ -790,36 +868,6 @@ async function renderizarRankingEquipe() {
   });
 
   container.innerHTML = html;
-}
-
-function calcularStatsMembro(historico) {
-  const datas = Object.keys(historico).sort();
-  const total = datas.length;
-
-  if (total === 0) return { streak: 0, total: 0 };
-
-  let streak = 0;
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-
-  let dataChecagem = new Date(hoje);
-  const hojeIso = dataChecagem.toISOString().split("T")[0];
-
-  if (!historico[hojeIso]) {
-    dataChecagem.setDate(dataChecagem.getDate() - 1);
-  }
-
-  while (true) {
-    const iso = dataChecagem.toISOString().split("T")[0];
-    if (historico[iso]) {
-      streak++;
-      dataChecagem.setDate(dataChecagem.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-
-  return { streak, total };
 }
 
 async function adicionarMembroEquipe() {
@@ -878,27 +926,6 @@ async function sairDaEquipeAtiva() {
   } catch (e) {
     alert("Erro ao sair da equipe: " + e.message);
   }
-}
-
-async function carregarTreinoDoAluno() {
-  const codigo = document.getElementById("input-codigo-aluno").value.trim().toUpperCase();
-  if (!codigo) return alert("Digite o código do aluno.");
-
-  const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
-  if (snap.empty) {
-    return alert("Nenhum aluno encontrado com este código.");
-  }
-
-  const docAluno = snap.docs[0];
-  uidAlvoTrabalho = docAluno.id;
-  const dadosAluno = docAluno.data();
-
-  const msg = document.getElementById("msg-aluno-carregado");
-  msg.innerText = `Editando/Visualizando treino do aluno: ${dadosAluno.email}`;
-  msg.classList.remove("hidden");
-
-  document.getElementById("modal-treinador").classList.add("hidden");
-  carregarDadosDoServidor();
 }
 
 function fecharModalAlongamento() {
@@ -1035,10 +1062,10 @@ async function concluirTreino() {
     exercicios: exerciciosConcluidos
   };
 
-  await db.collection("historicos").doc(uidAlvoTrabalho).set(historicoTreinos);
+  await db.collection("historicos").doc(usuarioLogado.uid).set(historicoTreinos);
 
   indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
-  await db.collection("rotinas").doc(uidAlvoTrabalho).set({
+  await db.collection("rotinas").doc(usuarioLogado.uid).set({
     rotina: configuracaoTreino,
     indiceAtual: indiceTreinoAtual
   });
@@ -1055,9 +1082,9 @@ async function trocarTreinoManual() {
 
   indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
 
-  if (uidAlvoTrabalho) {
+  if (usuarioLogado) {
     try {
-      await db.collection("rotinas").doc(uidAlvoTrabalho).set({
+      await db.collection("rotinas").doc(usuarioLogado.uid).set({
         rotina: configuracaoTreino,
         indiceAtual: indiceTreinoAtual
       }, { merge: true });
@@ -1139,6 +1166,8 @@ function abrirConfigRotina() {
   if (configuracaoTreino && configuracaoTreino.length > 0) {
     const letrasSalvas = configuracaoTreino.map(t => t.letra).join('');
     document.getElementById('input-divisao-letras').value = letrasSalvas;
+  } else {
+    document.getElementById('input-divisao-letras').value = "ABC";
   }
   
   gerarCamposConfig();
@@ -1241,17 +1270,21 @@ async function salvarNovaConfig() {
   });
 
   if (novaRotina.length > 0) {
-    configuracaoTreino = novaRotina;
-    indiceTreinoAtual = 0;
-    
+    // Salva na coleção rotinas apontando para o UID do alvo (seja o próprio usuário ou o aluno)
     await db.collection("rotinas").doc(uidAlvoTrabalho).set({
-      rotina: configuracaoTreino,
+      rotina: novaRotina,
       indiceAtual: 0
     });
     
-    atualizarTelaInicial();
     fecharModalConfig();
     alert('Nova rotina salva com sucesso!');
+
+    // Se editou a própria rotina, atualiza a tela
+    if (uidAlvoTrabalho === usuarioLogado.uid) {
+      configuracaoTreino = novaRotina;
+      indiceTreinoAtual = 0;
+      atualizarTelaInicial();
+    }
   } else {
     alert('Marque pelo menos um músculo para cada treino.');
   }
@@ -1259,6 +1292,8 @@ async function salvarNovaConfig() {
 
 function fecharModalConfig() {
   document.getElementById('modal-config-rotina').classList.add('hidden');
+  // Restaura o alvo para o próprio usuário ao fechar
+  uidAlvoTrabalho = usuarioLogado ? usuarioLogado.uid : null;
 }
 
 function verVideo(titulo, url) {
