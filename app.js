@@ -316,6 +316,7 @@ async function renderizarFeedEquipe() {
             </button>
           </div>
         </div>
+        ';
     });
 
     container.innerHTML = html;
