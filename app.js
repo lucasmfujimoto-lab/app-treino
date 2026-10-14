@@ -196,7 +196,7 @@ function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
 
 // Função para Publicar Foto Comprimida no Feed
 async function publicarFotoNoFeed() {
-  if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipa primeiro.");
+  if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipe primeiro.");
 
   const fileInput = document.getElementById('input-foto-feed');
   if (!fileInput.files || fileInput.files.length === 0) {
@@ -211,9 +211,9 @@ async function publicarFotoNoFeed() {
     btnPublicar.innerText = "⏳ A comprimir e publicar...";
   }
 
-  // Redimensiona para no máximo 800px e 70% de qualidade
   comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
     const hoje = new Date().toISOString().split('T')[0];
+    const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     try {
       await db.collection("feed_fotos").add({
@@ -222,13 +222,16 @@ async function publicarFotoNoFeed() {
         usuarioNome: usuarioLogado.email.split('@')[0],
         fotoUrl: base64Comprimido,
         dataIso: hoje,
-        dataHora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        dataHora: horaAtual,
+        timestamp: Date.now(),
         curtidas: []
       });
 
       fileInput.value = "";
       alert("Foto publicada com sucesso!");
-      renderizarFeedEquipe();
+      
+      // Força a re-renderização do feed imediatamente
+      await renderizarFeedEquipe();
     } catch (err) {
       alert("Erro ao publicar foto: " + err.message);
     } finally {
@@ -240,24 +243,56 @@ async function publicarFotoNoFeed() {
   });
 }
 
-
-// Renderizar o Feed com Fotos e Botão de Gostar
+// Renderizar o Feed com Ordenação Local (Sem necessidade de Índice no Firebase)
 async function renderizarFeedEquipe() {
   if (!equipeAtiva) return;
 
   const container = document.getElementById("container-feed-equipe");
-  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>A carregar fotos do feed...</p>";
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando fotos do feed...</p>";
 
   try {
+    // Busca as fotos da equipe sem requerer índice composto
     const snapFeed = await db.collection("feed_fotos")
       .where("equipeId", "==", equipeAtiva.id)
-      .limit(20)
       .get();
 
     if (snapFeed.empty) {
-      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Ainda não há fotos publicadas nesta equipa. Seja o primeiro a publicar!</p>";
+      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Ainda não há fotos nesta equipe. Seja o primeiro a publicar!</p>";
       return;
     }
+
+    // Ordenação no próprio JavaScript (mais recente primeiro)
+    const posts = snapFeed.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    let html = "";
+    posts.forEach(post => {
+      const curtidas = post.curtidas || [];
+      const jaCurtiu = usuarioLogado ? curtidas.includes(usuarioLogado.uid) : false;
+
+      html += `
+        <div class="feed-foto-card">
+          <div class="feed-header">
+            <span class="feed-usuario">📸 ${post.usuarioNome}</span>
+            <span class="feed-data">${post.dataIso} às ${post.dataHora || ''}</span>
+          </div>
+          <img src="${post.fotoUrl}" class="feed-foto-img" alt="Foto do treino">
+          <div>
+            <button class="btn-curtir ${jaCurtiu ? 'curtido' : ''}" onclick="alternarCurtida('${post.id}')">
+              ❤️ ${curtidas.length} ${curtidas.length === 1 ? 'Curtida' : 'Curtidas'}
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  } catch (e) {
+    console.error("Erro ao carregar feed:", e);
+    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar as fotos: " + e.message + "</p>";
+  }
+}
+
 
     // Ordenar manualmente pelas datas mais recentes
     const posts = snapFeed.docs.map(doc => ({ id: doc.id, ...doc.data() }));
