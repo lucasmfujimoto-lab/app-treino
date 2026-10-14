@@ -154,9 +154,43 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnDeslogar = document.getElementById('btn-deslogar');
   if (btnDeslogar) btnDeslogar.addEventListener('click', () => auth.signOut());
 
+  // Perfil
+  const btnAbrirPerfil = document.getElementById('btn-abrir-perfil');
+  if (btnAbrirPerfil) btnAbrirPerfil.addEventListener('click', abrirModalPerfil);
+
+  document.getElementById('btn-fechar-modal-perfil').addEventListener('click', fecharModalPerfil);
+
+  document.getElementById('btn-perfil-conquistas').addEventListener('click', () => {
+    fecharModalPerfil();
+    document.getElementById('modal-conquistas').classList.remove('hidden');
+  });
+
+  document.getElementById('btn-fechar-modal-conquistas').addEventListener('click', () => document.getElementById('modal-conquistas').classList.add('hidden'));
+  document.getElementById('btn-voltar-conquistas').addEventListener('click', () => document.getElementById('modal-conquistas').classList.add('hidden'));
+
+  document.getElementById('btn-perfil-equipes').addEventListener('click', () => {
+    fecharModalPerfil();
+    abrirModalEquipes();
+  });
+
+  document.getElementById('btn-perfil-alongamento').addEventListener('click', () => {
+    fecharModalPerfil();
+    document.getElementById('modal-alongamento').classList.remove('hidden');
+  });
+
+  document.getElementById('btn-perfil-treinador').addEventListener('click', () => {
+    fecharModalPerfil();
+    document.getElementById('modal-treinador').classList.remove('hidden');
+  });
+
+  document.getElementById('btn-fechar-modal-treinador').addEventListener('click', () => document.getElementById('modal-treinador').classList.add('hidden'));
+  document.getElementById('btn-voltar-treinador').addEventListener('click', () => document.getElementById('modal-treinador').classList.add('hidden'));
+
+  // Treinador
   const btnAcessarAluno = document.getElementById('btn-acessar-aluno');
   if (btnAcessarAluno) btnAcessarAluno.addEventListener('click', carregarTreinoDoAluno);
 
+  // Treino
   const btnIniciar = document.getElementById('btn-iniciar');
   if (btnIniciar) btnIniciar.addEventListener('click', iniciarTreino);
 
@@ -166,6 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnConcluir = document.getElementById('btn-concluir');
   if (btnConcluir) btnConcluir.addEventListener('click', concluirTreino);
 
+  // Configuração
   const btnAbrirConfig = document.getElementById('btn-abrir-config');
   if (btnAbrirConfig) btnAbrirConfig.addEventListener('click', abrirConfigRotina);
 
@@ -175,14 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSalvarRotina = document.getElementById('btn-salvar-rotina');
   if (btnSalvarRotina) btnSalvarRotina.addEventListener('click', salvarNovaConfig);
 
-  const btnAbrirAlong = document.getElementById('btn-abrir-alongamento');
-  if (btnAbrirAlong) btnAbrirAlong.addEventListener('click', () => {
-    document.getElementById('modal-alongamento').classList.remove('hidden');
-  });
-
-  const btnAbrirEq = document.getElementById('btn-abrir-equipes');
-  if (btnAbrirEq) btnAbrirEq.addEventListener('click', abrirModalEquipes);
-
+  // Equipes
   const btnCriarEq = document.getElementById('btn-criar-equipe');
   if (btnCriarEq) btnCriarEq.addEventListener('click', criarEquipe);
 
@@ -195,7 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSairEqAtiva = document.getElementById('btn-sair-equipe-ativa');
   if (btnSairEqAtiva) btnSairEqAtiva.addEventListener('click', sairDaEquipeAtiva);
 
-  // Fechar Modais
+  // Fechar Modais Gerais
   document.getElementById('btn-fechar-modal-equipes').addEventListener('click', fecharModalEquipes);
   document.getElementById('btn-fechar-equipes-btn').addEventListener('click', fecharModalEquipes);
 
@@ -233,9 +261,10 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById("app-principal").classList.remove("hidden");
     
     document.getElementById("info-usuario-logado").innerText = `Usuário: ${user.email} | Código: ${perfilUsuario.codigo}`;
+    document.getElementById("perfil-email-destaque").innerText = `${user.email} (${perfilUsuario.codigo})`;
 
     if (perfilUsuario.tipo === "treinador") {
-      document.getElementById("card-treinador").classList.remove("hidden");
+      document.getElementById("btn-perfil-treinador").classList.remove("hidden");
     }
 
     carregarDadosDoServidor();
@@ -244,6 +273,14 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById("app-principal").classList.add("hidden");
   }
 });
+
+function abrirModalPerfil() {
+  document.getElementById('modal-perfil').classList.remove('hidden');
+}
+
+function fecharModalPerfil() {
+  document.getElementById('modal-perfil').classList.add('hidden');
+}
 
 function alternarModoLogin(e) {
   if (e) e.preventDefault();
@@ -361,7 +398,6 @@ function calcularEstatisticasEOfensiva() {
   renderizarConquistas(streak, totalTreinos);
 }
 
-// RENDERIZAR EMBLEMAS / CONQUISTAS (ESTILO GYM RATS)
 function renderizarConquistas(streak, total) {
   const container = document.getElementById("container-conquistas");
   if (!container) return;
@@ -390,7 +426,7 @@ function renderizarConquistas(streak, total) {
   container.innerHTML = html;
 }
 
-// GERENCIAMENTO DE EQUIPES (GYM RATS)
+// GERENCIAMENTO DE EQUIPES
 async function abrirModalEquipes() {
   document.getElementById('modal-equipes').classList.remove('hidden');
   voltarParaListaEquipes();
@@ -539,7 +575,6 @@ async function renderizarMembrosEquipe() {
   container.innerHTML = html;
 }
 
-// RANKING DA EQUIPE
 async function renderizarRankingEquipe() {
   if (!equipeAtiva) return;
 
@@ -562,7 +597,6 @@ async function renderizarRankingEquipe() {
     } catch(e){}
 
     const stats = calcularStatsMembro(historico);
-    // Pontuação = (Total x 10) + (Streak x 25)
     const pontos = (stats.total * 10) + (stats.streak * 25);
 
     listaMembros.push({
@@ -574,7 +608,6 @@ async function renderizarRankingEquipe() {
     });
   }
 
-  // Ordena por pontuação maior
   listaMembros.sort((a, b) => b.pontos - a.pontos);
 
   let html = "";
@@ -595,7 +628,6 @@ async function renderizarRankingEquipe() {
   container.innerHTML = html;
 }
 
-// FEED EM TEMPO REAL DA EQUIPE (GYM RATS)
 async function renderizarFeedEquipe() {
   if (!equipeAtiva) return;
 
@@ -761,6 +793,27 @@ async function sairDaEquipeAtiva() {
   }
 }
 
+async function carregarTreinoDoAluno() {
+  const codigo = document.getElementById("input-codigo-aluno").value.trim().toUpperCase();
+  if (!codigo) return alert("Digite o código do aluno.");
+
+  const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
+  if (snap.empty) {
+    return alert("Nenhum aluno encontrado com este código.");
+  }
+
+  const docAluno = snap.docs[0];
+  uidAlvoTrabalho = docAluno.id;
+  const dadosAluno = docAluno.data();
+
+  const msg = document.getElementById("msg-aluno-carregado");
+  msg.innerText = `Editando/Visualizando treino do aluno: ${dadosAluno.email}`;
+  msg.classList.remove("hidden");
+
+  document.getElementById("modal-treinador").classList.add("hidden");
+  carregarDadosDoServidor();
+}
+
 function fecharModalAlongamento() {
   document.getElementById('modal-alongamento').classList.add('hidden');
 }
@@ -897,7 +950,7 @@ async function concluirTreino() {
 
   await db.collection("historicos").doc(uidAlvoTrabalho).set(historicoTreinos);
 
-  // PUBLICAR NO FEED DAS EQUIPES DO USUÁRIO
+  // PUBLICAR NO FEED
   try {
     const snapEq = await db.collection("equipes").where("membrosUids", "array-contains", usuarioLogado.uid).get();
     for (const docEq of snapEq.docs) {
