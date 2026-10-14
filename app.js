@@ -133,7 +133,7 @@ const todosGrupos = ["Peito", "Costas", "Biceps", "Triceps", "Ombro", "Perna", "
 let usuarioLogado = null;
 let perfilUsuario = null;
 let uidAlvoTrabalho = null;
-
+let ehTreinoAvulsoAtivo = false;
 let configuracaoTreino = [];
 let indiceTreinoAtual = 0;
 let historicoTreinos = {};
@@ -159,6 +159,7 @@ function obterDataFormatadaBR(dataIso) {
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
+// 2. AJUSTE DA OFENSIVA (Permite até 2 dias sem treino, zera com 3 dias ou mais sem treinar)
 function calcularStatsMembro(historico) {
   if (!historico) return { streak: 0, total: 0 };
   const datas = Object.keys(historico).sort();
@@ -172,9 +173,35 @@ function calcularStatsMembro(historico) {
   let dataChecagem = new Date();
   dataChecagem.setHours(0, 0, 0, 0);
 
+  // Se o usuário não treinou hoje, verifica quantos dias se passaram desde o último treino
   if (!historico[hojeIso]) {
-    dataChecagem.setDate(dataChecagem.getDate() - 1);
+    let diasSemTreino = 0;
+    let tempDate = new Date(dataChecagem);
+
+    while (diasSemTreino < 3) {
+      tempDate.setDate(tempDate.getDate() - 1);
+      const ano = tempDate.getFullYear();
+      const mes = String(tempDate.getMonth() + 1).padStart(2, '0');
+      const dia = String(tempDate.getDate()).padStart(2, '0');
+      const isoTemp = `${ano}-${mes}-${dia}`;
+
+      if (historico[isoTemp]) {
+        break;
+      }
+      diasSemTreino++;
+    }
+
+    // Se ficou 3 dias ou mais sem treinar a partir de hoje, a ofensiva zera
+    if (diasSemTreino >= 3) {
+      return { streak: 0, total };
+    }
+
+    // Caso contrário, ajusta a data inicial de checagem para o dia do último treino encontrado
+    dataChecagem.setDate(dataChecagem.getDate() - (diasSemTreino + 1));
   }
+
+  // Contagem do Streak permitindo até 2 folgas seguidas entre treinos registrados
+  let folgasConsecutivas = 0;
 
   while (true) {
     const ano = dataChecagem.getFullYear();
@@ -184,10 +211,15 @@ function calcularStatsMembro(historico) {
 
     if (historico[iso]) {
       streak++;
-      dataChecagem.setDate(dataChecagem.getDate() - 1);
+      folgasConsecutivas = 0; // Reseta a contagem de folgas consecutivas ao achar um treino
     } else {
-      break;
+      folgasConsecutivas++;
+      // Se houver 3 dias seguidos sem treino no histórico, a contagem da sequência para
+      if (folgasConsecutivas >= 3) {
+        break;
+      }
     }
+    dataChecagem.setDate(dataChecagem.getDate() - 1);
   }
 
   return { streak, total };
@@ -1216,13 +1248,14 @@ function atualizarTelaInicial() {
   document.getElementById('foco-treino').innerText = `Músculos: ${treinoAtual.grupos.join(', ')}`;
 }
 
+// 3. INICIAR TREINO DA ROTINA (Reseta a flag de avulso)
 function iniciarTreino() {
+  ehTreinoAvulsoAtivo = false;
   const areaExecucao = document.getElementById('area-execucao');
   const listaContainer = document.getElementById('lista-exercicios');
   listaContainer.innerHTML = '';
 
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
-
   if (!treinoAtual) return;
 
   treinoAtual.grupos.forEach(grupo => {
