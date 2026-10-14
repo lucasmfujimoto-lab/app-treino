@@ -132,7 +132,7 @@ const todosGrupos = ["Peito", "Costas", "Biceps", "Triceps", "Ombro", "Perna", "
 // ESTADO GLOBAL
 let usuarioLogado = null;
 let perfilUsuario = null;
-let uidAlvoTrabalho = null; // UID do usuário cujos treinos estão sendo exibidos/editados
+let uidAlvoTrabalho = null;
 
 let configuracaoTreino = [];
 let indiceTreinoAtual = 0;
@@ -142,6 +142,73 @@ let modoCadastro = false;
 // ESTADO DE EQUIPES
 let equipesDoUsuario = [];
 let equipeAtiva = null;
+
+// FUNÇÕES UTILITÁRIAS (Definidas no topo para evitar erros de referência)
+function calcularStatsMembro(historico) {
+  if (!historico) return { streak: 0, total: 0 };
+  const datas = Object.keys(historico).sort();
+  const total = datas.length;
+
+  if (total === 0) return { streak: 0, total: 0 };
+
+  let streak = 0;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  let dataChecagem = new Date(hoje);
+  const hojeIso = dataChecagem.toISOString().split("T")[0];
+
+  if (!historico[hojeIso]) {
+    dataChecagem.setDate(dataChecagem.getDate() - 1);
+  }
+
+  while (true) {
+    const iso = dataChecagem.toISOString().split("T")[0];
+    if (historico[iso]) {
+      streak++;
+      dataChecagem.setDate(dataChecagem.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  return { streak, total };
+}
+
+function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = function(event) {
+    const img = new Image();
+    img.src = event.target.result;
+    img.onload = function() {
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const base64Comprimido = canvas.toDataURL('image/jpeg', quality);
+      callback(base64Comprimido);
+    };
+  };
+}
 
 // REGISTRO DE EVENTOS
 document.addEventListener("DOMContentLoaded", () => {
@@ -209,7 +276,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Configuração
   const btnAbrirConfig = document.getElementById('btn-abrir-config');
   if (btnAbrirConfig) btnAbrirConfig.addEventListener('click', () => {
-    // Garante que se o usuário comum clicar, abre para si mesmo
     uidAlvoTrabalho = usuarioLogado.uid;
     document.getElementById('titulo-modal-config').innerText = "Configurar Minha Rotina";
     abrirConfigRotina();
@@ -318,7 +384,7 @@ async function salvarNomeExibicao() {
   }
 }
 
-// AÇÃO DO MODO TREINADOR (ACESSAR MONTAGEM DO ALUNO)
+// MODO TREINADOR
 async function carregarTreinoDoAluno() {
   const codigoInput = document.getElementById("input-codigo-aluno");
   const codigo = codigoInput.value.trim().toUpperCase();
@@ -339,10 +405,8 @@ async function carregarTreinoDoAluno() {
     document.getElementById("modal-treinador").classList.add("hidden");
     codigoInput.value = "";
 
-    // Carrega a rotina do aluno e abre o modal de configuração de montagem
     document.getElementById('titulo-modal-config').innerText = `⚙️ Montando Rotina de: ${nomeAluno}`;
     
-    // Busca a rotina do aluno no banco
     const docRotina = await db.collection("rotinas").doc(uidAlvoTrabalho).get();
     if (docRotina.exists) {
       configuracaoTreino = docRotina.data().rotina || [];
@@ -412,43 +476,7 @@ async function autenticarUsuario(e) {
   }
 }
 
-// REDIMENSIONAR E COMPRIMIR IMAGEM
-function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
-  reader.onload = function(event) {
-    const img = new Image();
-    img.src = event.target.result;
-    img.onload = function() {
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height) {
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-      } else {
-        if (height > maxHeight) {
-          width = Math.round((width * maxHeight) / height);
-          height = maxHeight;
-        }
-      }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
-      const base64Comprimido = canvas.toDataURL('image/jpeg', quality);
-      callback(base64Comprimido);
-    };
-  };
-}
-
-// PUBLICAR FOTO NO FEED COM O NOME DO PERFIL
+// PUBLICAR FOTO NO FEED
 async function publicarFotoNoFeed() {
   if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipe primeiro.");
 
@@ -544,7 +572,7 @@ async function renderizarFeedEquipe() {
   }
 }
 
-// LÓGICA DE CURTIR FOTO
+// CURTIR FOTO
 async function alternarCurtida(postId) {
   if (!usuarioLogado) return;
 
@@ -783,28 +811,19 @@ async function renderizarMembrosEquipe() {
   container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando membros...</p>";
 
   try {
-    // Busca os dados de todos os membros em paralelo com segurança
     const promessasMembros = equipeAtiva.membrosUids.map(async (uid) => {
       let userData = { email: "Usuário", codigo: "--", nomeExibicao: "" };
       let historico = {};
 
       try {
         const userDoc = await db.collection("usuarios").doc(uid).get();
-        if (userDoc.exists) {
-          userData = userDoc.data();
-        }
-      } catch (e) {
-        console.warn("Erro ao buscar dados do usuário:", uid, e);
-      }
+        if (userDoc.exists) userData = userDoc.data();
+      } catch (e) {}
 
       try {
         const histDoc = await db.collection("historicos").doc(uid).get();
-        if (histDoc.exists) {
-          historico = histDoc.data();
-        }
-      } catch (e) {
-        console.warn("Erro ao buscar histórico do usuário:", uid, e);
-      }
+        if (histDoc.exists) historico = histDoc.data();
+      } catch (e) {}
 
       const stats = calcularStatsMembro(historico);
       const nomeExibicao = userData.nomeExibicao || (userData.email ? userData.email.split('@')[0] : "Usuário");
@@ -905,27 +924,6 @@ async function renderizarRankingEquipe() {
     container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar o ranking.</p>";
   }
 }
-
-
-  listaMembros.sort((a, b) => b.pontos - a.pontos);
-
-  let html = "";
-  const trofeus = ["🥇", "🥈", "🥉"];
-
-  listaMembros.forEach((membro, index) => {
-    const posi = trofeus[index] || `#${index + 1}`;
-    html += `
-      <div class="membro-card" style="${index === 0 ? 'border-color: #ffb703;' : ''}">
-        <div class="membro-info">
-          <span class="membro-email">${posi} ${membro.nome} ${membro.isVoce ? '(Você)' : ''}</span>
-          <span class="membro-codigo">${membro.pontos} Pts (🔥${membro.streak}d | 📊${membro.total}t)</span>
-        </div>
-      </div>
-    `;
-  });
-
-  container.innerHTML = html;
-
 
 async function adicionarMembroEquipe() {
   if (!equipeAtiva) return;
@@ -1327,7 +1325,6 @@ async function salvarNovaConfig() {
   });
 
   if (novaRotina.length > 0) {
-    // Salva na coleção rotinas apontando para o UID do alvo (seja o próprio usuário ou o aluno)
     await db.collection("rotinas").doc(uidAlvoTrabalho).set({
       rotina: novaRotina,
       indiceAtual: 0
@@ -1336,7 +1333,6 @@ async function salvarNovaConfig() {
     fecharModalConfig();
     alert('Nova rotina salva com sucesso!');
 
-    // Se editou a própria rotina, atualiza a tela
     if (uidAlvoTrabalho === usuarioLogado.uid) {
       configuracaoTreino = novaRotina;
       indiceTreinoAtual = 0;
@@ -1349,7 +1345,6 @@ async function salvarNovaConfig() {
 
 function fecharModalConfig() {
   document.getElementById('modal-config-rotina').classList.add('hidden');
-  // Restaura o alvo para o próprio usuário ao fechar
   uidAlvoTrabalho = usuarioLogado ? usuarioLogado.uid : null;
 }
 
