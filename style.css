@@ -572,3 +572,33 @@ button:active {
   border-color: #ff4757;
 }
 
+.input-foto-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.btn-tirar-foto {
+  background-color: #27272a;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #3f3f46;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: inline-block;
+}
+
+.btn-tirar-foto:active {
+  background-color: #3f3f46;
+}
+
+#nome-arquivo-foto {
+  color: #a1a1aa;
+  font-size: 0.85rem;
+}
+
+
