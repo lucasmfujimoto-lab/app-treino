@@ -271,8 +271,37 @@ if (btnGoogle) btnGoogle.addEventListener('click', autenticarComGoogle);
   const linkAlternar = document.getElementById('link-alternar-login');
   if (linkAlternar) linkAlternar.addEventListener('click', alternarModoLogin);
 
-  const btnDeslogar = document.getElementById('btn-deslogar');
-  if (btnDeslogar) btnDeslogar.addEventListener('click', () => auth.signOut());
+  // EVENTO DO BOTÃO SAIR DA CONTA (btn-deslogar)
+const btnDeslogar = document.getElementById('btn-deslogar');
+
+if (btnDeslogar) {
+  btnDeslogar.addEventListener('click', async () => {
+    try {
+      // 1. Faz logout no Firebase
+      await auth.signOut();
+
+      // 2. Esconde o modal de Perfil se estiver aberto
+      const modalPerfil = document.getElementById('modal-perfil');
+      if (modalPerfil) {
+        modalPerfil.classList.add('hidden');
+      }
+
+      // 3. Garante que a tela principal esconde e a de login aparece
+      const telaPrincipal = document.getElementById('tela-principal');
+      const telaLogin = document.getElementById('tela-login');
+
+      if (telaPrincipal) telaPrincipal.classList.add('hidden');
+      if (telaLogin) telaLogin.classList.remove('hidden');
+
+      // 4. Recarrega a página para resetar o estado da aplicação
+      window.location.reload();
+    } catch (error) {
+      console.error("Erro ao encerrar sessão:", error);
+      alert("Erro ao sair da conta: " + error.message);
+    }
+  });
+}
+
 
   const btnPublicar = document.getElementById('btn-publicar-foto');
   if (btnPublicar) btnPublicar.addEventListener('click', publicarFotoNoFeed);
