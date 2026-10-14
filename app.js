@@ -18,16 +18,16 @@ const db = firebase.firestore();
 // CATÁLOGO EXPANDIDO DE EXERCÍCIOS
 const catalogoExercicios = {
   Alongamento: [
-    { id: 1, nome: "Mobilidade de Ombro (Bastão)", video: "https://www.youtube.com/embed/S2pG37y-Jls" },
-    { id: 2, nome: "Alongamento Torácico e Peitoral", video: "https://www.youtube.com/embed/5T2kM3g-_18" },
-    { id: 3, nome: "Mobilidade de Quadril", video: "https://www.youtube.com/embed/3m4aA-Gj_pU" },
-    { id: 4, nome: "Alongamento de Isquiotibiais", video: "https://www.youtube.com/embed/e_Z_8LqJd0M" },
-    { id: 5, nome: "Alongamento de Dorsal e Costas", video: "https://www.youtube.com/embed/G8L_8wO9U4E" },
-    { id: 6, nome: "Mobilidade de Tornozelo", video: "https://www.youtube.com/embed/N3awlEyY980" },
-    { id: 7, nome: "Alongamento de Flexores do Quadril", video: "https://www.youtube.com/embed/3m4aA-Gj_pU" },
-    { id: 8, nome: "Mobilidade de Punho e Antebraço", video: "https://www.youtube.com/embed/S2pG37y-Jls" },
-    { id: 9, nome: "Alongamento de Glúteo e Piriforme", video: "https://www.youtube.com/embed/3m4aA-Gj_pU" },
-    { id: 10, nome: "Mobilidade de Cervical e Pescoço", video: "https://www.youtube.com/embed/5T2kM3g-_18" }
+    { id: 1, nome: "Mobilidade de Ombro (Bastão)", video: "https://www.youtube.com/embed/3_SJ1YOeFxo" },
+    { id: 2, nome: "Alongamento Torácico e Peitoral", video: "https://www.youtube.com/embed/20glCAA_Lyo" },
+    { id: 3, nome: "Mobilidade de Quadril", video: "https://www.youtube.com/embed/fJ67PH2tVwk" },
+    { id: 4, nome: "Alongamento de Isquiotibiais", video: "https://www.youtube.com/embed/3O8SLneuVKc" },
+    { id: 5, nome: "Alongamento de Dorsal e Costas", video: "https://www.youtube.com/embed/PiKByqgZJ1I" },
+    { id: 6, nome: "Mobilidade de Tornozelo", video: "https://www.youtube.com/embed/ACzi_1jpEEk" },
+    { id: 7, nome: "Alongamento de Flexores do Quadril", video: "https://www.youtube.com/embed/LkEC8QO0ITk" },
+    { id: 8, nome: "Mobilidade de Punho e Antebraço", video: "https://www.youtube.com/embed/1cFYKc_vn-s" },
+    { id: 9, nome: "Alongamento de Glúteo e Piriforme", video: "https://www.youtube.com/embed/_mShDDDGDFA" },
+    { id: 10, nome: "Mobilidade de Cervical e Pescoço", video: "https://www.youtube.com/embed/_a_zO4TrF68" }
   ],
   Peito: [
     { id: 101, nome: "Supino Reto com Barra", video: "https://www.youtube.com/embed/IyvZ8nsR2dw" },
