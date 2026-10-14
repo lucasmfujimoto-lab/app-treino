@@ -1622,3 +1622,31 @@ function fecharModalVideo() {
   document.getElementById('modal-video').classList.add('hidden');
   document.getElementById('video-container').innerHTML = '';
 }
+// FUNÇÃO PARA LOGIN COM CONTA GOOGLE
+async function autenticarComGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  
+  try {
+    const result = await auth.signInWithPopup(provider);
+    const user = result.user;
+
+    // Verifica se é o primeiro login do utilizador para criar o perfil na base de dados
+    const docUser = await db.collection("usuarios").doc(user.uid).get();
+    
+    if (!docUser.exists) {
+      const codigoGerado = "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+      const novoPerfil = {
+        email: user.email,
+        nomeExibicao: user.displayName || user.email.split('@')[0],
+        tipo: "aluno",
+        codigo: codigoGerado
+      };
+      await db.collection("usuarios").doc(user.uid).set(novoPerfil);
+    }
+
+    alert(`Bem-vindo, ${user.displayName || user.email}!`);
+  } catch (error) {
+    console.error("Erro no login com Google:", error);
+    alert("Erro ao fazer login com o Google: " + error.message);
+  }
+}
