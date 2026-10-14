@@ -354,7 +354,7 @@ async function alternarCurtida(postId) {
   document.getElementById('btn-fechar-detalhes-btn').addEventListener('click', fecharModalDetalhes);
 
   document.getElementById('btn-fechar-modal-config').addEventListener('click', fecharModalConfig);
-});
+);
 
 // OBSERVADOR DE AUTENTICAÇÃO
 auth.onAuthStateChanged(async (user) => {
