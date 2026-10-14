@@ -1316,6 +1316,7 @@ function iniciarTreino() {
   areaExecucao.classList.remove('hidden');
 }
 
+// 5. CONCLUIR TREINO (GRAVA "AV" NO BANCO CASO SEJA AVULSO)
 async function concluirTreino() {
   const hojeChave = obterDataLocalIso();
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
@@ -1340,21 +1341,27 @@ async function concluirTreino() {
     }
   });
 
+  const letraTreino = ehTreinoAvulsoAtivo ? "AV" : (treinoAtual ? treinoAtual.letra : "A");
+  const gruposTreino = ehTreinoAvulsoAtivo ? ["Avulso"] : (treinoAtual ? treinoAtual.grupos : ["Geral"]);
+
   historicoTreinos[hojeChave] = {
-    letra: treinoAtual ? treinoAtual.letra : 'Avulso',
-    grupos: treinoAtual ? treinoAtual.grupos : ['Geral'],
+    letra: letraTreino,
+    grupos: gruposTreino,
     exercicios: exerciciosConcluidos
   };
 
   await db.collection("historicos").doc(usuarioLogado.uid).set(historicoTreinos);
 
-  if (configuracaoTreino.length > 0) {
+  // Só avança a rotina padrão A/B/C se NÃO for treino avulso
+  if (!ehTreinoAvulsoAtivo && configuracaoTreino.length > 0) {
     indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
     await db.collection("rotinas").doc(usuarioLogado.uid).set({
       rotina: configuracaoTreino,
       indiceAtual: indiceTreinoAtual
     });
   }
+
+  ehTreinoAvulsoAtivo = false; // Reseta o estado
 
   alert('Treino concluído com sucesso! 👏');
   document.getElementById('area-execucao').classList.add('hidden');
