@@ -206,12 +206,19 @@
           <div id="container-ranking-equipe"></div>
         </div>
 
-        <!-- CONTEÚDO ABA FEED -->
-        <div id="conteudo-aba-feed" class="hidden">
-          <p style="font-size: 0.8rem; color: #a8a8b3; margin: 10px 0;">Treinos recentes dos seus parceiros de equipe:</p>
-          <div id="container-feed-equipe"></div>
-        </div>
-      </div>
+        <!-- CONTEÚDO ABA FEED (FOTOS E GOSTOS) -->
+<div id="conteudo-aba-feed" class="hidden">
+  <p style="font-size: 0.8rem; color: #a8a8b3; margin: 10px 0 5px 0;">Partilhe uma foto do seu treino com a equipa:</p>
+  
+  <!-- ÁREA DE PUBLICAR FOTO -->
+  <div style="background: #121214; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #29292e;">
+    <input type="file" id="input-foto-feed" accept="image/*" class="input-form" style="margin-top: 0; padding: 6px;">
+    <button id="btn-publicar-foto" class="btn-secundario" style="width: 100%; margin-top: 8px; background: #00e676; color: #000;">📸 Publicar Foto no Feed</button>
+  </div>
+
+  <div id="container-feed-equipe"></div>
+</div>
+
 
       <button id="btn-fechar-equipes-btn" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR AO PERFIL</button>
     </div>
