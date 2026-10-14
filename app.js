@@ -1725,7 +1725,7 @@ document.getElementById('btn-fechar-feed-amigos')?.addEventListener('click', () 
 // 1. SISTEMA DE ADICIONAR E ACEITAR AMIGOS
 // -------------------------------------------------------------
 
-// Enviar convite de amizade
+// Enviar convite de amizade (com validação de duplicidade e amizade existente)
 document.getElementById('btn-enviar-convite')?.addEventListener('click', async () => {
   const codigoDigitado = document.getElementById('input-codigo-amigo').value.trim().toUpperCase();
   const userAtual = auth.currentUser;
@@ -1733,7 +1733,7 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
   if (!codigoDigitado) return alert("Digite o código do seu amigo.");
 
   try {
-    // Busca usuário pelo código
+    // 1. Busca usuário pelo código informado
     const snap = await db.collection("usuarios").where("codigo", "==", codigoDigitado).get();
     if (snap.empty) return alert("Usuário não encontrado com esse código.");
 
@@ -1741,9 +1741,49 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
     const amigoData = amigoDoc.data();
     const amigoId = amigoDoc.id;
 
-    if (amigoId === userAtual.uid) return alert("Você não pode adicionar a si mesmo.");
+    if (amigoId === userAtual.uid) {
+      return alert("Você não pode adicionar a si mesmo.");
+    }
 
-    // Envia convite
+    // 2. Verifica se JÁ SÃO AMIGOS
+    const amizadeExistente = await db.collection("amizades")
+      .where("usuarios", "array-contains", userAtual.uid)
+      .get();
+
+    let jaEAmigo = false;
+    amizadeExistente.forEach(doc => {
+      const usuarios = doc.data().usuarios || [];
+      if (usuarios.includes(amigoId)) {
+        jaEAmigo = true;
+      }
+    });
+
+    if (jaEAmigo) {
+      return alert(`Você e ${amigoData.nomeExibicao || 'essa pessoa'} já são amigos!`);
+    }
+
+    // 3. Verifica se JÁ EXISTE CONVITE PENDENTE (enviado por você ou recebido de você)
+    const convitesEnviados = await db.collection("convites_amizade")
+      .where("remetenteId", "==", userAtual.uid)
+      .where("destinatarioId", "==", amigoId)
+      .where("status", "==", "pendente")
+      .get();
+
+    const convitesRecebidos = await db.collection("convites_amizade")
+      .where("remetenteId", "==", amigoId)
+      .where("destinatarioId", "==", userAtual.uid)
+      .where("status", "==", "pendente")
+      .get();
+
+    if (!convitesEnviados.empty) {
+      return alert(`Você já enviou um convite de amizade para ${amigoData.nomeExibicao || 'essa pessoa'}. Aguarde a resposta.`);
+    }
+
+    if (!convitesRecebidos.empty) {
+      return alert(`${amigoData.nomeExibicao || 'Esta pessoa'} já enviou um convite para você! Verifique a aba de convites pendentes.`);
+    }
+
+    // 4. Se passou em todas as verificações, envia o convite
     await db.collection("convites_amizade").add({
       remetenteId: userAtual.uid,
       destinatarioId: amigoId,
@@ -1751,13 +1791,15 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    alert(`Convite enviado para ${amigoData.nomeExibicao || 'usuário'}!`);
+    alert(`Convite enviado com sucesso para ${amigoData.nomeExibicao || 'o usuário'}!`);
     document.getElementById('input-codigo-amigo').value = "";
+
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao enviar convite:", err);
     alert("Erro ao enviar convite: " + err.message);
   }
 });
+
 
 // Carregar lista de amigos e convites pendentes
 async function carregarAmigosEConvites() {
