@@ -444,7 +444,7 @@ function fecharModalTreinoAvulso() {
   if (modal) modal.classList.add('hidden');
 }
 
-// MONTAR E EXIBIR OS EXERCÍCIOS ESCOLHIDOS NA TELA INICIAL
+// 4. MONTAR E INICIAR TREINO AVULSO (Ativa a flag de avulso)
 function montarEIniciarTreinoAvulso() {
   const selecionados = document.querySelectorAll('.cb-ex-avulso:checked');
   
@@ -452,6 +452,7 @@ function montarEIniciarTreinoAvulso() {
     return alert("Selecione pelo menos um exercício para o treino avulso.");
   }
 
+  ehTreinoAvulsoAtivo = true; // Marca que o treino em execução é Avulso
   const areaExecucao = document.getElementById('area-execucao');
   const listaContainer = document.getElementById('lista-exercicios');
   listaContainer.innerHTML = '';
