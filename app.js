@@ -230,6 +230,7 @@ function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
 
 // REGISTRO DE EVENTOS
 document.addEventListener("DOMContentLoaded", () => {
+  
   const formLogin = document.getElementById('form-login');
   if (formLogin) formLogin.addEventListener('submit', autenticarUsuario);
 
@@ -333,7 +334,129 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById('btn-fechar-modal-config').addEventListener('click', fecharModalConfig);
 });
+const btnAvulso = document.getElementById('btn-treino-avulso');
+  if (btnAvulso) btnAvulso.addEventListener('click', abrirModalTreinoAvulso);
 
+  const btnFecharAvulso = document.getElementById('btn-fechar-modal-avulso');
+  if (btnFecharAvulso) btnFecharAvulso.addEventListener('click', fecharModalTreinoAvulso);
+
+  const btnVoltarAvulso = document.getElementById('btn-voltar-avulso');
+  if (btnVoltarAvulso) btnVoltarAvulso.addEventListener('click', fecharModalTreinoAvulso);
+
+  const btnConfirmarAvulso = document.getElementById('btn-iniciar-avulso-confirmar');
+  if (btnConfirmarAvulso) btnConfirmarAvulso.addEventListener('click', montarEIniciarTreinoAvulso);
+});
+
+// ABRIR MODAL DE SELEÇÃO DO TREINO AVULSO
+function abrirModalTreinoAvulso() {
+  const container = document.getElementById('container-selecao-avulso');
+  container.innerHTML = '';
+
+  todosGrupos.forEach(grupo => {
+    const bloco = document.createElement('div');
+    bloco.style.cssText = "margin-bottom: 15px; border-bottom: 1px solid #29292e; padding-bottom: 10px;";
+    
+    let html = `<h4 style='color: #00e676; margin-bottom: 6px;'>● ${grupo}</h4>`;
+    const exerciciosGrupo = catalogoExercicios[grupo] || [];
+
+    exerciciosGrupo.forEach(ex => {
+      html += `
+        <label style='display: block; font-size: 0.85rem; margin-bottom: 4px; font-weight: normal; color: #e1e1e6;'>
+          <input type='checkbox' class='cb-ex-avulso' data-grupo='${grupo}' value='${ex.nome}'> ${ex.nome}
+        </label>
+      `;
+    });
+
+    bloco.innerHTML = html;
+    container.appendChild(bloco);
+  });
+
+  document.getElementById('modal-treino-avulso').classList.remove('hidden');
+}
+
+function fecharModalTreinoAvulso() {
+  document.getElementById('modal-treino-avulso').classList.add('hidden');
+}
+
+// MONTAR E EXIBIR OS EXERCÍCIOS ESCOLHIDOS NA TELA INICIAL
+function montarEIniciarTreinoAvulso() {
+  const selecionados = document.querySelectorAll('.cb-ex-avulso:checked');
+  
+  if (selecionados.length === 0) {
+    return alert("Selecione pelo menos um exercício para o treino avulso.");
+  }
+
+  const areaExecucao = document.getElementById('area-execucao');
+  const listaContainer = document.getElementById('lista-exercicios');
+  listaContainer.innerHTML = '';
+
+  // Agrupa os exercícios selecionados por grupo muscular
+  const exerciciosPorGrupo = {};
+  selecionados.forEach(cb => {
+    const grupo = cb.getAttribute('data-grupo');
+    const nomeEx = cb.value;
+
+    if (!exerciciosPorGrupo[grupo]) exerciciosPorGrupo[grupo] = [];
+    exerciciosPorGrupo[grupo].push(nomeEx);
+  });
+
+  // Desenha os cards dos exercícios na área de execução
+  Object.keys(exerciciosPorGrupo).forEach(grupo => {
+    const tituloGrupo = document.createElement('h3');
+    tituloGrupo.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
+    tituloGrupo.innerText = `● ${grupo} (Avulso)`;
+    listaContainer.appendChild(tituloGrupo);
+
+    exerciciosPorGrupo[grupo].forEach(nomeEx => {
+      const exObj = (catalogoExercicios[grupo] || []).find(e => e.nome === nomeEx) || { nome: nomeEx, video: "" };
+
+      const cardEx = document.createElement('div');
+      cardEx.className = 'item-exercicio';
+      
+      const topo = document.createElement('div');
+      topo.className = 'exercicio-topo';
+      
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${exObj.nome}" checked> <strong>${exObj.nome}</strong>`;
+      
+      const btnVid = document.createElement('button');
+      btnVid.className = 'btn-secundario';
+      btnVid.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
+      btnVid.innerText = '▶ Vídeo';
+      btnVid.addEventListener('click', () => verVideo(exObj.nome, exObj.video));
+
+      topo.appendChild(label);
+      topo.appendChild(btnVid);
+
+      const inputs = document.createElement('div');
+      inputs.className = 'inputs-treino';
+      inputs.innerHTML = `
+        <div class="input-group">
+          <label>Séries</label>
+          <input type="number" value="3" class="input-series">
+        </div>
+        <div class="input-group">
+          <label>Reps</label>
+          <input type="text" value="8-10" class="input-reps">
+        </div>
+        <div class="input-group" style="flex: 1.2; min-width: 100px;">
+          <label>Carga (kg)</label>
+          <input type="number" placeholder="Opcional" class="input-carga">
+        </div>
+      `;
+
+      cardEx.appendChild(topo);
+      cardEx.appendChild(inputs);
+      listaContainer.appendChild(cardEx);
+    });
+  });
+
+  fecharModalTreinoAvulso();
+  areaExecucao.classList.remove('hidden');
+  
+  // Rola suavemente até a lista de execução
+  areaExecucao.scrollIntoView({ behavior: 'smooth' });
+}
 // OBSERVADOR DE AUTENTICAÇÃO
 auth.onAuthStateChanged(async (user) => {
   if (user) {
