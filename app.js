@@ -1394,6 +1394,8 @@ async function trocarTreinoManual() {
   atualizarTelaInicial();
 }
 
+
+// 6. RENDERIZAR CALENDÁRIO (EXIBE "Treino AV" NO QUADRADINHO VERDE)
 function renderizarCalendario() {
   const cal = document.getElementById('calendario');
   if (!cal) return;
