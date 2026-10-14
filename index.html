@@ -52,18 +52,20 @@
   <!-- INTERFACE PRINCIPAL DO APP -->
   <div id="app-principal" class="hidden">
     <header>
-      <div class="logo-header">
-        <svg class="logo-icon-sm" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="6" y="26" width="8" height="12" rx="3" fill="#00e676"/>
-          <rect x="14" y="20" width="8" height="24" rx="4" fill="#00e676"/>
-          <rect x="22" y="29" width="20" height="6" rx="2" fill="#e1e1e6"/>
-          <rect x="42" y="20" width="8" height="24" rx="4" fill="#00e676"/>
-          <rect x="50" y="26" width="8" height="12" rx="3" fill="#00e676"/>
-        </svg>
-        <h1>Treino Do Dia</h1>
+      <div class="header-topo">
+        <div class="logo-header">
+          <svg class="logo-icon-sm" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="26" width="8" height="12" rx="3" fill="#00e676"/>
+            <rect x="14" y="20" width="8" height="24" rx="4" fill="#00e676"/>
+            <rect x="22" y="29" width="20" height="6" rx="2" fill="#e1e1e6"/>
+            <rect x="42" y="20" width="8" height="24" rx="4" fill="#00e676"/>
+            <rect x="50" y="26" width="8" height="12" rx="3" fill="#00e676"/>
+          </svg>
+          <h1>Treino Do Dia</h1>
+        </div>
+        <button id="btn-abrir-perfil" class="btn-secundario" style="padding: 6px 12px; font-size: 0.85rem;">👤 Perfil</button>
       </div>
       <p id="info-usuario-logado">Usuário: -- | Código: --</p>
-      <button id="btn-deslogar" class="btn-secundario" style="padding: 4px 10px; font-size: 0.75rem; margin-top: 6px;">Sair da Conta</button>
     </header>
 
     <main class="container">
@@ -79,41 +81,6 @@
           <span class="stat-titulo">Total Treinados</span>
           <span class="stat-valor" id="stat-total">📊 0 treinos</span>
           <small class="stat-sub" id="stat-inicio">desde --</small>
-        </div>
-      </section>
-
-      <!-- EMBLEMAS / CONQUISTAS (ESTILO GYM RATS) -->
-      <section class="card">
-        <h2>🏆 Conquistas</h2>
-        <div id="container-conquistas" class="conquistas-grid"></div>
-      </section>
-
-      <!-- BOTÃO MINHAS EQUIPES (TELA INICIAL) -->
-      <section class="card card-equipes-btn">
-        <button id="btn-abrir-equipes" class="btn-secundario" style="width: 100%; font-size: 1rem; padding: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          👥 Minhas Equipes & Gym Rats Feed
-        </button>
-      </section>
-
-      <!-- MODO TREINADOR -->
-      <section id="card-treinador" class="card hidden" style="border-left: 4px solid #ff9800;">
-        <h2>⚡ Modo Treinador / Personal</h2>
-        <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Acesse e modifique os treinos do seu aluno:</p>
-        <div style="display: flex; gap: 8px;">
-          <input type="text" id="input-codigo-aluno" placeholder="Código (Ex: ALUNO-A1B2)" style="flex: 1; text-transform: uppercase;" class="input-form">
-          <button id="btn-acessar-aluno" class="btn-secundario">Acessar</button>
-        </div>
-        <p id="msg-aluno-carregado" style="font-size: 0.8rem; color: #00e676; margin-top: 8px;" class="hidden"></p>
-      </section>
-
-      <!-- BOTÃO ALONGAMENTO -->
-      <section class="card card-alongamento">
-        <div class="alongamento-topo">
-          <div>
-            <h2>🧘 Alongamento & Mobilidade</h2>
-            <p style="font-size: 0.8rem; color: #a8a8b3;">Mobilidade antes do treino</p>
-          </div>
-          <button id="btn-abrir-alongamento" class="btn-secundario">Ver Exercícios</button>
         </div>
       </section>
 
@@ -154,7 +121,44 @@
     </main>
   </div>
 
-  <!-- MODAL MINHAS EQUIPES & GYM RATS FEED -->
+  <!-- MODAL DE PERFIL (CENTRAL DE RECURSOS) -->
+  <div id="modal-perfil" class="modal hidden">
+    <div class="modal-content modal-scroll">
+      <span class="close" id="btn-fechar-modal-perfil">&times;</span>
+      <h3>👤 Perfil & Opções</h3>
+      <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 15px;" id="perfil-email-destaque">usuario@email.com</p>
+
+      <div class="menu-perfil-grid">
+        <button id="btn-perfil-conquistas" class="btn-menu-perfil">
+          <span>🏆</span> Conquistas
+        </button>
+        <button id="btn-perfil-equipes" class="btn-menu-perfil">
+          <span>👥</span> Equipes & Feed
+        </button>
+        <button id="btn-perfil-alongamento" class="btn-menu-perfil">
+          <span>🧘</span> Alongamento
+        </button>
+        <button id="btn-perfil-treinador" class="btn-menu-perfil hidden" id="btn-opcao-treinador">
+          <span>⚡</span> Modo Treinador
+        </button>
+      </div>
+
+      <button id="btn-deslogar" class="btn-alerta" style="width: 100%; margin-top: 20px;">Sair da Conta</button>
+    </div>
+  </div>
+
+  <!-- MODAL CONQUISTAS -->
+  <div id="modal-conquistas" class="modal hidden">
+    <div class="modal-content modal-scroll">
+      <span class="close" id="btn-fechar-modal-conquistas">&times;</span>
+      <h3>🏆 Suas Conquistas</h3>
+      <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 12px;">Emblemas desbloqueados pela sua constância:</p>
+      <div id="container-conquistas" class="conquistas-grid"></div>
+      <button id="btn-voltar-conquistas" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR</button>
+    </div>
+  </div>
+
+  <!-- MODAL MINHAS EQUIPES & FEED -->
   <div id="modal-equipes" class="modal hidden">
     <div class="modal-content modal-scroll">
       <span class="close" id="btn-fechar-modal-equipes">&times;</span>
@@ -172,7 +176,7 @@
         <div id="container-lista-equipes"></div>
       </div>
 
-      <!-- NÍVEL 2: VISÃO INTERNA DA EQUIPE (MEMBROS, RANKING E FEED GYM RATS) -->
+      <!-- NÍVEL 2: VISÃO INTERNA DA EQUIPE (MEMBROS, RANKING E FEED) -->
       <div id="view-detalhes-equipe" class="hidden">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
           <button id="btn-voltar-lista-equipes" class="btn-secundario" style="padding: 4px 8px; font-size: 0.75rem;">← Voltar</button>
@@ -180,11 +184,10 @@
           <button id="btn-sair-equipe-ativa" class="btn-alerta" style="padding: 4px 8px; font-size: 0.75rem;">Sair</button>
         </div>
 
-        <!-- ABAS DA EQUIPE: MEMBROS / RANKING / FEED -->
         <div class="abas-equipe">
           <button id="aba-membros" class="aba-btn ativa" onclick="mudarAbaEquipe('membros')">Membros</button>
           <button id="aba-ranking" class="aba-btn" onclick="mudarAbaEquipe('ranking')">👑 Ranking</button>
-          <button id="aba-feed" class="aba-btn" onclick="mudarAbaEquipe('feed')">🔥 Feed Rats</button>
+          <button id="aba-feed" class="aba-btn" onclick="mudarAbaEquipe('feed')">🔥 Feed</button>
         </div>
 
         <!-- CONTEÚDO ABA MEMBROS -->
@@ -203,14 +206,29 @@
           <div id="container-ranking-equipe"></div>
         </div>
 
-        <!-- CONTEÚDO ABA FEED (GYM RATS) -->
+        <!-- CONTEÚDO ABA FEED -->
         <div id="conteudo-aba-feed" class="hidden">
           <p style="font-size: 0.8rem; color: #a8a8b3; margin: 10px 0;">Treinos recentes dos seus parceiros de equipe:</p>
           <div id="container-feed-equipe"></div>
         </div>
       </div>
 
-      <button id="btn-fechar-equipes-btn" class="btn-secundario" style="width: 100%; margin-top: 15px;">FECHAR</button>
+      <button id="btn-fechar-equipes-btn" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR AO PERFIL</button>
+    </div>
+  </div>
+
+  <!-- MODAL TREINADOR -->
+  <div id="modal-treinador" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" id="btn-fechar-modal-treinador">&times;</span>
+      <h2>⚡ Modo Treinador / Personal</h2>
+      <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 10px;">Acesse e modifique os treinos do seu aluno:</p>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="input-codigo-aluno" placeholder="Código (Ex: ALUNO-A1B2)" style="flex: 1; text-transform: uppercase;" class="input-form">
+        <button id="btn-acessar-aluno" class="btn-secundario">Acessar</button>
+      </div>
+      <p id="msg-aluno-carregado" style="font-size: 0.8rem; color: #00e676; margin-top: 8px;" class="hidden"></p>
+      <button id="btn-voltar-treinador" class="btn-secundario" style="width: 100%; margin-top: 15px;">VOLTAR</button>
     </div>
   </div>
 
