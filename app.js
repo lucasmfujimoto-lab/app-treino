@@ -230,7 +230,6 @@ function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
 
 // REGISTRO DE EVENTOS
 document.addEventListener("DOMContentLoaded", () => {
-  
   const formLogin = document.getElementById('form-login');
   if (formLogin) formLogin.addEventListener('submit', autenticarUsuario);
 
@@ -250,33 +249,52 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnAbrirPerfil = document.getElementById('btn-abrir-perfil');
   if (btnAbrirPerfil) btnAbrirPerfil.addEventListener('click', abrirModalPerfil);
 
-  document.getElementById('btn-fechar-modal-perfil').addEventListener('click', fecharModalPerfil);
+  const btnFecharPerfil = document.getElementById('btn-fechar-modal-perfil');
+  if (btnFecharPerfil) btnFecharPerfil.addEventListener('click', fecharModalPerfil);
 
-  document.getElementById('btn-perfil-conquistas').addEventListener('click', () => {
-    fecharModalPerfil();
-    document.getElementById('modal-conquistas').classList.remove('hidden');
-  });
+  const btnPerfilConquistas = document.getElementById('btn-perfil-conquistas');
+  if (btnPerfilConquistas) {
+    btnPerfilConquistas.addEventListener('click', () => {
+      fecharModalPerfil();
+      document.getElementById('modal-conquistas').classList.remove('hidden');
+    });
+  }
 
-  document.getElementById('btn-fechar-modal-conquistas').addEventListener('click', () => document.getElementById('modal-conquistas').classList.add('hidden'));
-  document.getElementById('btn-voltar-conquistas').addEventListener('click', () => document.getElementById('modal-conquistas').classList.add('hidden'));
+  const btnFecharConquistas = document.getElementById('btn-fechar-modal-conquistas');
+  if (btnFecharConquistas) btnFecharConquistas.addEventListener('click', () => document.getElementById('modal-conquistas').classList.add('hidden'));
 
-  document.getElementById('btn-perfil-equipes').addEventListener('click', () => {
-    fecharModalPerfil();
-    abrirModalEquipes();
-  });
+  const btnVoltarConquistas = document.getElementById('btn-voltar-conquistas');
+  if (btnVoltarConquistas) btnVoltarConquistas.addEventListener('click', () => document.getElementById('modal-conquistas').classList.add('hidden'));
 
-  document.getElementById('btn-perfil-alongamento').addEventListener('click', () => {
-    fecharModalPerfil();
-    document.getElementById('modal-alongamento').classList.remove('hidden');
-  });
+  const btnPerfilEquipes = document.getElementById('btn-perfil-equipes');
+  if (btnPerfilEquipes) {
+    btnPerfilEquipes.addEventListener('click', () => {
+      fecharModalPerfil();
+      abrirModalEquipes();
+    });
+  }
 
-  document.getElementById('btn-perfil-treinador').addEventListener('click', () => {
-    fecharModalPerfil();
-    document.getElementById('modal-treinador').classList.remove('hidden');
-  });
+  const btnPerfilAlongamento = document.getElementById('btn-perfil-alongamento');
+  if (btnPerfilAlongamento) {
+    btnPerfilAlongamento.addEventListener('click', () => {
+      fecharModalPerfil();
+      document.getElementById('modal-alongamento').classList.remove('hidden');
+    });
+  }
 
-  document.getElementById('btn-fechar-modal-treinador').addEventListener('click', () => document.getElementById('modal-treinador').classList.add('hidden'));
-  document.getElementById('btn-voltar-treinador').addEventListener('click', () => document.getElementById('modal-treinador').classList.add('hidden'));
+  const btnPerfilTreinador = document.getElementById('btn-perfil-treinador');
+  if (btnPerfilTreinador) {
+    btnPerfilTreinador.addEventListener('click', () => {
+      fecharModalPerfil();
+      document.getElementById('modal-treinador').classList.remove('hidden');
+    });
+  }
+
+  const btnFecharTreinador = document.getElementById('btn-fechar-modal-treinador');
+  if (btnFecharTreinador) btnFecharTreinador.addEventListener('click', () => document.getElementById('modal-treinador').classList.add('hidden'));
+
+  const btnVoltarTreinador = document.getElementById('btn-voltar-treinador');
+  if (btnVoltarTreinador) btnVoltarTreinador.addEventListener('click', () => document.getElementById('modal-treinador').classList.add('hidden'));
 
   // Treinador
   const btnAcessarAluno = document.getElementById('btn-acessar-aluno');
@@ -291,6 +309,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const btnConcluir = document.getElementById('btn-concluir');
   if (btnConcluir) btnConcluir.addEventListener('click', concluirTreino);
+
+  // Treino Avulso
+  const btnAvulso = document.getElementById('btn-treino-avulso');
+  if (btnAvulso) btnAvulso.addEventListener('click', abrirModalTreinoAvulso);
+
+  const btnFecharAvulso = document.getElementById('btn-fechar-modal-avulso');
+  if (btnFecharAvulso) btnFecharAvulso.addEventListener('click', fecharModalTreinoAvulso);
+
+  const btnVoltarAvulso = document.getElementById('btn-voltar-avulso');
+  if (btnVoltarAvulso) btnVoltarAvulso.addEventListener('click', fecharModalTreinoAvulso);
+
+  const btnConfirmarAvulso = document.getElementById('btn-iniciar-avulso-confirmar');
+  if (btnConfirmarAvulso) btnConfirmarAvulso.addEventListener('click', montarEIniciarTreinoAvulso);
 
   // Configuração
   const btnAbrirConfig = document.getElementById('btn-abrir-config');
@@ -320,36 +351,38 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnSairEqAtiva) btnSairEqAtiva.addEventListener('click', sairDaEquipeAtiva);
 
   // Fechar Modais Gerais
-  document.getElementById('btn-fechar-modal-equipes').addEventListener('click', fecharModalEquipes);
-  document.getElementById('btn-fechar-equipes-btn').addEventListener('click', fecharModalEquipes);
+  const btnFecharEq1 = document.getElementById('btn-fechar-modal-equipes');
+  if (btnFecharEq1) btnFecharEq1.addEventListener('click', fecharModalEquipes);
 
-  document.getElementById('btn-fechar-modal-alongamento').addEventListener('click', fecharModalAlongamento);
-  document.getElementById('btn-voltar-alongamento').addEventListener('click', fecharModalAlongamento);
+  const btnFecharEq2 = document.getElementById('btn-fechar-equipes-btn');
+  if (btnFecharEq2) btnFecharEq2.addEventListener('click', fecharModalEquipes);
 
-  document.getElementById('btn-fechar-modal-video').addEventListener('click', fecharModalVideo);
-  document.getElementById('btn-fechar-video-btn').addEventListener('click', fecharModalVideo);
+  const btnFecharAlong1 = document.getElementById('btn-fechar-modal-alongamento');
+  if (btnFecharAlong1) btnFecharAlong1.addEventListener('click', fecharModalAlongamento);
 
-  document.getElementById('btn-fechar-modal-detalhes').addEventListener('click', fecharModalDetalhes);
-  document.getElementById('btn-fechar-detalhes-btn').addEventListener('click', fecharModalDetalhes);
+  const btnFecharAlong2 = document.getElementById('btn-voltar-alongamento');
+  if (btnFecharAlong2) btnFecharAlong2.addEventListener('click', fecharModalAlongamento);
 
-  document.getElementById('btn-fechar-modal-config').addEventListener('click', fecharModalConfig);
-});
-const btnAvulso = document.getElementById('btn-treino-avulso');
-  if (btnAvulso) btnAvulso.addEventListener('click', abrirModalTreinoAvulso);
+  const btnFecharVid1 = document.getElementById('btn-fechar-modal-video');
+  if (btnFecharVid1) btnFecharVid1.addEventListener('click', fecharModalVideo);
 
-  const btnFecharAvulso = document.getElementById('btn-fechar-modal-avulso');
-  if (btnFecharAvulso) btnFecharAvulso.addEventListener('click', fecharModalTreinoAvulso);
+  const btnFecharVid2 = document.getElementById('btn-fechar-video-btn');
+  if (btnFecharVid2) btnFecharVid2.addEventListener('click', fecharModalVideo);
 
-  const btnVoltarAvulso = document.getElementById('btn-voltar-avulso');
-  if (btnVoltarAvulso) btnVoltarAvulso.addEventListener('click', fecharModalTreinoAvulso);
+  const btnFecharDet1 = document.getElementById('btn-fechar-modal-detalhes');
+  if (btnFecharDet1) btnFecharDet1.addEventListener('click', fecharModalDetalhes);
 
-  const btnConfirmarAvulso = document.getElementById('btn-iniciar-avulso-confirmar');
-  if (btnConfirmarAvulso) btnConfirmarAvulso.addEventListener('click', montarEIniciarTreinoAvulso);
+  const btnFecharDet2 = document.getElementById('btn-fechar-detalhes-btn');
+  if (btnFecharDet2) btnFecharDet2.addEventListener('click', fecharModalDetalhes);
+
+  const btnFecharConf = document.getElementById('btn-fechar-modal-config');
+  if (btnFecharConf) btnFecharConf.addEventListener('click', fecharModalConfig);
 });
 
 // ABRIR MODAL DE SELEÇÃO DO TREINO AVULSO
 function abrirModalTreinoAvulso() {
   const container = document.getElementById('container-selecao-avulso');
+  if (!container) return;
   container.innerHTML = '';
 
   todosGrupos.forEach(grupo => {
@@ -375,7 +408,8 @@ function abrirModalTreinoAvulso() {
 }
 
 function fecharModalTreinoAvulso() {
-  document.getElementById('modal-treino-avulso').classList.add('hidden');
+  const modal = document.getElementById('modal-treino-avulso');
+  if (modal) modal.classList.add('hidden');
 }
 
 // MONTAR E EXIBIR OS EXERCÍCIOS ESCOLHIDOS NA TELA INICIAL
@@ -390,7 +424,6 @@ function montarEIniciarTreinoAvulso() {
   const listaContainer = document.getElementById('lista-exercicios');
   listaContainer.innerHTML = '';
 
-  // Agrupa os exercícios selecionados por grupo muscular
   const exerciciosPorGrupo = {};
   selecionados.forEach(cb => {
     const grupo = cb.getAttribute('data-grupo');
@@ -400,7 +433,6 @@ function montarEIniciarTreinoAvulso() {
     exerciciosPorGrupo[grupo].push(nomeEx);
   });
 
-  // Desenha os cards dos exercícios na área de execução
   Object.keys(exerciciosPorGrupo).forEach(grupo => {
     const tituloGrupo = document.createElement('h3');
     tituloGrupo.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
@@ -453,10 +485,9 @@ function montarEIniciarTreinoAvulso() {
 
   fecharModalTreinoAvulso();
   areaExecucao.classList.remove('hidden');
-  
-  // Rola suavemente até a lista de execução
   areaExecucao.scrollIntoView({ behavior: 'smooth' });
 }
+
 // OBSERVADOR DE AUTENTICAÇÃO
 auth.onAuthStateChanged(async (user) => {
   if (user) {
@@ -645,27 +676,21 @@ async function publicarFotoNoFeed() {
     const nomeAutor = perfilUsuario.nomeExibicao || usuarioLogado.email.split('@')[0];
 
     try {
-      // 1. Verifica a quantidade de fotos da equipe no banco
       const snapFeed = await db.collection("feed_fotos")
         .where("equipeId", "==", equipeAtiva.id)
         .get();
 
       const posts = snapFeed.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      // 2. Se já houver 30 ou mais fotos, apaga a(s) mais antiga(s)
       if (posts.length >= 30) {
-        // Ordena da mais antiga para a mais recente
         posts.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
-        // Quantidade de fotos excedentes que precisam ser removidas
-        const qtdParaDeletar = posts.length - 29; // Deixa espaço para a nova foto
+        const qtdParaDeletar = posts.length - 29;
         
         for (let i = 0; i < qtdParaDeletar; i++) {
           await db.collection("feed_fotos").doc(posts[i].id).delete();
         }
       }
 
-      // 3. Adiciona a nova foto
       await db.collection("feed_fotos").add({
         equipeId: equipeAtiva.id,
         usuarioUid: usuarioLogado.uid,
@@ -690,7 +715,6 @@ async function publicarFotoNoFeed() {
     }
   });
 }
-
 
 // RENDERIZAR FEED
 async function renderizarFeedEquipe() {
@@ -1159,6 +1183,7 @@ function fecharModalAlongamento() {
 
 function carregarBlocoAlongamento() {
   const container = document.getElementById('lista-alongamento');
+  if (!container) return;
   container.innerHTML = '';
 
   catalogoExercicios.Alongamento.forEach(ex => {
@@ -1258,7 +1283,7 @@ function iniciarTreino() {
 }
 
 async function concluirTreino() {
-  const hojeChave = obterDataLocalIso(); // YYYY-MM-DD no fuso local
+  const hojeChave = obterDataLocalIso();
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
 
   const itensEx = document.querySelectorAll('#lista-exercicios .item-exercicio');
@@ -1282,20 +1307,22 @@ async function concluirTreino() {
   });
 
   historicoTreinos[hojeChave] = {
-    letra: treinoAtual.letra,
-    grupos: treinoAtual.grupos,
+    letra: treinoAtual ? treinoAtual.letra : 'Avulso',
+    grupos: treinoAtual ? treinoAtual.grupos : ['Geral'],
     exercicios: exerciciosConcluidos
   };
 
   await db.collection("historicos").doc(usuarioLogado.uid).set(historicoTreinos);
 
-  indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
-  await db.collection("rotinas").doc(usuarioLogado.uid).set({
-    rotina: configuracaoTreino,
-    indiceAtual: indiceTreinoAtual
-  });
+  if (configuracaoTreino.length > 0) {
+    indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
+    await db.collection("rotinas").doc(usuarioLogado.uid).set({
+      rotina: configuracaoTreino,
+      indiceAtual: indiceTreinoAtual
+    });
+  }
 
-  alert('Treino do Dia concluído com sucesso! 👏');
+  alert('Treino concluído com sucesso! 👏');
   document.getElementById('area-execucao').classList.add('hidden');
   atualizarTelaInicial();
   renderizarCalendario();
@@ -1328,6 +1355,7 @@ async function trocarTreinoManual() {
 
 function renderizarCalendario() {
   const cal = document.getElementById('calendario');
+  if (!cal) return;
   cal.innerHTML = '';
 
   for (let i = 13; i >= 0; i--) {
@@ -1520,10 +1548,29 @@ function fecharModalConfig() {
   uidAlvoTrabalho = usuarioLogado ? usuarioLogado.uid : null;
 }
 
+// CORREÇÃO DOS VÍDEOS EMBEDDED PARA FUNCIONAREM NO ANDROID / WEBVIEW
 function verVideo(titulo, url) {
   document.getElementById('video-titulo').innerText = titulo;
+  
+  // Limpa e trata a URL do YouTube
+  let urlFormatada = url;
+  if (!urlFormatada.includes('?')) {
+    urlFormatada += '?enablejsapi=1&rel=0';
+  } else {
+    urlFormatada += '&enablejsapi=1&rel=0';
+  }
+
+  // Define o iframe com os parâmetros corretos de política de origem (necessários no Android)
   document.getElementById('video-container').innerHTML = `
-    <iframe width="100%" height="220" src="${url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    <iframe 
+      width="100%" 
+      height="220" 
+      src="${urlFormatada}" 
+      frameborder="0" 
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+      referrerpolicy="strict-origin-when-cross-origin"
+      allowfullscreen>
+    </iframe>
   `;
   document.getElementById('modal-video').classList.remove('hidden');
 }
