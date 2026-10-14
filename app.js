@@ -262,6 +262,9 @@ function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
 
 // REGISTRO DE EVENTOS
 document.addEventListener("DOMContentLoaded", () => {
+  const btnGoogle = document.getElementById('btn-login-google');
+if (btnGoogle) btnGoogle.addEventListener('click', autenticarComGoogle);
+
   const formLogin = document.getElementById('form-login');
   if (formLogin) formLogin.addEventListener('submit', autenticarUsuario);
 
