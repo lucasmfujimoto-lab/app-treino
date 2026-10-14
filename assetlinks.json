@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.treino_dia.twa",
+        "sha256_cert_fingerprints": ["DB:44:1B:EE:C7:34:BC:9E:CF:E5:6E:54:99:DF:6E:44:EC:3A:B8:3A:CA:EA:A6:6F:E1:66:7A:37:0C:AA:02:FD"]
+      }
+    }]
