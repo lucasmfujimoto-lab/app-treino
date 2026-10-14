@@ -925,7 +925,7 @@ async function renderizarRankingEquipe() {
   });
 
   container.innerHTML = html;
-}
+
 
 async function adicionarMembroEquipe() {
   if (!equipeAtiva) return;
