@@ -325,11 +325,22 @@ if (inputFotoFeed) {
     });
   }
 
-  const btnFecharConquistas = document.getElementById('btn-fechar-modal-conquistas');
-  if (btnFecharConquistas) btnFecharConquistas.addEventListener('click', () => document.getElementById('modal-conquistas').classList.add('hidden'));
+const btnFecharConquistas = document.getElementById('btn-fechar-modal-conquistas');
+if (btnFecharConquistas) {
+  btnFecharConquistas.addEventListener('click', () => {
+    document.getElementById('modal-conquistas').classList.add('hidden');
+    abrirModalPerfil(); // Reabre o perfil
+  });
+}
+
 
   const btnVoltarConquistas = document.getElementById('btn-voltar-conquistas');
-  if (btnVoltarConquistas) btnVoltarConquistas.addEventListener('click', () => document.getElementById('modal-conquistas').classList.add('hidden'));
+if (btnVoltarConquistas) {
+    btnVoltarConquistas.addEventListener('click', () => {
+    document.getElementById('modal-conquistas').classList.add('hidden');
+    abrirModalPerfil(); // Reabre o perfil
+  });
+}
 
   const btnPerfilEquipes = document.getElementById('btn-perfil-equipes');
   if (btnPerfilEquipes) {
@@ -1092,6 +1103,7 @@ async function abrirModalEquipes() {
 
 function fecharModalEquipes() {
   document.getElementById('modal-equipes').classList.add('hidden');
+  abrirModalPerfil(); // Reabre o perfil
 }
 
 function voltarParaListaEquipes() {
