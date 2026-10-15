@@ -418,7 +418,23 @@
     <span class="close" id="btn-fechar-modal-avulso">&times;</span>
     <h3>🏋️ Treino Avulso</h3>
     <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 12px;">Selecione os exercícios que você deseja realizar hoje:</p>
-    
+    <!-- Seção Outros Treinos -->
+<div class="outros-treinos-container">
+  <h3>Outros Treinos</h3>
+  
+  <!-- Lista onde os novos campos serão inseridos -->
+  <div id="lista-outros-treinos">
+    <div class="campo-treino-item">
+      <input type="text" class="input-outro-treino" placeholder="Digite o treino avulso..." />
+    </div>
+  </div>
+
+  <!-- Botão de Adicionar (+) -->
+  <button type="button" id="btn-add-outro-treino" onclick="adicionarCampoTreino()">
+    <span>+</span> Adicionar treino
+  </button>
+</div>
+
     <div id="container-selecao-avulso" style="text-align: left;"></div>
 
     <button id="btn-iniciar-avulso-confirmar" style="width: 100%; margin-top: 15px;">INICIAR TREINO SELECIONADO</button>
