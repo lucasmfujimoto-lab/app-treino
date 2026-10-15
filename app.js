@@ -1322,6 +1322,11 @@ async function adicionarMembroEquipe() {
   if (!codigo) return alert("Digite o código do aluno.");
 
   try {
+    // Valida o limite de 15 membros na equipe atual
+    if (equipeAtiva.membrosUids.length >= 15) {
+      return alert("Esta equipe atingiu o limite máximo de 15 membros!");
+    }
+
     const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
     if (snap.empty) {
       return alert("Nenhum aluno encontrado com este código.");
@@ -1346,6 +1351,7 @@ async function adicionarMembroEquipe() {
     alert("Erro ao adicionar membro: " + e.message);
   }
 }
+
 
 async function sairDaEquipeAtiva() {
   if (!equipeAtiva) return;
