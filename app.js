@@ -2111,3 +2111,19 @@ async function carregarFeedAmigos() {
     containerFeed.innerHTML = `<p style="color: #ef4444; font-size: 0.85rem; text-align: center;">Erro ao carregar fotos do feed.</p>`;
   }
 }
+// Função chamada automaticamente quando escolhe/tira a foto no Feed da Equipe
+function atualizarTextoFotoFeed(input) {
+  const textoStatus = document.getElementById('texto-status-foto-feed');
+  if (input.files && input.files.length > 0) {
+    if (textoStatus) {
+      textoStatus.innerText = "Foto capturada ✓";
+      textoStatus.style.color = "#00e676";
+    }
+  } else {
+    if (textoStatus) {
+      textoStatus.innerText = "Nenhuma foto selecionada";
+      textoStatus.style.color = "#a8a8b3";
+    }
+  }
+}
+
