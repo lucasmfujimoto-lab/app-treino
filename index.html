@@ -243,15 +243,15 @@
           
           <div style="background: #121214; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #29292e;">
            <!-- O atributo capture="environment" força a abertura da câmara traseira -->
-<div class="input-foto-container">
-  <!-- Input com a função onchange direta -->
+<div class="input-foto-container" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+  <!-- Input nativo escondido -->
   <input 
     type="file" 
     id="input-foto-feed" 
     accept="image/*" 
     capture="environment" 
     style="display: none;"
-    onchange="atualizarTextoFotoFeed(this)"
+    onchange="previsualizarFotoFeed(this)"
   >
 
   <!-- Botão customizado que ativa o input -->
@@ -259,9 +259,13 @@
     📸 Tirar uma foto
   </label>
 
-  <!-- Texto dinâmico (ID mantido como nome-arquivo-foto) -->
-  <span id="nome-arquivo-foto" style="font-size: 0.85rem; color: #a8a8b3; margin-left: 8px;">Nenhuma foto selecionada</span>
+  <!-- Miniatura da foto (clicável para ampliar) -->
+  <img id="miniatura-foto-feed" src="" alt="Miniatura" class="hidden" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #00e676;" onclick="ampliarFotoMiniatura(this.src)" title="Clique para ampliar">
+
+  <!-- Texto dinâmico -->
+  <span id="nome-arquivo-foto">Nenhuma foto selecionada</span>
 </div>
+
 
 
             <button id="btn-publicar-foto" class="btn-secundario" style="width: 100%; margin-top: 8px; background: #00e676; color: #000;">📸 Publicar Foto no Feed</button>
