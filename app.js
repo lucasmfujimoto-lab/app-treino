@@ -462,80 +462,83 @@ function fecharModalTreinoAvulso() {
 }
 
 function montarEIniciarTreinoAvulso() {
-  const selecionados = document.querySelectorAll('.cb-ex-avulso:checked');
+  // 1. Capturar os checkboxes marcados
+  const selecionados = document.querySelectorAll('#modalTreinoAvulso input[type="checkbox"]:checked');
   
-  if (selecionados.length === 0) {
-    return alert("Selecione pelo menos um exercício para o treino avulso.");
+  // 2. Capturar os inputs manuais da seção Outros Treinos
+  const inputsOutros = document.querySelectorAll('.input-outro-treino');
+  
+  // Validar se nada foi selecionado nem preenchido
+  let temPreenchido = selecionados.length > 0;
+  inputsOutros.forEach(input => {
+    if (input.value.trim() !== '') temPreenchido = true;
+  });
+
+  if (!temPreenchido) {
+    return alert("Selecione pelo menos um exercício ou digite em Outros Treinos!");
   }
 
   ehTreinoAvulsoAtivo = true;
-  const areaExecucao = document.getElementById('area-execucao');
-  const listaContainer = document.getElementById('lista-exercicios');
+  const areaExecucao = document.getElementById('areaExecucaoTreino'); // Ajuste o ID se necessário
+  const listaContainer = document.getElementById('listaExerciciosExecucao'); // Ajuste o ID se necessário
   listaContainer.innerHTML = '';
 
   const exerciciosPorGrupo = {};
+
+  // Agrupar os exercícios marcados via Checkbox
   selecionados.forEach(cb => {
-    const grupo = cb.getAttribute('data-grupo');
+    const grupo = cb.getAttribute('data-grupo') || 'Geral';
     const nomeEx = cb.value;
 
     if (!exerciciosPorGrupo[grupo]) exerciciosPorGrupo[grupo] = [];
     exerciciosPorGrupo[grupo].push(nomeEx);
   });
 
+  // Agrupar os exercícios manuais na categoria "Outros Treinos"
+  inputsOutros.forEach(input => {
+    const nomeEx = input.value.trim();
+    if (nomeEx !== '') {
+      const grupo = 'Outros Treinos';
+      if (!exerciciosPorGrupo[grupo]) exerciciosPorGrupo[grupo] = [];
+      exerciciosPorGrupo[grupo].push(nomeEx);
+    }
+  });
+
+  // Renderizar os grupos de exercícios na tela de execução
   Object.keys(exerciciosPorGrupo).forEach(grupo => {
     const tituloGrupo = document.createElement('h3');
-    tituloGrupo.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
-    tituloGrupo.innerText = `● ${grupo} (Avulso)`;
+    tituloGrupo.style.cssText = "color: #00e676; margin-top: 15px;";
+    tituloGrupo.innerText = `• ${grupo} (Avulso)`;
     listaContainer.appendChild(tituloGrupo);
 
     exerciciosPorGrupo[grupo].forEach(nomeEx => {
-      const exObj = (catalogoExercicios[grupo] || []).find(e => e.nome === nomeEx) || { nome: nomeEx, video: "" };
+      // Procura o objeto do catálogo ou cria um padrão para o treino manual
+      const exObj = (catalogoExercicios[grupo] && catalogoExercicios[grupo].find(e => e.nome === nomeEx)) || {
+        id: Date.now() + Math.random(),
+        nome: nomeEx,
+        videoUrl: ''
+      };
 
       const cardEx = document.createElement('div');
       cardEx.className = 'item-exercicio';
-      
+
       const topo = document.createElement('div');
       topo.className = 'exercicio-topo';
-      
+
       const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${exObj.nome}" checked> <strong>${exObj.nome}</strong>`;
-      
-      const btnVid = document.createElement('button');
-      btnVid.className = 'btn-secundario';
-      btnVid.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
-      btnVid.innerText = '▶ Vídeo';
-      btnVid.addEventListener('click', () => verVideo(exObj.nome, exObj.video));
+      label.innerHTML = `<input type="checkbox"> ${exObj.nome}`;
 
       topo.appendChild(label);
-      topo.appendChild(btnVid);
-
-      const inputs = document.createElement('div');
-      inputs.className = 'inputs-treino';
-      inputs.innerHTML = `
-        <div class="input-group">
-          <label>Séries</label>
-          <input type="number" value="3" class="input-series">
-        </div>
-        <div class="input-group">
-          <label>Reps</label>
-          <input type="text" value="8-10" class="input-reps">
-        </div>
-        <div class="input-group" style="flex: 1.2; min-width: 100px;">
-          <label>Carga (kg)</label>
-          <input type="number" placeholder="Opcional" class="input-carga">
-        </div>
-      `;
-
       cardEx.appendChild(topo);
-      cardEx.appendChild(inputs);
       listaContainer.appendChild(cardEx);
     });
   });
 
-  fecharModalTreinoAvulso();
-  areaExecucao.classList.remove('hidden');
-  areaExecucao.scrollIntoView({ behavior: 'smooth' });
+  // Ocultar modal e exibir área de execução
+  // fecharModalTreinoAvulso();
+  // areaExecucao.style.display = 'block';
 }
+
 
 // OBSERVADOR DE AUTENTICAÇÃO
 auth.onAuthStateChanged(async (user) => {
