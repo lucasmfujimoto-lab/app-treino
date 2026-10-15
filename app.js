@@ -1965,6 +1965,23 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
   if (!codigoDigitado) return alert("Digite o código do seu amigo.");
 
   try {
+    // 1. Valida o limite de 25 amigos antes de enviar
+    const amigosSnapAtual = await db.collection("amizades")
+      .where("usuarios", "array-contains", userAtual.uid)
+      .get();
+
+    const mapaAmigosCheck = new Map();
+    amigosSnapAtual.docs.forEach(doc => {
+      const amizade = doc.data();
+      const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
+      if (amigoId) mapaAmigosCheck.set(amigoId, true);
+    });
+
+    if (mapaAmigosCheck.size >= 25) {
+      return alert("Você atingiu o limite máximo de 25 amigos!");
+    }
+
+    // 2. Procura o usuário pelo código
     const snap = await db.collection("usuarios").where("codigo", "==", codigoDigitado).get();
     if (snap.empty) return alert("Usuário não encontrado com esse código.");
 
@@ -1976,30 +1993,7 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
       return alert("Você não pode adicionar a si mesmo.");
     }
 
-    const amizadeExistente = await db.collection("amizades")
-      .where("usuarios", "array-contains", userAtual.uid)
-      .get();
-
-// Conta quantos amigos únicos você já tem
-const mapaAmigosCheck = new Map();
-amigosSnapAtual.docs.forEach(doc => {
-  const amizade = doc.data();
-  const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
-  if (amigoId) mapaAmigosCheck.set(amigoId, true);
-});
-
-if (mapaAmigosCheck.size >= 25) {
-  return alert("Você atingiu o limite máximo de 25 amigos!");
-}
-
-
-    let jaEAmigo = false;
-    amizadeExistente.forEach(doc => {
-      const usuarios = doc.data().usuarios || [];
-      if (usuarios.includes(amigoId)) {
-        jaEAmigo = true;
-      }
-    });
+    let jaEAmigo = mapaAmigosCheck.has(amigoId);
 
     if (jaEAmigo) {
       return alert(`Você e ${amigoData.nomeExibicao || 'essa pessoa'} já são amigos!`);
@@ -2040,6 +2034,7 @@ if (mapaAmigosCheck.size >= 25) {
     alert("Erro ao enviar convite: " + err.message);
   }
 });
+
 
 // Carregar Lista de Amigos e Convites (Corrigido sem duplicados)
 async function carregarAmigosEConvites() {
