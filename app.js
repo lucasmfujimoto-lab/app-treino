@@ -1840,7 +1840,10 @@ async function aceitarAmigo(conviteId, remetenteId) {
   }
 }
 
-// FEED DOS AMIGOS (CHECK-IN)
+// -------------------------------------------------------------
+// FEED DOS AMIGOS (CHECK-IN E REGRAS DE ROLAGEM/LIMITE)
+// -------------------------------------------------------------
+
 const inputFotoCheckin = document.getElementById('input-foto-checkin');
 const nomeFotoCheckin = document.getElementById('nome-foto-checkin');
 
@@ -1853,7 +1856,7 @@ if (inputFotoCheckin && nomeFotoCheckin) {
   });
 }
 
-// Postar foto no feed de check-in dos amigos
+// Postar foto no feed de check-in dos amigos (Máximo 20 fotos e 1 por dia)
 document.getElementById('btn-postar-checkin')?.addEventListener('click', async () => {
   if (!inputFotoCheckin || !inputFotoCheckin.files.length) {
     return alert("Tire uma foto antes de postar.");
@@ -1862,8 +1865,10 @@ document.getElementById('btn-postar-checkin')?.addEventListener('click', async (
   const file = inputFotoCheckin.files[0];
   const userAtual = auth.currentUser;
   const hoje = obterDataLocalIso();
+  const btnPostar = document.getElementById('btn-postar-checkin');
 
   try {
+    // 1. Valida se já postou hoje
     const checkHoje = await db.collection("feed_amigos")
       .where("usuarioId", "==", userAtual.uid)
       .where("dataData", "==", hoje)
@@ -1873,6 +1878,12 @@ document.getElementById('btn-postar-checkin')?.addEventListener('click', async (
       return alert("Você já realizou o seu check-in diário de hoje!");
     }
 
+    if (btnPostar) {
+      btnPostar.disabled = true;
+      btnPostar.textContent = "⏳ Enviando foto...";
+    }
+
+    // 2. Comprime a foto
     comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
       const userDoc = await db.collection("usuarios").doc(userAtual.uid).get();
       const userData = userDoc.data();
@@ -1881,27 +1892,51 @@ document.getElementById('btn-postar-checkin')?.addEventListener('click', async (
       const dataFormatada = agora.toLocaleDateString('pt-BR');
       const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+      // 3. Salva a foto no Firestore
       await db.collection("feed_amigos").add({
         usuarioId: userAtual.uid,
-        nomeUsuario: userData?.nomeExibicao || 'Usuário',
+        nomeUsuario: userData?.nomeExibicao || (userData?.email ? userData.email.split('@')[0] : 'Usuário'),
         fotoUrl: base64Comprimido,
         dataData: hoje,
         dataExibicao: `${dataFormatada} às ${horaFormatada}`,
+        timestamp: agora.getTime(),
         criadoEm: firebase.firestore.FieldValue.serverTimestamp()
       });
+
+      // 4. Limpeza automática: Mantém apenas os últimos 20 posts no feed geral
+      const todosPostsSnap = await db.collection("feed_amigos")
+        .orderBy("timestamp", "asc")
+        .get();
+
+      if (todosPostsSnap.docs.length > 20) {
+        const excesso = todosPostsSnap.docs.length - 20;
+        for (let i = 0; i < excesso; i++) {
+          await db.collection("feed_amigos").doc(todosPostsSnap.docs[i].id).delete();
+        }
+      }
 
       alert("Check-in postado com sucesso!");
       inputFotoCheckin.value = "";
       if (nomeFotoCheckin) {
-        nomeFotoCheckin.textContent = "Nenhuma foto capturada";
+        nomeFotoCheckin.textContent = "Nenhuma foto";
         nomeFotoCheckin.style.color = "#a1a1aa";
       }
+
+      if (btnPostar) {
+        btnPostar.disabled = false;
+        btnPostar.textContent = "Postar Check-in no Feed";
+      }
+
       carregarFeedAmigos();
     });
 
   } catch (err) {
     console.error("Erro ao postar check-in:", err);
     alert("Erro ao postar check-in: " + err.message);
+    if (btnPostar) {
+      btnPostar.disabled = false;
+      btnPostar.textContent = "Postar Check-in no Feed";
+    }
   }
 });
 
@@ -1910,6 +1945,29 @@ async function carregarFeedAmigos() {
   const userAtual = auth.currentUser;
   if (!userAtual) return;
 
+  const areaPostar = document.getElementById('area-postar-checkin');
+  const avisoCheckin = document.getElementById('aviso-checkin-realizado');
+  const hoje = obterDataLocalIso();
+
+  // Verifica se o usuário já fez check-in hoje para alternar o aviso
+  try {
+    const checkHoje = await db.collection("feed_amigos")
+      .where("usuarioId", "==", userAtual.uid)
+      .where("dataData", "==", hoje)
+      .get();
+
+    if (!checkHoje.empty) {
+      if (areaPostar) areaPostar.classList.add('hidden');
+      if (avisoCheckin) avisoCheckin.classList.remove('hidden');
+    } else {
+      if (areaPostar) areaPostar.classList.remove('hidden');
+      if (avisoCheckin) avisoCheckin.classList.add('hidden');
+    }
+  } catch (e) {
+    console.error("Erro ao verificar check-in de hoje:", e);
+  }
+
+  // Busca lista de IDs dos amigos
   const amizadesSnap = await db.collection("amizades")
     .where("usuarios", "array-contains", userAtual.uid)
     .get();
@@ -1921,8 +1979,9 @@ async function carregarFeedAmigos() {
     if (amigoId) idsPermitidos.push(amigoId);
   });
 
+  // Busca os últimos 20 posts do banco
   const feedSnap = await db.collection("feed_amigos")
-    .orderBy("criadoEm", "desc")
+    .orderBy("timestamp", "desc")
     .limit(20)
     .get();
 
@@ -1950,6 +2009,7 @@ async function carregarFeedAmigos() {
   });
 
   if (postsEncontrados === 0) {
-    containerFeed.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem; text-align: center;">Nenhum check-in postado recentemente pelos seus amigos.</p>`;
+    containerFeed.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem; text-align: center; margin-top: 20px;">Nenhum check-in postado recentemente pelos seus amigos.</p>`;
   }
 }
+
