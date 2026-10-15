@@ -323,15 +323,26 @@
 
 
     <!-- Área de Postar Check-in (Fica fixa no topo) -->
-    <div id="area-postar-checkin" class="box-postar-checkin" style="flex-shrink: 0; margin-bottom: 12px;">
-      <p style="font-size: 0.85rem; color: #a1a1aa; margin-bottom: 8px;">Poste o seu check-in diário:</p>
-      
-      <input type="file" id="input-foto-checkin" accept="image/*" capture="environment" style="display: none;">
-      
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
-        <label for="input-foto-checkin" class="btn-secundario" style="cursor: pointer; padding: 6px 12px; font-size: 0.85rem;">📸 Abrir Câmera</label>
-        <span id="nome-foto-checkin" style="font-size: 0.8rem; color: #a1a1aa;">Nenhuma foto</span>
-      </div>
+<!-- Área de Postar Check-in -->
+<div id="area-postar-checkin" class="box-postar">
+  <p style="font-size: 0.85rem; color: #a1a1aa; margin-bottom: 10px;">Compartilhe o seu treino de hoje com os amigos:</p>
+  
+  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+    <!-- Input nativo com a função onchange para a miniatura -->
+    <input type="file" id="input-foto-checkin" accept="image/*" capture="environment" style="display: none;" onchange="previsualizarFotoCheckin(this)">
+    
+    <label for="input-foto-checkin" class="btn-secundario" style="cursor: pointer; padding: 10px 14px; margin: 0;">
+      📸 Tirar foto
+    </label>
+
+    <!-- Miniatura da foto (clicável para ampliar) -->
+    <img id="miniatura-foto-checkin" src="" alt="Miniatura" class="hidden" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #00e676;" onclick="ampliarFotoMiniatura(this.src)" title="Clique para ampliar">
+
+    <span id="nome-foto-checkin" style="font-size: 0.85rem; color: #a1a1aa;">Nenhuma foto</span>
+  </div>
+
+  <button id="btn-postar-checkin" class="btn-primario" style="width: 100%;">Postar Check-in no Feed</button>
+</div>
 
       <button id="btn-postar-checkin" class="btn-primario" style="width: 100%; font-size: 0.9rem; padding: 8px;">Postar Check-in no Feed</button>
     </div>
