@@ -1633,6 +1633,7 @@ function abrirConfigRotina() {
 function gerarCamposConfig() {
   const inputDiv = document.getElementById('input-divisao-letras').value.toUpperCase().trim();
   const container = document.getElementById('container-config-dias');
+  if (!container) return;
   container.innerHTML = '';
 
   if (!inputDiv) return;
@@ -1642,12 +1643,25 @@ function gerarCamposConfig() {
   letras.forEach((letra) => {
     const treinoSalvo = configuracaoTreino.find(t => t.letra === letra);
     const gruposSalvos = treinoSalvo ? treinoSalvo.grupos : [];
+    const exerciciosFixosSalvos = treinoSalvo ? (treinoSalvo.exerciciosFixos || []) : [];
+    
+    // Filtra o que são treinos avulsos manuais salvos nesta letra (itens que não estão no catálogo padrão)
+    const exerciciosManuaisSalvos = exerciciosFixosSalvos.filter(exNome => {
+      let pertenceCatalogo = false;
+      Object.keys(catalogoExercicios).forEach(g => {
+        if (g === "Alongamento") return;
+        if (catalogoExercicios[g].some(item => item.nome === exNome)) {
+          pertenceCatalogo = true;
+        }
+      });
+      return !pertenceCatalogo;
+    });
 
     const bloco = document.createElement('div');
-    bloco.style.cssText = "margin-bottom: 15px; border-bottom: 1px solid #29292e; padding-bottom: 10px;";
+    bloco.style.cssText = "margin-bottom: 20px; border-bottom: 1px solid #29292e; padding-bottom: 15px;";
     
     let html = `<h4 style='color: #00e676; margin-bottom: 8px; text-align: left;'>Treino ${letra}</h4>`;
-    html += `<p style='font-size: 0.8rem; color: #a8a8b3; text-align: left;'>Selecione os músculos e abra para escolher os exercícios fixos:</p>`;
+    html += `<p style='font-size: 0.8rem; color: #a8a8b3; text-align: left;'>Selecione os músculos e exercícios fixos:</p>`;
     html += `<div class='grupo-checkboxes' data-letra='${letra}'>`;
     
     todosGrupos.forEach(grupo => {
@@ -1660,6 +1674,33 @@ function gerarCamposConfig() {
       `;
     });
     html += `</div>`;
+
+    // Seção de Treinos Avulsos / Manuais para esta letra específica
+    html += `
+      <div style="margin-top: 15px; padding: 10px; background-color: #121214; border-radius: 6px; border: 1px solid #29292e;">
+        <p style="font-size: 0.8rem; color: #00e676; margin-bottom: 8px; font-weight: bold;">+ Adicionar Treino Avulso / Manual no Treino ${letra}:</p>
+        <div id="lista-outros-config-${letra}" class="container-outros-config" data-letra="${letra}">
+    `;
+
+    if (exerciciosManuaisSalvos.length > 0) {
+      exerciciosManuaisSalvos.forEach(nomeManual => {
+        html += `
+          <div class="campo-treino-item-config" style="display: flex; align-items: center; margin-bottom: 8px;">
+            <input type="text" class="input-outro-treino-config" value="${nomeManual}" placeholder="Ex: Corrida, Abdominal livre..." style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #333; background-color: #1e1e24; color: #fff; font-size: 13px; box-sizing: border-box;" />
+            <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: #ff5252; margin-left: 8px; cursor: pointer; font-size: 16px;">✕</button>
+          </div>
+        `;
+      });
+    }
+
+    html += `
+        </div>
+        <button type="button" onclick="adicionarCampoTreinoConfig('${letra}')" style="background-color: #29292e; color: #00e676; border: 1px solid #00e676; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer; margin-top: 5px;">
+          + Adicionar linha avulsa
+        </button>
+      </div>
+    `;
+
     bloco.innerHTML = html;
     container.appendChild(bloco);
 
@@ -1673,6 +1714,35 @@ function gerarCamposConfig() {
 
   document.getElementById('btn-salvar-rotina').classList.remove('hidden');
 }
+
+// Função auxiliar para criar nova linha de treino avulso na configuração
+function adicionarCampoTreinoConfig(letra) {
+  const container = document.getElementById(`lista-outros-config-${letra}`);
+  if (!container) return;
+
+  const divItem = document.createElement('div');
+  divItem.className = 'campo-treino-item-config';
+  divItem.style.cssText = 'display: flex; align-items: center; margin-bottom: 8px;';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'input-outro-treino-config';
+  input.placeholder = 'Ex: Corrida, Abdominal livre...';
+  input.style.cssText = 'flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #333; background-color: #1e1e24; color: #fff; font-size: 13px; box-sizing: border-box;';
+
+  const btnRemover = document.createElement('button');
+  btnRemover.type = 'button';
+  btnRemover.innerText = '✕';
+  btnRemover.style.cssText = 'background: none; border: none; color: #ff5252; margin-left: 8px; cursor: pointer; font-size: 16px; padding: 0 4px;';
+  btnRemover.onclick = function () {
+    container.removeChild(divItem);
+  };
+
+  divItem.appendChild(input);
+  divItem.appendChild(btnRemover);
+  container.appendChild(divItem);
+}
+
 
 function toggleExerciciosMontagem(cb, letra, grupo) {
   const containerExs = document.getElementById(`exs-${letra}-${grupo}`);
