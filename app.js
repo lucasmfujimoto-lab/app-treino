@@ -2153,6 +2153,12 @@ async function carregarAmigosEConvites() {
       `;
       listaAmigos.appendChild(div);
     });
+const totalAmigosAtuais = listaProcessada.length;
+const textoContadorAmigos = document.getElementById('contador-amigos-texto');
+if (textoContadorAmigos) {
+  const formatado = String(totalAmigosAtuais).padStart(2, '0');
+  textoContadorAmigos.innerText = `Você possui ${formatado}/25 amigos`;
+}
 
   } catch (err) {
     console.error("Erro ao carregar amigos e convites:", err);
