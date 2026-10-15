@@ -2114,7 +2114,7 @@ async function carregarFeedAmigos() {
 // Função chamada automaticamente quando escolhe/tira a foto no Feed da Equipe
 // Função chamada automaticamente quando escolhe/tira a foto no Feed da Equipe
 function atualizarTextoFotoFeed(input) {
-  const textoStatus = document.getElementById('texto-status-foto-feed');
+  const textoStatus = document.getElementById('nome-arquivo-foto');
   if (input.files && input.files.length > 0) {
     if (textoStatus) {
       textoStatus.innerText = "Foto capturada ✓";
@@ -2127,5 +2127,6 @@ function atualizarTextoFotoFeed(input) {
     }
   }
 }
+
 
 
