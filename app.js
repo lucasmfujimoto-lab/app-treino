@@ -1793,22 +1793,21 @@ function toggleExerciciosMontagem(cb, letra, grupo) {
     containerExs.classList.remove('hidden');
     containerExs.innerHTML = `<strong style='font-size: 0.75rem; color: #00e676;'>Exercícios de ${grupo}:</strong>`;
     
-    // Dentro de gerarCamposConfig(), na parte do catálogo:
-catalogoExercicios[grupo].forEach(ex => {
-  // Só marca se o exercício estiver explicitamente salvo nos fixos do utilizador
-  const marcado = exerciciosFixosSalvos.includes(ex.nome) ? 'checked' : '';
-  containerExs.innerHTML += `
-    <label style='font-weight: normal;'>
-      <input type='checkbox' class='cb-ex-fixo' data-letra='${letra}' data-grupo='${grupo}' value='${ex.nome}' ${marcado}> ${ex.nome}
-    </label>
-  `;
-});
-
+    catalogoExercicios[grupo].forEach(ex => {
+      // Garante que só marca se estiver explicitamente salvo, vindo limpo para contas novas
+      const marcado = exerciciosFixosSalvos.includes(ex.nome) ? 'checked' : '';
+      containerExs.innerHTML += `
+        <label style='font-weight: normal;'>
+          <input type='checkbox' class='cb-ex-fixo' data-letra='${letra}' data-grupo='${grupo}' value='${ex.nome}' ${marcado}> ${ex.nome}
+        </label>
+      `;
+    });
   } else {
     containerExs.classList.add('hidden');
     containerExs.innerHTML = '';
   }
 }
+
 
 async function salvarNovaConfig() {
   const blocos = document.querySelectorAll('.grupo-checkboxes');
