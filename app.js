@@ -2029,3 +2029,31 @@ async function carregarFeedAmigos() {
   }
 }
 
+function adicionarCampoTreino() {
+  const container = document.getElementById('lista-outros-treinos');
+
+  // Criar div do item
+  const divItem = document.createElement('div');
+  divItem.className = 'campo-treino-item';
+
+  // Criar input vazio
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'input-outro-treino';
+  input.placeholder = 'Digite o treino avulso...';
+
+  // Criar botão para remover o campo caso o usuário queira
+  const btnRemover = document.createElement('button');
+  btnRemover.type = 'button';
+  btnRemover.innerText = '✕';
+  btnRemover.style.cssText = 'background:none; border:none; color:#ff5252; margin-left:8px; cursor:pointer; font-size:16px;';
+  btnRemover.onclick = function () {
+    container.removeChild(divItem);
+  };
+
+  divItem.appendChild(input);
+  divItem.appendChild(btnRemover);
+  container.appendChild(divItem);
+}
+
+
