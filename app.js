@@ -626,11 +626,12 @@ auth.onAuthStateChanged(async (user) => {
         perfilUsuario = docUser.data();
       } else {
         perfilUsuario = { 
-          email: user.email, 
-          nomeExibicao: user.displayName || user.email.split('@')[0], 
-          tipo: "aluno", 
-          codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() 
-        };
+  email: user.email, 
+  nomeExibicao: user.displayName || user.email.split('@')[0], 
+  tipo: "aluno", 
+  codigo: gerarCodigoUsuario() 
+};
+
         await db.collection("usuarios").doc(user.uid).set(perfilUsuario);
       }
     } catch (e) {
