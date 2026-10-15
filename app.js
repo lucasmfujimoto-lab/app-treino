@@ -428,12 +428,15 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnFecharConf) btnFecharConf.addEventListener('click', fecharModalConfig);
 });
 
+// ABRIR MODAL DE SELEÇÃO DO TREINO AVULSO
 function abrirModalTreinoAvulso() {
   const container = document.getElementById('container-selecao-avulso');
   if (!container) return;
+  
+  // Limpa o modal para evitar duplicações
   container.innerHTML = '';
 
-  // Renderizar apenas os grupos musculares padrões
+  // 1. Renderizar os grupos musculares padrões
   todosGrupos.forEach(grupo => {
     const bloco = document.createElement('div');
     bloco.style.cssText = "margin-bottom: 15px; border-bottom: 1px solid #29292e; padding-bottom: 10px;";
@@ -453,13 +456,7 @@ function abrirModalTreinoAvulso() {
     container.appendChild(bloco);
   });
 
-  // Exibir o modal (o HTML original já cuidará de mostrar 'Outros Treinos' uma única vez no final)
-  const modal = document.getElementById('modal-treino-avulso') || document.getElementById('modalTreinoAvulso');
-  if (modal) modal.classList.remove('hidden');
-}
-
-
-  // 2. Renderizar a seção "Outros Treinos" SEMPRE NO FINAL
+  // 2. Renderizar a seção "Outros Treinos" UMA ÚNICA VEZ NO FINAL
   const blocoOutros = document.createElement('div');
   blocoOutros.style.cssText = "margin-top: 20px; margin-bottom: 15px; padding: 15px; background-color: #1e1e24; border-radius: 8px;";
   blocoOutros.innerHTML = `
@@ -475,9 +472,10 @@ function abrirModalTreinoAvulso() {
   `;
   container.appendChild(blocoOutros);
 
+  // 3. Exibir o modal
   const modal = document.getElementById('modal-treino-avulso') || document.getElementById('modalTreinoAvulso');
   if (modal) modal.classList.remove('hidden');
-
+}
 
 function fecharModalTreinoAvulso() {
   const modal = document.getElementById('modal-treino-avulso') || document.getElementById('modalTreinoAvulso');
