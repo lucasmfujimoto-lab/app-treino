@@ -434,6 +434,7 @@ function abrirModalTreinoAvulso() {
   if (!container) return;
   container.innerHTML = '';
 
+  // 1. Renderizar grupos musculares padrões
   todosGrupos.forEach(grupo => {
     const bloco = document.createElement('div');
     bloco.style.cssText = "margin-bottom: 15px; border-bottom: 1px solid #29292e; padding-bottom: 10px;";
@@ -453,37 +454,83 @@ function abrirModalTreinoAvulso() {
     container.appendChild(bloco);
   });
 
-  document.getElementById('modal-treino-avulso').classList.remove('hidden');
+  // 2. Renderizar a seção "Outros Treinos" SEMPRE NO FINAL
+  const blocoOutros = document.createElement('div');
+  blocoOutros.style.cssText = "margin-top: 20px; margin-bottom: 15px; padding: 15px; background-color: #1e1e24; border-radius: 8px;";
+  blocoOutros.innerHTML = `
+    <h3 style="color: #ffffff; font-size: 1rem; margin-bottom: 12px; text-align: center;">Outros Treinos</h3>
+    <div id="lista-outros-treinos">
+      <div class="campo-treino-item" style="margin-bottom: 10px;">
+        <input type="text" class="input-outro-treino" placeholder="Digite o treino avulso..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #333; background-color: #121214; color: #fff; font-size: 14px; box-sizing: border-box;" />
+      </div>
+    </div>
+    <button type="button" id="btn-add-outro-treino" onclick="adicionarCampoTreino()" style="display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #00e676; color: #000; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; margin: 10px auto 0 auto; width: 100%;">
+      <span>+</span> Adicionar treino
+    </button>
+  `;
+  container.appendChild(blocoOutros);
+
+  const modal = document.getElementById('modal-treino-avulso') || document.getElementById('modalTreinoAvulso');
+  if (modal) modal.classList.remove('hidden');
 }
 
 function fecharModalTreinoAvulso() {
-  const modal = document.getElementById('modal-treino-avulso');
+  const modal = document.getElementById('modal-treino-avulso') || document.getElementById('modalTreinoAvulso');
   if (modal) modal.classList.add('hidden');
 }
 
+function adicionarCampoTreino() {
+  const container = document.getElementById('lista-outros-treinos');
+  if (!container) return;
+
+  const divItem = document.createElement('div');
+  divItem.className = 'campo-treino-item';
+  divItem.style.cssText = 'display: flex; align-items: center; margin-bottom: 10px;';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'input-outro-treino';
+  input.placeholder = 'Digite o treino avulso...';
+  input.style.cssText = 'flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #333; background-color: #121214; color: #fff; font-size: 14px; box-sizing: border-box;';
+
+  const btnRemover = document.createElement('button');
+  btnRemover.type = 'button';
+  btnRemover.innerText = '✕';
+  btnRemover.style.cssText = 'background: none; border: none; color: #ff5252; margin-left: 8px; cursor: pointer; font-size: 18px; padding: 0 8px;';
+  btnRemover.onclick = function () {
+    container.removeChild(divItem);
+  };
+
+  divItem.appendChild(input);
+  divItem.appendChild(btnRemover);
+  container.appendChild(divItem);
+}
+
 function montarEIniciarTreinoAvulso() {
-  // 1. Procurar todos os checkboxes marcados na página inteira
+  // 1. Procurar checkboxes marcados
   const selecionados = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
   
-  // 2. Procurar todos os inputs de treinos manuais preenchidos
-  const inputsOutros = Array.from(document.querySelectorAll('.input-outro-treino, #lista-outros-treinos input'));
+  // 2. Procurar treinos manuais preenchidos
+  const inputsOutros = Array.from(document.querySelectorAll('.input-outro-treino'));
   const treinosManuais = inputsOutros
     .map(input => input.value.trim())
     .filter(texto => texto !== '');
 
-  // 3. Validar se existe pelo menos um checkbox selecionado OU um treino manual digitado
+  // Validar se pelo menos 1 item foi selecionado ou preenchido
   if (selecionados.length === 0 && treinosManuais.length === 0) {
     return alert("Selecione pelo menos um exercício ou digite em Outros Treinos!");
   }
 
   ehTreinoAvulsoAtivo = true;
-  const areaExecucao = document.getElementById('areaExecucaoTreino'); // Ajuste para o ID da sua área de treino
-  const listaContainer = document.getElementById('listaExerciciosExecucao'); // Ajuste para o ID do seu container
+
+  const areaExecucao = document.getElementById('area-execucao') || document.getElementById('areaExecucaoTreino');
+  const listaContainer = document.getElementById('lista-exercicios') || document.getElementById('listaExerciciosExecucao');
+  
   if (listaContainer) listaContainer.innerHTML = '';
 
   const exerciciosPorGrupo = {};
 
-  // Agrupar checkboxes marcados por grupo
+  // Agrupar exercícios marcados por Grupo
   selecionados.forEach(cb => {
     const grupo = cb.getAttribute('data-grupo') || 'Geral';
     const nomeEx = cb.value;
@@ -492,7 +539,7 @@ function montarEIniciarTreinoAvulso() {
     exerciciosPorGrupo[grupo].push(nomeEx);
   });
 
-  // Agrupar treinos manuais na categoria "Outros Treinos"
+  // Agrupar treinos manuais no grupo "Outros Treinos"
   if (treinosManuais.length > 0) {
     exerciciosPorGrupo['Outros Treinos'] = treinosManuais;
   }
@@ -500,8 +547,8 @@ function montarEIniciarTreinoAvulso() {
   // Renderizar na tela de execução
   Object.keys(exerciciosPorGrupo).forEach(grupo => {
     const tituloGrupo = document.createElement('h3');
-    tituloGrupo.style.cssText = "color: #00e676; margin-top: 15px;";
-    tituloGrupo.innerText = `• ${grupo} (Avulso)`;
+    tituloGrupo.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
+    tituloGrupo.innerText = `● ${grupo} (Avulso)`;
     if (listaContainer) listaContainer.appendChild(tituloGrupo);
 
     exerciciosPorGrupo[grupo].forEach(nomeEx => {
@@ -512,21 +559,37 @@ function montarEIniciarTreinoAvulso() {
       topo.className = 'exercicio-topo';
 
       const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox"> ${nomeEx}`;
+      label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${nomeEx}" checked> <strong>${nomeEx}</strong>`;
 
       topo.appendChild(label);
+
+      const inputs = document.createElement('div');
+      inputs.className = 'inputs-treino';
+      inputs.innerHTML = `
+        <div class="input-group">
+          <label>Séries</label>
+          <input type="number" value="3" class="input-series">
+        </div>
+        <div class="input-group">
+          <label>Reps</label>
+          <input type="text" value="8-10" class="input-reps">
+        </div>
+        <div class="input-group" style="flex: 1.2; min-width: 100px;">
+          <label>Carga (kg)</label>
+          <input type="number" placeholder="Opcional" class="input-carga">
+        </div>
+      `;
+
       cardEx.appendChild(topo);
+      cardEx.appendChild(inputs);
       if (listaContainer) listaContainer.appendChild(cardEx);
     });
   });
 
-  // Fechar modal e abrir área de execução (se existirem na página)
-  // const modalAvulso = document.getElementById('modalTreinoAvulso');
-  // if (modalAvulso) modalAvulso.style.display = 'none';
-  // if (areaExecucao) areaExecucao.style.display = 'block';
+  // Fechar modal e abrir tela de treino ativo
+  fecharModalTreinoAvulso();
+  if (areaExecucao) areaExecucao.classList.remove('hidden');
 }
-
-
 
 // OBSERVADOR DE AUTENTICAÇÃO
 auth.onAuthStateChanged(async (user) => {
@@ -1931,7 +1994,7 @@ document.getElementById('btn-postar-checkin')?.addEventListener('click', async (
   }
 });
 
-// Carregar Feed de fotos dos amigos (Versão Corrigida)
+// Carregar Feed de fotos dos amigos
 async function carregarFeedAmigos() {
   const userAtual = auth.currentUser;
   if (!userAtual) return;
@@ -2019,32 +2082,3 @@ async function carregarFeedAmigos() {
     containerFeed.innerHTML = `<p style="color: #ef4444; font-size: 0.85rem; text-align: center;">Erro ao carregar fotos do feed.</p>`;
   }
 }
-
-function adicionarCampoTreino() {
-  const container = document.getElementById('lista-outros-treinos');
-
-  // Criar div do item
-  const divItem = document.createElement('div');
-  divItem.className = 'campo-treino-item';
-
-  // Criar input vazio
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'input-outro-treino';
-  input.placeholder = 'Digite o treino avulso...';
-
-  // Criar botão para remover o campo caso o usuário queira
-  const btnRemover = document.createElement('button');
-  btnRemover.type = 'button';
-  btnRemover.innerText = '✕';
-  btnRemover.style.cssText = 'background:none; border:none; color:#ff5252; margin-left:8px; cursor:pointer; font-size:16px;';
-  btnRemover.onclick = function () {
-    container.removeChild(divItem);
-  };
-
-  divItem.appendChild(input);
-  divItem.appendChild(btnRemover);
-  container.appendChild(divItem);
-}
-
-
