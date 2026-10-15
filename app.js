@@ -1940,7 +1940,7 @@ document.getElementById('btn-postar-checkin')?.addEventListener('click', async (
   }
 });
 
-// Carregar Feed de fotos dos amigos
+// Carregar Feed de fotos dos amigos (Versão Corrigida)
 async function carregarFeedAmigos() {
   const userAtual = auth.currentUser;
   if (!userAtual) return;
@@ -1949,7 +1949,7 @@ async function carregarFeedAmigos() {
   const avisoCheckin = document.getElementById('aviso-checkin-realizado');
   const hoje = obterDataLocalIso();
 
-  // Verifica se o usuário já fez check-in hoje para alternar o aviso
+  // 1. Verifica se já fez check-in hoje
   try {
     const checkHoje = await db.collection("feed_amigos")
       .where("usuarioId", "==", userAtual.uid)
@@ -1967,34 +1967,50 @@ async function carregarFeedAmigos() {
     console.error("Erro ao verificar check-in de hoje:", e);
   }
 
-  // Busca lista de IDs dos amigos
-  const amizadesSnap = await db.collection("amizades")
-    .where("usuarios", "array-contains", userAtual.uid)
-    .get();
-
+  // 2. Busca IDs dos amigos
   const idsPermitidos = [userAtual.uid];
-  amizadesSnap.forEach(doc => {
-    const amizade = doc.data();
-    const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
-    if (amigoId) idsPermitidos.push(amigoId);
-  });
+  try {
+    const amizadesSnap = await db.collection("amizades")
+      .where("usuarios", "array-contains", userAtual.uid)
+      .get();
 
-  // Busca os últimos 20 posts do banco
-  const feedSnap = await db.collection("feed_amigos")
-    .orderBy("timestamp", "desc")
-    .limit(20)
-    .get();
+    amizadesSnap.forEach(doc => {
+      const amizade = doc.data();
+      const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
+      if (amigoId) idsPermitidos.push(amigoId);
+    });
+  } catch (e) {
+    console.error("Erro ao buscar amigos:", e);
+  }
 
+  // 3. Busca os posts do feed sem travar na ordenação do banco
   const containerFeed = document.getElementById('container-feed-fotos');
   if (!containerFeed) return;
   containerFeed.innerHTML = "";
 
-  let postsEncontrados = 0;
+  try {
+    const feedSnap = await db.collection("feed_amigos").get();
+    let posts = [];
 
-  feedSnap.forEach(doc => {
-    const post = doc.data();
-    if (idsPermitidos.includes(post.usuarioId)) {
-      postsEncontrados++;
+    feedSnap.forEach(doc => {
+      const data = doc.data();
+      if (idsPermitidos.includes(data.usuarioId)) {
+        posts.push({ id: doc.id, ...data });
+      }
+    });
+
+    // Ordena as fotos da mais recente para a mais antiga via código
+    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    // Limita às 20 fotos mais recentes
+    posts = posts.slice(0, 20);
+
+    if (posts.length === 0) {
+      containerFeed.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem; text-align: center; margin-top: 20px;">Nenhum check-in postado recentemente pelos seus amigos.</p>`;
+      return;
+    }
+
+    posts.forEach(post => {
       const div = document.createElement('div');
       div.className = 'post-feed-card';
       div.innerHTML = `
@@ -2005,11 +2021,11 @@ async function carregarFeedAmigos() {
         <img src="${post.fotoUrl}" class="post-feed-img" alt="Check-in">
       `;
       containerFeed.appendChild(div);
-    }
-  });
+    });
 
-  if (postsEncontrados === 0) {
-    containerFeed.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem; text-align: center; margin-top: 20px;">Nenhum check-in postado recentemente pelos seus amigos.</p>`;
+  } catch (err) {
+    console.error("Erro ao carregar feed de amigos:", err);
+    containerFeed.innerHTML = `<p style="color: #ef4444; font-size: 0.85rem; text-align: center;">Erro ao carregar fotos do feed.</p>`;
   }
 }
 
