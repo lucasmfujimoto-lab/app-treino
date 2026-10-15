@@ -445,11 +445,13 @@ function abrirModalTreinoAvulso() {
     const exerciciosGrupo = catalogoExercicios[grupo] || [];
 
     exerciciosGrupo.forEach(ex => {
-      html += `
-        <label style='display: block; font-size: 0.85rem; margin-bottom: 4px; font-weight: normal; color: #e1e1e6;'>
-          <input type='checkbox' class='cb-ex-avulso' data-grupo='${grupo}' value='${ex.nome}'> ${ex.nome}
-        </label>
-      `;
+      // Garanta que o value receba ex.nome ou o nome do exercício
+html += `
+  <label style='display: block; font-size: 0.85rem; margin-bottom: 4px; font-weight: normal; color: #e1e1e6;'>
+    <input type='checkbox' class='cb-ex-avulso' data-grupo='${grupo}' value='${ex.nome}'> ${ex.nome}
+  </label>
+`;
+
     });
 
     bloco.innerHTML = html;
@@ -534,13 +536,15 @@ function montarEIniciarTreinoAvulso() {
   const exerciciosPorGrupo = {};
 
   // Agrupar exercícios marcados por Grupo
-  selecionados.forEach(cb => {
-    const grupo = cb.getAttribute('data-grupo') || 'Geral';
-    const nomeEx = cb.value;
+  // Ler o valor do checkbox (ou data-nome se preferir)
+selecionados.forEach(cb => {
+  const grupo = cb.getAttribute('data-grupo') || 'Geral';
+  const nomeEx = cb.value !== 'on' ? cb.value : cb.getAttribute('data-nome');
 
-    if (!exerciciosPorGrupo[grupo]) exerciciosPorGrupo[grupo] = [];
-    exerciciosPorGrupo[grupo].push(nomeEx);
-  });
+  if (!exerciciosPorGrupo[grupo]) exerciciosPorGrupo[grupo] = [];
+  exerciciosPorGrupo[grupo].push(nomeEx);
+});
+
 
   // Agrupar treinos manuais no grupo "Outros Treinos"
   if (treinosManuais.length > 0) {
