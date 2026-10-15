@@ -647,4 +647,48 @@ button:active {
   border-radius: 8px;
 }
 
+.outros-treinos-container {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #1e1e24;
+  border-radius: 8px;
+}
+
+.campo-treino-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.input-outro-treino {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background-color: #121214;
+  color: #fff;
+  font-size: 14px;
+}
+
+#btn-add-outro-treino {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #00e676;
+  color: #000;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#btn-add-outro-treino span {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+
 
