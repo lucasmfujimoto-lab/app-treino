@@ -2187,5 +2187,93 @@ function gerarCodigoUsuario() {
   return Math.random().toString(36).substr(2, 6).toUpperCase();
 }
 
+// Pré-visualizar foto do Feed da Equipe
+function previsualizarFotoFeed(input) {
+  const textoStatus = document.getElementById('nome-arquivo-foto');
+  const miniatura = document.getElementById('miniatura-foto-feed');
+
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (miniatura) {
+        miniatura.src = e.target.result;
+        miniatura.classList.remove('hidden');
+      }
+      if (textoStatus) {
+        textoStatus.innerText = "Foto capturada ✓ (Toque na foto para ver)";
+        textoStatus.style.color = "#00e676";
+      }
+    }
+    reader.readAsDataURL(input.files[0]);
+  } else {
+    resetarVisualizacaoFeed();
+  }
+}
+
+function resetarVisualizacaoFeed() {
+  const textoStatus = document.getElementById('nome-arquivo-foto');
+  const miniatura = document.getElementById('miniatura-foto-feed');
+  if (miniatura) {
+    miniatura.src = "";
+    miniatura.classList.add('hidden');
+  }
+  if (textoStatus) {
+    textoStatus.innerText = "Nenhuma foto selecionada";
+    textoStatus.style.color = "#a8a8b3";
+  }
+}
+
+// Pré-visualizar foto do Check-in dos Amigos
+function previsualizarFotoCheckin(input) {
+  const textoStatus = document.getElementById('nome-foto-checkin');
+  const miniatura = document.getElementById('miniatura-foto-checkin');
+
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (miniatura) {
+        miniatura.src = e.target.result;
+        miniatura.classList.remove('hidden');
+      }
+      if (textoStatus) {
+        textoStatus.innerText = "Foto capturada ✓";
+        textoStatus.style.color = "#00e676";
+      }
+    }
+    reader.readAsDataURL(input.files[0]);
+  } else {
+    resetarVisualizacaoCheckin();
+  }
+}
+
+function resetarVisualizacaoCheckin() {
+  const textoStatus = document.getElementById('nome-foto-checkin');
+  const miniatura = document.getElementById('miniatura-foto-checkin');
+  if (miniatura) {
+    miniatura.src = "";
+    miniatura.classList.add('hidden');
+  }
+  if (textoStatus) {
+    textoStatus.innerText = "Nenhuma foto";
+    textoStatus.style.color = "#a1a1aa";
+  }
+}
+
+// Funções para Abrir/Fechar o Modal de Ampliação
+function ampliarFotoMiniatura(src) {
+  const modal = document.getElementById('modal-ampliar-foto');
+  const imgAmpliada = document.getElementById('imagem-ampliada');
+  if (modal && imgAmpliada) {
+    imgAmpliada.src = src;
+    modal.classList.remove('hidden');
+  }
+}
+
+function fecharModalAmpliar() {
+  const modal = document.getElementById('modal-ampliar-foto');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
 
 
