@@ -740,6 +740,78 @@ function alternarModoLogin(e) {
     document.getElementById("area-perfil-cadastro").classList.add("hidden");
   }
 }
+// Função centralizada para garantir que o código seja SEMPRE o mesmo do banco
+async function obterOuCriarCodigoUsuario(user, tipoDefinido = "aluno") {
+  const userRef = db.collection("usuarios").doc(user.uid);
+  const docUser = await userRef.get();
+
+  if (docUser.exists) {
+    const dados = docUser.data();
+    // Se já tem código no banco, retorna ele (nunca gera outro!)
+    if (dados.codigo) {
+      return dados.codigo;
+    }
+  }
+
+  // Se não existe ou não tem código, gera um novo e salva
+  const codigoGerado = gerarCodigoUsuario();
+  const dadosNovos = {
+    email: user.email,
+    nomeExibicao: user.displayName || user.email.split('@')[0],
+    tipo: tipoDefinido,
+    codigo: codigoGerado
+  };
+
+  await userRef.set(dadosNovos, { merge: true });
+  return codigoGerado;
+}
+
+// OBSERVADOR DE AUTENTICAÇÃO ATUALIZADO
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    usuarioLogado = user;
+    uidAlvoTrabalho = user.uid;
+
+    try {
+      // Garante que o perfil existe e puxa o código oficial exato do banco
+      const codigoOficial = await obterOuCriarCodigoUsuario(user);
+      
+      const docUser = await db.collection("usuarios").doc(user.uid).get();
+      perfilUsuario = docUser.data();
+      perfilUsuario.codigo = codigoOficial; // Força sincronia exata
+
+    } catch (e) {
+      console.error("Erro ao sincronizar perfil:", e);
+      perfilUsuario = { 
+        email: user.email, 
+        nomeExibicao: user.email.split('@')[0], 
+        tipo: "aluno", 
+        codigo: "ERRO-COD" 
+      };
+    }
+
+    const nomeExibir = perfilUsuario.nomeExibicao || user.email.split('@')[0];
+
+    document.getElementById("tela-login").classList.add("hidden");
+    document.getElementById("app-principal").classList.remove("hidden");
+    
+    // Atualiza imediatamente na tela com o código oficial do banco
+    document.getElementById("info-usuario-logado").innerText = `Olá, ${nomeExibir} | Código: ${perfilUsuario.codigo}`;
+    document.getElementById("perfil-email-destaque").innerText = `${user.email} (${perfilUsuario.codigo})`;
+    document.getElementById("input-nome-exibicao").value = nomeExibir;
+
+    if (perfilUsuario.tipo === "treinador") {
+      document.getElementById("btn-perfil-treinador").classList.remove("hidden");
+    }
+
+    carregarDadosDoServidor();
+  } else {
+    document.getElementById("tela-login").classList.remove("hidden");
+    document.getElementById("app-principal").classList.add("hidden");
+  }
+});
+
+// AUTENTICAÇÃO POR EMAIL E SENHA ATUALIZADA
 async function autenticarUsuario(e) {
   if (e) e.preventDefault();
   
@@ -756,16 +828,8 @@ async function autenticarUsuario(e) {
       const tipoPerfil = document.getElementById("login-tipo-perfil").value;
       const res = await auth.createUserWithEmailAndPassword(email, senha);
       
-      // 1. Gera o código EXATO uma única vez
-      const codigoGerado = gerarCodigoUsuario(); 
-
-      // 2. Salva exatamente este código no banco
-      await db.collection("usuarios").doc(res.user.uid).set({
-        email: email,
-        nomeExibicao: email.split('@')[0],
-        tipo: tipoPerfil,
-        codigo: codigoGerado
-      });
+      // Usa a função centralizada para criar com o código oficial
+      await obterOuCriarCodigoUsuario(res.user, tipoPerfil);
 
       alert("Conta criada com sucesso!");
     } else {
@@ -775,6 +839,27 @@ async function autenticarUsuario(e) {
     alert("Erro na autenticação: " + err.message);
   }
 }
+
+
+// Atualizar função abrirModalPerfil para revalidar os dados na tela
+async function abrirModalPerfil() {
+  if (usuarioLogado) {
+    try {
+      const docRef = await db.collection("usuarios").doc(usuarioLogado.uid).get();
+      if (docRef.exists) {
+        const dados = docRef.data();
+        perfilUsuario = dados;
+        const codigoAtual = dados.codigo || "--";
+        const emailDestaque = document.getElementById("perfil-email-destaque");
+        if (emailDestaque) {
+          emailDestaque.innerText = `${usuarioLogado.email} (${codigoAtual})`;
+        }
+      }
+    } catch (e) {}
+  }
+  document.getElementById('modal-perfil').classList.remove('hidden');
+}
+
 
 
 
