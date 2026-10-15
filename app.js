@@ -1787,10 +1787,22 @@ async function salvarNovaConfig() {
       exerciciosFixos.push(cbEx.value);
     });
 
-    if (marcados.length > 0) {
+    // Recolher também os treinos avulsos/manuais adicionados nesta letra
+    const containerOutros = document.getElementById(`lista-outros-config-${letra}`);
+    if (containerOutros) {
+      const inputsManuais = containerOutros.querySelectorAll('.input-outro-treino-config');
+      inputsManuais.forEach(input => {
+        const texto = input.value.trim();
+        if (texto && !exerciciosFixos.includes(texto)) {
+          exerciciosFixos.push(texto);
+        }
+      });
+    }
+
+    if (marcados.length > 0 || exerciciosFixos.length > 0) {
       novaRotina.push({ 
         letra: letra, 
-        grupos: marcados,
+        grupos: marcados.length > 0 ? marcados : ["Avulso"],
         exerciciosFixos: exerciciosFixos
       });
     }
@@ -1811,9 +1823,10 @@ async function salvarNovaConfig() {
       atualizarTelaInicial();
     }
   } else {
-    alert('Marque pelo menos um músculo para cada treino.');
+    alert('Configure pelo menos um exercício ou músculo na rotina.');
   }
 }
+
 
 function fecharModalConfig() {
   document.getElementById('modal-config-rotina').classList.add('hidden');
