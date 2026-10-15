@@ -308,34 +308,41 @@
 
 <!-- MODAL FEED DOS AMIGOS -->
 <div id="modal-feed-amigos" class="modal hidden">
-  <div class="modal-conteudo card">
-    <div class="modal-header">
+  <div class="modal-conteudo card" style="max-height: 85vh; display: flex; flex-direction: column; padding: 16px;">
+    
+    <!-- Cabeçalho Fixo -->
+    <div class="modal-header" style="flex-shrink: 0; margin-bottom: 10px;">
       <h2>📸 Feed dos Amigos</h2>
       <button class="btn-fechar" id="btn-fechar-feed-amigos">&times;</button>
     </div>
 
-    <!-- Área de Postar Check-in -->
-    <div class="box-postar-checkin">
-      <p style="font-size: 0.9rem; color: #a1a1aa; margin-bottom: 10px;">Poste o seu check-in diário:</p>
+    <!-- Área de Postar Check-in (Fica fixa no topo) -->
+    <div id="area-postar-checkin" class="box-postar-checkin" style="flex-shrink: 0; margin-bottom: 12px;">
+      <p style="font-size: 0.85rem; color: #a1a1aa; margin-bottom: 8px;">Poste o seu check-in diário:</p>
       
       <input type="file" id="input-foto-checkin" accept="image/*" capture="environment" style="display: none;">
       
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-        <label for="input-foto-checkin" class="btn-secundario" style="cursor: pointer;">📸 Abrir Câmera</label>
-        <span id="nome-foto-checkin" style="font-size: 0.85rem; color: #a1a1aa;">Nenhuma foto capturada</span>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+        <label for="input-foto-checkin" class="btn-secundario" style="cursor: pointer; padding: 6px 12px; font-size: 0.85rem;">📸 Abrir Câmera</label>
+        <span id="nome-foto-checkin" style="font-size: 0.8rem; color: #a1a1aa;">Nenhuma foto</span>
       </div>
 
-      <button id="btn-postar-checkin" class="btn-primario" style="width: 100%;">Postar Check-in no Feed</button>
+      <button id="btn-postar-checkin" class="btn-primario" style="width: 100%; font-size: 0.9rem; padding: 8px;">Postar Check-in no Feed</button>
     </div>
 
-    <hr style="border-color: #27272a; margin: 15px 0;">
-
-    <!-- Feed de Fotos -->
-    <div id="container-feed-fotos" class="feed-posts">
-      <p style="color: #a1a1aa; font-size: 0.85rem; text-align: center;">Nenhum check-in postado hoje.</p>
+    <!-- Aviso quando já fez check-in no dia -->
+    <div id="aviso-checkin-realizado" class="hidden" style="flex-shrink: 0; background: #122b1c; border: 1px solid #00e676; padding: 10px; border-radius: 8px; text-align: center; color: #00e676; font-size: 0.85rem; font-weight: bold; margin-bottom: 12px;">
+      ✅ Você já realizou seu check-in de hoje!
     </div>
+
+    <!-- Contêiner de fotos COM ROLAGEM Apenas aqui -->
+    <div id="container-feed-fotos" class="feed-posts" style="flex: 1; overflow-y: auto; padding-right: 4px;">
+      <p style="color: #a1a1aa; font-size: 0.85rem; text-align: center;">Carregando check-ins...</p>
+    </div>
+
   </div>
 </div>
+
 
 
   <!-- MODAL TREINADOR -->
