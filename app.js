@@ -477,7 +477,7 @@ function abrirModalTreinoAvulso() {
 
   const modal = document.getElementById('modal-treino-avulso') || document.getElementById('modalTreinoAvulso');
   if (modal) modal.classList.remove('hidden');
-}
+
 
 function fecharModalTreinoAvulso() {
   const modal = document.getElementById('modal-treino-avulso') || document.getElementById('modalTreinoAvulso');
