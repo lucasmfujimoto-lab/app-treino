@@ -1019,10 +1019,7 @@ async function carregarDadosDoServidor() {
       configuracaoTreino = d.rotina || [];
       indiceTreinoAtual = d.indiceAtual || 0;
     } else {
-      configuracaoTreino = [
-        { letra: "A", grupos: ["Peito", "Triceps"], exerciciosFixos: ["Supino Reto com Barra", "Tríceps Pulley Corda"] },
-        { letra: "B", grupos: ["Costas", "Biceps"], exerciciosFixos: ["Puxada Frontal Aberta", "Rosca Direta Barra W"] }
-      ];
+      configuracaoTreino = [];
       indiceTreinoAtual = 0;
     }
 
