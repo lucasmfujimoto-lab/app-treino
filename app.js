@@ -755,7 +755,8 @@ async function autenticarUsuario(e) {
     if (modoCadastro) {
       const tipoPerfil = document.getElementById("login-tipo-perfil").value;
       const res = await auth.createUserWithEmailAndPassword(email, senha);
-      const codigoGerado = "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase();
+      const codigoGerado = gerarCodigoUsuario(); // Gera apenas o código simples de 6 caracteres
+
       
       await db.collection("usuarios").doc(res.user.uid).set({
         email: email,
