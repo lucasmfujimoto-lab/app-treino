@@ -2131,5 +2131,10 @@ function atualizarTextoFotoFeed(input) {
   }
 }
 
+// Função para gerar código único de 6 caracteres (Ex: WNUF33)
+function gerarCodigoUsuario() {
+  return Math.random().toString(36).substr(2, 6).toUpperCase();
+}
+
 
 
