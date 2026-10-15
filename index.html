@@ -244,22 +244,23 @@
           <div style="background: #121214; padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #29292e;">
            <!-- O atributo capture="environment" força a abertura da câmara traseira -->
 <div class="input-foto-container">
-  <!-- Input nativo escondido -->
+  <!-- Input com a função onchange direta -->
   <input 
     type="file" 
     id="input-foto-feed" 
     accept="image/*" 
     capture="environment" 
     style="display: none;"
+    onchange="atualizarTextoFotoFeed(this)"
   >
 
   <!-- Botão customizado que ativa o input -->
-  <label for="input-foto-feed" class="btn-tirar-foto">
+  <label for="input-foto-feed" class="btn-tirar-foto" style="cursor: pointer;">
     📸 Tirar uma foto
   </label>
 
-  <!-- Texto dinâmico com o status da seleção -->
-  <span id="nome-arquivo-foto">Nenhuma foto selecionada</span>
+  <!-- Texto dinâmico (ID mantido como nome-arquivo-foto) -->
+  <span id="nome-arquivo-foto" style="font-size: 0.85rem; color: #a8a8b3; margin-left: 8px;">Nenhuma foto selecionada</span>
 </div>
 
 
