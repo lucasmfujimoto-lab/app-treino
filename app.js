@@ -1413,6 +1413,7 @@ function atualizarTelaInicial() {
   document.getElementById('foco-treino').innerText = `Músculos: ${treinoAtual.grupos.join(', ')}`;
 }
 
+
 function iniciarTreino() {
   ehTreinoAvulsoAtivo = false;
   const areaExecucao = document.getElementById('area-execucao');
@@ -1422,9 +1423,14 @@ function iniciarTreino() {
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
   if (!treinoAtual) return;
 
+  // 1. Renderizar exercícios dos grupos musculares normais
   treinoAtual.grupos.forEach(grupo => {
+    if (grupo === "Avulso") return; // Ignora o grupo placeholder se houver
+    
     const exerciciosGrupo = catalogoExercicios[grupo] || [];
     const selecionados = treinoAtual.exerciciosFixos || [];
+    
+    // Filtra apenas os do catálogo que pertencem a este grupo e foram selecionados
     const exerciciosExibir = exerciciosGrupo.filter(ex => selecionados.length === 0 || selecionados.includes(ex.nome));
 
     if (exerciciosExibir.length > 0) {
@@ -1435,49 +1441,81 @@ function iniciarTreino() {
     }
 
     exerciciosExibir.forEach(ex => {
-      const cardEx = document.createElement('div');
-      cardEx.className = 'item-exercicio';
-      
-      const topo = document.createElement('div');
-      topo.className = 'exercicio-topo';
-      
-      const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${ex.nome}" checked> <strong>${ex.nome}</strong>`;
-      
-      const btnVid = document.createElement('button');
-      btnVid.className = 'btn-secundario';
-      btnVid.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
-      btnVid.innerText = '▶ Vídeo';
-      btnVid.addEventListener('click', () => verVideo(ex.nome, ex.video));
-
-      topo.appendChild(label);
-      topo.appendChild(btnVid);
-
-      const inputs = document.createElement('div');
-      inputs.className = 'inputs-treino';
-      inputs.innerHTML = `
-        <div class="input-group">
-          <label>Séries</label>
-          <input type="number" value="3" class="input-series">
-        </div>
-        <div class="input-group">
-          <label>Reps</label>
-          <input type="text" value="8-10" class="input-reps">
-        </div>
-        <div class="input-group" style="flex: 1.2; min-width: 100px;">
-          <label>Carga (kg)</label>
-          <input type="number" placeholder="Opcional" class="input-carga">
-        </div>
-      `;
-
-      cardEx.appendChild(topo);
-      cardEx.appendChild(inputs);
-      listaContainer.appendChild(cardEx);
+      renderizarCardExercicioExecucao(listaContainer, ex.nome, ex.video);
     });
   });
 
+  // 2. Renderizar os treinos avulsos / manuais digitados especificamente nesta letra
+  const exerciciosFixosSalvos = treinoAtual.exerciciosFixos || [];
+  const exerciciosManuais = exerciciosFixosSalvos.filter(nomeEx => {
+    let pertenceCatalogo = false;
+    Object.keys(catalogoExercicios).forEach(g => {
+      if (g === "Alongamento") return;
+      if (catalogoExercicios[g].some(item => item.nome === nomeEx)) {
+        pertenceCatalogo = true;
+      }
+    });
+    return !pertenceCatalogo; // Se não está no catálogo padrão, é um treino manual/avulso!
+  });
+
+  if (exerciciosManuais.length > 0) {
+    const tituloManual = document.createElement('h3');
+    tituloManual.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
+    tituloManual.innerText = `● Outros / Avulsos`;
+    listaContainer.appendChild(tituloManual);
+
+    exerciciosManuais.forEach(nomeManual => {
+      renderizarCardExercicioExecucao(listaContainer, nomeManual, null);
+    });
+  }
+
   areaExecucao.classList.remove('hidden');
 }
+
+// Função auxiliar para desenhar o card na tela (evita código duplicado)
+function renderizarCardExercicioExecucao(container, nomeExercicio, videoUrl) {
+  const cardEx = document.createElement('div');
+  cardEx.className = 'item-exercicio';
+  
+  const topo = document.createElement('div');
+  topo.className = 'exercicio-topo';
+  
+  const label = document.createElement('label');
+  label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${nomeExercicio}" checked> <strong>${nomeExercicio}</strong>`;
+  
+  topo.appendChild(label);
+
+  if (videoUrl) {
+    const btnVid = document.createElement('button');
+    btnVid.className = 'btn-secundario';
+    btnVid.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
+    btnVid.innerText = '▶ Vídeo';
+    btnVid.addEventListener('click', () => verVideo(nomeExercicio, videoUrl));
+    topo.appendChild(btnVid);
+  }
+
+  const inputs = document.createElement('div');
+  inputs.className = 'inputs-treino';
+  inputs.innerHTML = `
+    <div class="input-group">
+      <label>Séries</label>
+      <input type="number" value="3" class="input-series">
+    </div>
+    <div class="input-group">
+      <label>Reps</label>
+      <input type="text" value="8-10" class="input-reps">
+    </div>
+    <div class="input-group" style="flex: 1.2; min-width: 100px;">
+      <label>Carga (kg)</label>
+      <input type="number" placeholder="Opcional" class="input-carga">
+    </div>
+  `;
+
+  cardEx.appendChild(topo);
+  cardEx.appendChild(inputs);
+  container.appendChild(cardEx);
+}
+
 
 async function concluirTreino() {
   const hojeChave = obterDataLocalIso();
