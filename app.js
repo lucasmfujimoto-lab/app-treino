@@ -836,10 +836,13 @@ async function publicarFotoNoFeed() {
         btnPublicar.innerText = "📸 Publicar Foto no Feed";
       }
       // Dentro de publicarFotoNoFeed(), após o sucesso:
-if (textoFotoFeed) {
-  textoFotoFeed.textContent = "Nenhuma foto selecionada";
-  textoFotoFeed.style.color = "#a8a8b3";
+// Dentro da função publicarFotoNoFeed(), logo após enviar a foto:
+const textoStatus = document.getElementById('nome-arquivo-foto');
+if (textoStatus) {
+  textoStatus.innerText = "Nenhuma foto selecionada";
+  textoStatus.style.color = "#a8a8b3";
 }
+
 
     }
   });
