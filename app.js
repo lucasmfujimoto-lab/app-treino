@@ -1974,6 +1974,19 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
       .where("usuarios", "array-contains", userAtual.uid)
       .get();
 
+// Conta quantos amigos únicos você já tem
+const mapaAmigosCheck = new Map();
+amigosSnapAtual.docs.forEach(doc => {
+  const amizade = doc.data();
+  const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
+  if (amigoId) mapaAmigosCheck.set(amigoId, true);
+});
+
+if (mapaAmigosCheck.size >= 25) {
+  return alert("Você atingiu o limite máximo de 25 amigos!");
+}
+
+
     let jaEAmigo = false;
     amizadeExistente.forEach(doc => {
       const usuarios = doc.data().usuarios || [];
