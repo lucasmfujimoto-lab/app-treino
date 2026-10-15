@@ -462,30 +462,28 @@ function fecharModalTreinoAvulso() {
 }
 
 function montarEIniciarTreinoAvulso() {
-  // 1. Capturar os checkboxes marcados
-  const selecionados = document.querySelectorAll('#modalTreinoAvulso input[type="checkbox"]:checked');
+  // 1. Procurar todos os checkboxes marcados na página inteira
+  const selecionados = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
   
-  // 2. Capturar os inputs manuais da seção Outros Treinos
-  const inputsOutros = document.querySelectorAll('.input-outro-treino');
-  
-  // Validar se nada foi selecionado nem preenchido
-  let temPreenchido = selecionados.length > 0;
-  inputsOutros.forEach(input => {
-    if (input.value.trim() !== '') temPreenchido = true;
-  });
+  // 2. Procurar todos os inputs de treinos manuais preenchidos
+  const inputsOutros = Array.from(document.querySelectorAll('.input-outro-treino, #lista-outros-treinos input'));
+  const treinosManuais = inputsOutros
+    .map(input => input.value.trim())
+    .filter(texto => texto !== '');
 
-  if (!temPreenchido) {
+  // 3. Validar se existe pelo menos um checkbox selecionado OU um treino manual digitado
+  if (selecionados.length === 0 && treinosManuais.length === 0) {
     return alert("Selecione pelo menos um exercício ou digite em Outros Treinos!");
   }
 
   ehTreinoAvulsoAtivo = true;
-  const areaExecucao = document.getElementById('areaExecucaoTreino'); // Ajuste o ID se necessário
-  const listaContainer = document.getElementById('listaExerciciosExecucao'); // Ajuste o ID se necessário
-  listaContainer.innerHTML = '';
+  const areaExecucao = document.getElementById('areaExecucaoTreino'); // Ajuste para o ID da sua área de treino
+  const listaContainer = document.getElementById('listaExerciciosExecucao'); // Ajuste para o ID do seu container
+  if (listaContainer) listaContainer.innerHTML = '';
 
   const exerciciosPorGrupo = {};
 
-  // Agrupar os exercícios marcados via Checkbox
+  // Agrupar checkboxes marcados por grupo
   selecionados.forEach(cb => {
     const grupo = cb.getAttribute('data-grupo') || 'Geral';
     const nomeEx = cb.value;
@@ -494,31 +492,19 @@ function montarEIniciarTreinoAvulso() {
     exerciciosPorGrupo[grupo].push(nomeEx);
   });
 
-  // Agrupar os exercícios manuais na categoria "Outros Treinos"
-  inputsOutros.forEach(input => {
-    const nomeEx = input.value.trim();
-    if (nomeEx !== '') {
-      const grupo = 'Outros Treinos';
-      if (!exerciciosPorGrupo[grupo]) exerciciosPorGrupo[grupo] = [];
-      exerciciosPorGrupo[grupo].push(nomeEx);
-    }
-  });
+  // Agrupar treinos manuais na categoria "Outros Treinos"
+  if (treinosManuais.length > 0) {
+    exerciciosPorGrupo['Outros Treinos'] = treinosManuais;
+  }
 
-  // Renderizar os grupos de exercícios na tela de execução
+  // Renderizar na tela de execução
   Object.keys(exerciciosPorGrupo).forEach(grupo => {
     const tituloGrupo = document.createElement('h3');
     tituloGrupo.style.cssText = "color: #00e676; margin-top: 15px;";
     tituloGrupo.innerText = `• ${grupo} (Avulso)`;
-    listaContainer.appendChild(tituloGrupo);
+    if (listaContainer) listaContainer.appendChild(tituloGrupo);
 
     exerciciosPorGrupo[grupo].forEach(nomeEx => {
-      // Procura o objeto do catálogo ou cria um padrão para o treino manual
-      const exObj = (catalogoExercicios[grupo] && catalogoExercicios[grupo].find(e => e.nome === nomeEx)) || {
-        id: Date.now() + Math.random(),
-        nome: nomeEx,
-        videoUrl: ''
-      };
-
       const cardEx = document.createElement('div');
       cardEx.className = 'item-exercicio';
 
@@ -526,18 +512,20 @@ function montarEIniciarTreinoAvulso() {
       topo.className = 'exercicio-topo';
 
       const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox"> ${exObj.nome}`;
+      label.innerHTML = `<input type="checkbox"> ${nomeEx}`;
 
       topo.appendChild(label);
       cardEx.appendChild(topo);
-      listaContainer.appendChild(cardEx);
+      if (listaContainer) listaContainer.appendChild(cardEx);
     });
   });
 
-  // Ocultar modal e exibir área de execução
-  // fecharModalTreinoAvulso();
-  // areaExecucao.style.display = 'block';
+  // Fechar modal e abrir área de execução (se existirem na página)
+  // const modalAvulso = document.getElementById('modalTreinoAvulso');
+  // if (modalAvulso) modalAvulso.style.display = 'none';
+  // if (areaExecucao) areaExecucao.style.display = 'block';
 }
+
 
 
 // OBSERVADOR DE AUTENTICAÇÃO
