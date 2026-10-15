@@ -367,11 +367,19 @@ if (btnVoltarConquistas) {
   }
 
   const btnFecharTreinador = document.getElementById('btn-fechar-modal-treinador');
-  if (btnFecharTreinador) btnFecharTreinador.addEventListener('click', () => document.getElementById('modal-treinador').classList.add('hidden'));
-
+if (btnFecharTreinador) {
+  btnFecharTreinador.addEventListener('click', () => {
+    document.getElementById('modal-treinador').classList.add('hidden');
+    abrirModalPerfil(); // Reabre o perfil
+  });
+}
   const btnVoltarTreinador = document.getElementById('btn-voltar-treinador');
-  if (btnVoltarTreinador) btnVoltarTreinador.addEventListener('click', () => document.getElementById('modal-treinador').classList.add('hidden'));
-
+if (btnVoltarTreinador) {
+  btnVoltarTreinador.addEventListener('click', () => {
+    document.getElementById('modal-treinador').classList.add('hidden');
+    abrirModalPerfil(); // Reabre o perfil
+  });
+}
   // Treinador
   const btnAcessarAluno = document.getElementById('btn-acessar-aluno');
   if (btnAcessarAluno) btnAcessarAluno.addEventListener('click', carregarTreinoDoAluno);
@@ -1391,6 +1399,7 @@ async function sairDaEquipeAtiva() {
 
 function fecharModalAlongamento() {
   document.getElementById('modal-alongamento').classList.add('hidden');
+  abrirModalPerfil(); // Reabre o perfil
 }
 
 function carregarBlocoAlongamento() {
