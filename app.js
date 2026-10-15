@@ -1700,15 +1700,16 @@ async function autenticarComGoogle() {
     const docUser = await db.collection("usuarios").doc(user.uid).get();
     
     if (!docUser.exists) {
-      const codigoGerado = "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase();
-      const novoPerfil = {
-        email: user.email,
-        nomeExibicao: user.displayName || user.email.split('@')[0],
-        tipo: "aluno",
-        codigo: codigoGerado
-      };
-      await db.collection("usuarios").doc(user.uid).set(novoPerfil);
-    }
+  const codigoGerado = gerarCodigoUsuario();
+  const novoPerfil = {
+    email: user.email,
+    nomeExibicao: user.displayName || user.email.split('@')[0],
+    tipo: "aluno",
+    codigo: codigoGerado
+  };
+  await db.collection("usuarios").doc(user.uid).set(novoPerfil);
+}
+
 
     alert(`Bem-vindo, ${user.displayName || user.email}!`);
   } catch (error) {
