@@ -740,7 +740,6 @@ function alternarModoLogin(e) {
     document.getElementById("area-perfil-cadastro").classList.add("hidden");
   }
 }
-
 async function autenticarUsuario(e) {
   if (e) e.preventDefault();
   
@@ -756,15 +755,18 @@ async function autenticarUsuario(e) {
     if (modoCadastro) {
       const tipoPerfil = document.getElementById("login-tipo-perfil").value;
       const res = await auth.createUserWithEmailAndPassword(email, senha);
-      const codigoGerado = gerarCodigoUsuario(); // Gera apenas o código simples de 6 caracteres
-
       
+      // 1. Gera o código EXATO uma única vez
+      const codigoGerado = gerarCodigoUsuario(); 
+
+      // 2. Salva exatamente este código no banco
       await db.collection("usuarios").doc(res.user.uid).set({
         email: email,
         nomeExibicao: email.split('@')[0],
         tipo: tipoPerfil,
         codigo: codigoGerado
       });
+
       alert("Conta criada com sucesso!");
     } else {
       await auth.signInWithEmailAndPassword(email, senha);
@@ -773,6 +775,8 @@ async function autenticarUsuario(e) {
     alert("Erro na autenticação: " + err.message);
   }
 }
+
+
 
 async function publicarFotoNoFeed() {
   if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipe primeiro.");
