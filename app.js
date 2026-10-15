@@ -2180,6 +2180,21 @@ async function removerAmizade(amizadeDocId, nomeAmigo) {
 async function aceitarAmigo(conviteId, remetenteId) {
   const userAtual = auth.currentUser;
   try {
+    const amigosSnapAtual = await db.collection("amizades")
+      .where("usuarios", "array-contains", userAtual.uid)
+      .get();
+      
+    const mapaAmigosCheck = new Map();
+    amigosSnapAtual.docs.forEach(doc => {
+      const amizade = doc.data();
+      const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
+      if (amigoId) mapaAmigosCheck.set(amigoId, true);
+    });
+
+    if (mapaAmigosCheck.size >= 25) {
+      return alert("Você atingiu o limite máximo de 25 amigos!");
+    }
+
     await db.collection("amizades").add({
       usuarios: [userAtual.uid, remetenteId],
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
@@ -2194,6 +2209,7 @@ async function aceitarAmigo(conviteId, remetenteId) {
     alert("Erro ao aceitar convite: " + err.message);
   }
 }
+
 
 // -------------------------------------------------------------
 // FEED DOS AMIGOS (CHECK-IN E REGRAS DE ROLAGEM/LIMITE)
