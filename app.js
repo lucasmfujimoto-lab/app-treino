@@ -257,6 +257,22 @@ function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
 
 // REGISTRO DE EVENTOS
 document.addEventListener("DOMContentLoaded", () => {
+  // Atualizar o texto quando uma foto for selecionada/capturada no Feed de Equipe
+const inputFotoFeed = document.getElementById('input-foto-feed');
+const textoFotoFeed = document.getElementById('texto-foto-feed'); // Ajuste o ID conforme o seu HTML se necessário
+
+if (inputFotoFeed) {
+  inputFotoFeed.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // Se houver um span/p para o texto ao lado do botão
+      if (textoFotoFeed) {
+        textoFotoFeed.textContent = "Foto capturada ✓";
+        textoFotoFeed.style.color = "#00e676";
+      }
+    }
+  });
+}
+
   const btnGoogle = document.getElementById('btn-login-google');
   if (btnGoogle) btnGoogle.addEventListener('click', autenticarComGoogle);
 
