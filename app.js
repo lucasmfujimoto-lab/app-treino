@@ -1813,87 +1813,131 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
   }
 });
 
-// Carregar Lista de Amigos e Convites
+// Carregar Lista de Amigos e Convites (Corrigido sem duplicados)
 async function carregarAmigosEConvites() {
   const userAtual = auth.currentUser;
   if (!userAtual) return;
 
-  // Convites Recebidos
-  const convitesSnap = await db.collection("convites_amizade")
-    .where("destinatarioId", "==", userAtual.uid)
-    .where("status", "==", "pendente")
-    .get();
-
+  const listaAmigos = document.getElementById('lista-amigos');
   const containerConvites = document.getElementById('container-convites-pendentes');
   const listaConvites = document.getElementById('lista-convites');
+
+  if (listaAmigos) listaAmigos.innerHTML = "<p style='color: #a1a1aa; font-size: 0.85rem;'>Carregando amigos...</p>";
   if (listaConvites) listaConvites.innerHTML = "";
 
-  if (!convitesSnap.empty) {
-    if (containerConvites) containerConvites.classList.remove('hidden');
-    for (let doc of convitesSnap.docs) {
-      const convite = doc.data();
-      const remetenteDoc = await db.collection("usuarios").doc(convite.remetenteId).get();
-      const remetente = remetenteDoc.data();
+  try {
+    // 1. CARREGAR CONVITES RECEBIDOS PENDENTES
+    const convitesSnap = await db.collection("convites_amizade")
+      .where("destinatarioId", "==", userAtual.uid)
+      .where("status", "==", "pendente")
+      .get();
 
-      const div = document.createElement('div');
-      div.className = 'item-convite';
-      div.innerHTML = `
-        <span><b>${remetente?.nomeExibicao || 'Usuário'}</b> quer ser seu amigo.</span>
-        <button onclick="aceitarAmigo('${doc.id}', '${convite.remetenteId}')" class="btn-primario" style="padding: 4px 10px; font-size: 0.8rem;">Aceitar</button>
-      `;
-      if (listaConvites) listaConvites.appendChild(div);
+    if (!convitesSnap.empty) {
+      if (containerConvites) containerConvites.classList.remove('hidden');
+      
+      const promessasConvites = convitesSnap.docs.map(async (doc) => {
+        const convite = doc.data();
+        let remetenteNome = 'Usuário';
+        try {
+          const remetenteDoc = await db.collection("usuarios").doc(convite.remetenteId).get();
+          if (remetenteDoc.exists) {
+            remetenteNome = remetenteDoc.data().nomeExibicao || remetenteDoc.data().email?.split('@')[0] || 'Usuário';
+          }
+        } catch (e) {}
+
+        return `
+          <div class="item-convite" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span><b>${remetenteNome}</b> quer ser seu amigo.</span>
+            <button onclick="aceitarAmigo('${doc.id}', '${convite.remetenteId}')" class="btn-primario" style="padding: 4px 10px; font-size: 0.8rem;">Aceitar</button>
+          </div>
+        `;
+      });
+
+      const htmlConvites = await Promise.all(promessasConvites);
+      if (listaConvites) listaConvites.innerHTML = htmlConvites.join('');
+    } else {
+      if (containerConvites) containerConvites.classList.add('hidden');
     }
-  } else {
-    if (containerConvites) containerConvites.classList.add('hidden');
-  }
 
-  // Lista de Amigos Confirmados
-  const amigosSnap = await db.collection("amizades")
-    .where("usuarios", "array-contains", userAtual.uid)
-    .get();
+    // 2. CARREGAR AMIGOS CONFIRMADOS (SEM DUPLICAÇÃO)
+    const amigosSnap = await db.collection("amizades")
+      .where("usuarios", "array-contains", userAtual.uid)
+      .get();
 
-  const listaAmigos = document.getElementById('lista-amigos');
-  if (!listaAmigos) return;
-  listaAmigos.innerHTML = "";
+    if (amigosSnap.empty) {
+      if (listaAmigos) listaAmigos.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem;">Você ainda não possui amigos adicionados.</p>`;
+      return;
+    }
 
-  if (amigosSnap.empty) {
-    listaAmigos.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem;">Você ainda não possui amigos adicionados.</p>`;
-    return;
-  }
+    // Usar um Map para garantir apenas 1 registro por amigo (evita duplicações de amizades duplicadas no banco)
+    const mapaAmigos = new Map();
 
-  for (let doc of amigosSnap.docs) {
-    const amizade = doc.data();
-    const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
-    
-    // Busca Dados do Perfil e Histórico do Amigo
-    const amigoDoc = await db.collection("usuarios").doc(amigoId).get();
-    const amigoHistDoc = await db.collection("historicos").doc(amigoId).get();
-    
-    const amigoData = amigoDoc.exists ? amigoDoc.data() : {};
-    const amigoHist = amigoHistDoc.exists ? amigoHistDoc.data() : {};
+    amigosSnap.docs.forEach(doc => {
+      const amizade = doc.data();
+      const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
+      if (amigoId && !mapaAmigos.has(amigoId)) {
+        mapaAmigos.set(amigoId, doc.id); // Guarda o ID do amigo e o docId da amizade
+      }
+    });
 
-    // Calcula as estatísticas exatas do amigo
-    const statsAmigo = calcularStatsMembro(amigoHist);
-    const nomeAmigo = amigoData.nomeExibicao || (amigoData.email ? amigoData.email.split('@')[0] : 'Amigo');
+    // Buscar dados dos amigos em paralelo
+    const promessasAmigos = Array.from(mapaAmigos.entries()).map(async ([amigoId, amizadeDocId]) => {
+      let userData = {};
+      let historico = {};
 
-    const div = document.createElement('div');
-    div.className = 'item-amigo';
-    div.innerHTML = `
-      <div style="flex: 1;">
-        <strong>${nomeAmigo}</strong>
-        <div class="info-amigo-stats">🔥 ${statsAmigo.streak} dias seguidos | 📊 ${statsAmigo.total} treinos</div>
-      </div>
-      <button 
-        onclick="removerAmizade('${doc.id}', '${nomeAmigo.replace(/'/g, "\\'")}')" 
-        title="Remover Amigo"
-        style="background: transparent; border: none; color: #ef4444; font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 4px;"
-      >
-        ✖
-      </button>
-    `;
-    listaAmigos.appendChild(div);
+      try {
+        const userDoc = await db.collection("usuarios").doc(amigoId).get();
+        if (userDoc.exists) userData = userDoc.data();
+      } catch (e) {}
+
+      try {
+        const histDoc = await db.collection("historicos").doc(amigoId).get();
+        if (histDoc.exists) historico = histDoc.data();
+      } catch (e) {}
+
+      const statsAmigo = calcularStatsMembro(historico);
+      const nomeAmigo = userData.nomeExibicao || (userData.email ? userData.email.split('@')[0] : 'Amigo');
+
+      return {
+        amizadeDocId,
+        nomeAmigo,
+        statsAmigo
+      };
+    });
+
+    const listaProcessada = await Promise.all(promessasAmigos);
+
+    if (listaAmigos) listaAmigos.innerHTML = ""; // Limpa a mensagem de carregando
+
+    listaProcessada.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'item-amigo';
+      div.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; background: #121214; padding: 10px; border-radius: 6px; border: 1px solid #29292e;";
+      
+      div.innerHTML = `
+        <div style="flex: 1;">
+          <strong style="color: #fff; font-size: 0.9rem;">${item.nomeAmigo}</strong>
+          <div class="info-amigo-stats" style="font-size: 0.8rem; color: #00e676; margin-top: 2px;">
+            🔥 ${item.statsAmigo.streak} dias seguidos | 📊 ${item.statsAmigo.total} treinos
+          </div>
+        </div>
+        <button 
+          onclick="removerAmizade('${item.amizadeDocId}', '${item.nomeAmigo.replace(/'/g, "\\'")}')" 
+          title="Remover Amigo"
+          style="background: transparent; border: none; color: #ef4444; font-size: 1.1rem; cursor: pointer; padding: 4px 8px;"
+        >
+          ✖
+        </button>
+      `;
+      listaAmigos.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error("Erro ao carregar amigos e convites:", err);
+    if (listaAmigos) listaAmigos.innerHTML = `<p style="color: #ef4444; font-size: 0.85rem;">Erro ao carregar a lista de amigos.</p>`;
   }
 }
+
 
 // Remover Amizade
 async function removerAmizade(amizadeDocId, nomeAmigo) {
