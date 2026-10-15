@@ -419,17 +419,14 @@
     <h3>🏋️ Treino Avulso</h3>
     <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 12px;">Selecione os exercícios que você deseja realizar hoje:</p>
     
+    <!-- O JavaScript vai injetar os Grupos Musculares E o "Outros Treinos" AQUI dentro: -->
     <div id="container-selecao-avulso" style="text-align: left;"></div>
-
-
-</div>
-
 
     <button id="btn-iniciar-avulso-confirmar" style="width: 100%; margin-top: 15px;">INICIAR TREINO SELECIONADO</button>
     <button id="btn-voltar-avulso" class="btn-secundario" style="width: 100%; margin-top: 8px;">CANCELAR</button>
   </div>
 </div>
-<script>
+
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')
       .then(() => console.log('Service Worker registrado com sucesso.'))
