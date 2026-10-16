@@ -1963,3 +1963,118 @@ async function alternarCurtida(postId) {
     }
   } catch (e) {}
 }
+
+// --- LÓGICA DO BOTÃO DO SINO E NOTIFICAÇÕES ---
+const btnNotificacoes = document.getElementById('btn-notificacoes');
+const modalNotificacoes = document.getElementById('modal-notificacoes');
+const btnFecharNotificacoes = document.getElementById('btn-fechar-modal-notificacoes');
+const badgeNotificacao = document.getElementById('badge-notificacao');
+
+// Ao clicar no sino, abre o modal de notificações e limpa o ponto vermelho
+if (btnNotificacoes && modalNotificacoes) {
+  btnNotificacoes.addEventListener('click', () => {
+    if (badgeNotificacao) badgeNotificacao.classList.add('hidden');
+    modalNotificacoes.classList.remove('hidden');
+    carregarNotificacoesTexto();
+  });
+}
+
+// Fechar pelo botão "X"
+if (btnFecharNotificacoes && modalNotificacoes) {
+  btnFecharNotificacoes.addEventListener('click', () => {
+    modalNotificacoes.classList.add('hidden');
+  });
+}
+
+// Fechar ao clicar fora do modal (fundo escuro)
+window.addEventListener('click', (event) => {
+  if (modalNotificacoes && event.target === modalNotificacoes) {
+    modalNotificacoes.classList.add('hidden');
+  }
+});
+
+// Função para buscar e exibir apenas os textos descritivos das atividades
+async function carregarNotificacoesTexto() {
+  const userAtual = auth.currentUser;
+  const containerNotif = document.getElementById('container-lista-notificacoes');
+  if (!userAtual || !containerNotif) return;
+
+  containerNotif.innerHTML = "<p style='color: #a1a1aa; font-size: 0.85rem; text-align: center;'>Buscando atualizações...</p>";
+
+  try {
+    // 1. Pega os IDs dos amigos
+    const idsAmigos = [userAtual.uid];
+    const amizadesSnap = await db.collection("amizades")
+      .where("usuarios", "array-contains", userAtual.uid)
+      .get();
+
+    amizadesSnap.forEach(doc => {
+      const amizade = doc.data();
+      const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
+      if (amigoId) idsAmigos.push(amigoId);
+    });
+
+    let listaNotificacoes = [];
+
+    // 2. Busca check-ins recentes dos amigos (somente texto)
+    const feedAmigosSnap = await db.collection("feed_amigos").get();
+    feedAmigosSnap.forEach(doc => {
+      const dados = doc.data();
+      if (idsAmigos.includes(dados.usuarioId) && dados.usuarioId !== userAtual.uid) {
+        listaNotificacoes.push({
+          texto: `<b>${dados.nomeUsuario}</b> fez o check-in`,
+          data: dados.dataExibicao || 'Recentemente',
+          timestamp: dados.timestamp || 0
+        });
+      }
+    });
+
+    // 3. Busca postagens em equipes que o usuário participa
+    if (equipesDoUsuario && equipesDoUsuario.length > 0) {
+      const equipeIds = equipesDoUsuario.map(eq => eq.id);
+      const feedFotosSnap = await db.collection("feed_fotos").get();
+      
+      feedFotosSnap.forEach(doc => {
+        const dados = doc.data();
+        // Se a foto é de uma equipe do usuário e não foi postada por ele mesmo
+        if (equipeIds.includes(dados.equipeId) && dados.usuarioUid !== userAtual.uid) {
+          // Acha o nome da equipe correspondente
+          const eqObj = equipesDoUsuario.find(e => e.id === dados.equipeId);
+          const nomeEquipe = eqObj ? eqObj.nome : "uma equipe";
+
+          listaNotificacoes.push({
+            texto: `<b>${dados.usuarioNome}</b> postou na equipe <b>${nomeEquipe}</b>`,
+            data: `${dados.dataIso || ''} às ${dados.dataHora || ''}`,
+            timestamp: dados.timestamp || 0
+          });
+        }
+      });
+    }
+
+    // Ordena da mais recente para a mais antiga
+    listaNotificacoes.sort((a, b) => b.timestamp - a.timestamp);
+
+    if (listaNotificacoes.length === 0) {
+      containerNotif.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem; text-align: center; margin-top: 15px;">Nenhuma nova notificação dos seus amigos ou equipes.</p>`;
+      return;
+    }
+
+    // Renderiza apenas os cards de texto (sem imagens)
+    let html = "";
+    listaNotificacoes.slice(0, 15).forEach(notif => {
+      html += `
+        <div style="background: #121214; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #29292e;">
+          <div style="color: #fff; font-size: 0.85rem;">📸 ${notif.texto}</div>
+          <div style="color: #a1a1aa; font-size: 0.7rem; margin-top: 4px;">${notif.data}</div>
+        </div>
+      `;
+    });
+
+    containerNotif.innerHTML = html;
+
+  } catch (err) {
+    console.error("Erro ao carregar notificações:", err);
+    containerNotif.innerHTML = `<p style="color: #ef4444; font-size: 0.85rem; text-align: center;">Erro ao carregar notificações.</p>`;
+  }
+}
+
