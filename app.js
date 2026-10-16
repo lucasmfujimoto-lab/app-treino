@@ -2538,4 +2538,48 @@ function fecharModalAmpliar() {
   }
 }
 
+const modalPerfil = document.getElementById('modal-perfil');
+const btnAbrirMenu = document.getElementById('btn-abrir-menu');
+const btnFecharPerfil = document.getElementById('btn-fechar-modal-perfil');
+
+// Abrir menu lateral/perfil pelos três riscos
+if (btnAbrirMenu) {
+  btnAbrirMenu.addEventListener('click', () => {
+    modalPerfil.classList.remove('hidden');
+  });
+}
+
+// Fechar modal pelo botão "X"
+if (btnFecharPerfil) {
+  btnFecharPerfil.addEventListener('click', () => {
+    modalPerfil.classList.add('hidden');
+  });
+}
+
+// Fechar modal ao clicar fora da caixa de conteúdo (fundo escuro)
+window.addEventListener('click', (event) => {
+  if (event.target === modalPerfil) {
+    modalPerfil.classList.add('hidden');
+  }
+});
+
+// --- Lógica de Notificação de Nova Foto no Feed ---
+const badgeNotificacao = document.getElementById('badge-notificacao');
+
+// Função para chamar quando houver um post novo de amigo ou equipe
+function dispararNotificacaoNovaFoto() {
+  if (badgeNotificacao) {
+    badgeNotificacao.classList.remove('hidden'); // Exibe o ponto vermelho
+  }
+}
+
+// Exemplo: Ao clicar no sininho de notificações, o utilizador visualiza o feed e o ponto desaparece
+const btnNotificacoes = document.getElementById('btn-notificacoes');
+if (btnNotificacoes) {
+  btnNotificacoes.addEventListener('click', () => {
+    badgeNotificacao.classList.add('hidden'); // Oculta o alerta ao ler
+    // Aqui você pode adicionar a função que abre a tela do Feed de Amigos/Check-in
+    console.log("Abrindo notificações / feed...");
+  });
+}
 
