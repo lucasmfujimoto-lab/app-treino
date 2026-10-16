@@ -146,41 +146,40 @@
   </div>
 
   <!-- MODAL DE PERFIL -->
-  <div id="modal-perfil" class="modal hidden">
-    <div class="modal-content modal-scroll">
-      <span class="close" id="btn-fechar-modal-perfil">&times;</span>
-      <h3>👤 Perfil & Configurações</h3>
-      <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 15px;" id="perfil-email-destaque">usuario@email.com</p>
-
-      <!-- SEÇÃO ALTERAR NOME DE EXIBIÇÃO -->
-      <div style="background: #121214; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #29292e; text-align: left;">
-        <label style="font-size: 0.8rem; color: #a8a8b3; font-weight: bold;">Nome no Feed e Grupos:</label>
-        <div style="display: flex; gap: 8px; margin-top: 6px;">
-          <input type="text" id="input-nome-exibicao" placeholder="Seu nome ou apelido" class="input-form" style="margin: 0;">
-          <button id="btn-salvar-nome" class="btn-secundario" style="white-space: nowrap; font-size: 0.8rem;">Salvar</button>
-        </div>
-      </div>
-
-      <div class="menu-perfil-grid">
-        <button id="btn-perfil-conquistas" class="btn-menu-perfil">
-          <span>🏆</span> Conquistas
-        </button>
-        <button id="btn-perfil-equipes" class="btn-menu-perfil">
-          <span>👥</span> Equipes
-        </button>
-          <button id="btn-amigos" class="btn-card">🤝 Amigos</button> <!-- Novo -->
-  <button id="btn-feed-amigos" class="btn-card">📸 Check-in dos Amigos</button>
-        <button id="btn-perfil-alongamento" class="btn-menu-perfil">
-          <span>🧘</span> Alongamento
-        </button>
-        <button id="btn-perfil-treinador" class="btn-menu-perfil hidden">
-          <span>⚡</span> Modo Treinador
-        </button>
-      </div>
-
-      <button id="btn-deslogar" class="btn-alerta" style="width: 100%; margin-top: 20px;">Sair da Conta</button>
+ <div id="modal-perfil" class="modal hidden">
+  <div class="modal-content" style="max-width: 400px; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0; color: #fff; font-size: 1.1rem;">👤 Perfil & Configurações</h3>
+      <button id="btn-fechar-modal-perfil" style="background:none; border:none; color:#fff; font-size: 1.2rem; cursor:pointer;">✕</button>
     </div>
+    
+    <p style="font-size: 0.8rem; color: #a8a8b3; margin-bottom: 15px;" id="email-usuario-perfil">email@dominio.com</p>
+
+    <!-- Alterar Nome no Feed em formato de linha -->
+    <div style="margin-bottom: 20px; background: #16161a; padding: 12px; border-radius: 8px; border: 1px solid #2a2a31;">
+      <label style="font-size: 0.85rem; color: #a8a8b3; display: block; margin-bottom: 6px;">Nome no Feed e Grupos:</label>
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="input-nome-feed" style="flex: 1; padding: 8px; background: #0e0e10; border: 1px solid #333; color: #fff; border-radius: 6px;" />
+        <button id="btn-salvar-nome" style="padding: 8px 14px; background: #00e676; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Salvar</button>
+      </div>
+    </div>
+
+    <!-- Lista Vertical de Opções -->
+    <div class="modal-perfil-lista">
+      <button class="item-menu-lista" id="menu-conquistas">🏆 Conquistas</button>
+      <button class="item-menu-lista" id="menu-equipes">👥 Equipes</button>
+      <button class="item-menu-lista destaque" id="menu-amigos">🤝 Amigos</button>
+      <button class="item-menu-lista destaque" id="menu-checkin">📸 Check-in dos Amigos</button>
+      <button class="item-menu-lista" id="menu-alongamento">🧘 Alongamento</button>
+      <button class="item-menu-lista" id="menu-treinador">⚡ Modo Treinador</button>
+    </div>
+
+    <button id="btn-sair-conta" style="width: 100%; margin-top: 20px; padding: 12px; background: rgba(255, 59, 48, 0.15); border: 1px solid #ff3b30; color: #ff3b30; border-radius: 8px; font-weight: bold; cursor: pointer;">
+      Sair da Conta
+    </button>
   </div>
+</div>
+
 
   <!-- MODAL CONQUISTAS -->
   <div id="modal-conquistas" class="modal hidden">
