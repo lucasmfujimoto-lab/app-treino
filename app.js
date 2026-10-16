@@ -389,19 +389,39 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Mapeamento dos itens do menu lateral em lista
+    // --- Mapeamento correto dos itens do menu lateral em lista ---
   const associarMenuModal = (idElemento, idModalDestino) => {
     const el = document.getElementById(idElemento);
     if (el) {
       el.addEventListener('click', () => {
         if (modalPerfil) modalPerfil.classList.add('hidden');
         const modalDest = document.getElementById(idModalDestino);
-        if (modalDest) modalDest.classList.remove('hidden');
+        if (modalDest) {
+          modalDest.classList.remove('hidden');
+          
+          // Se abrir equipes, carrega as equipes do usuário
+          if (idModalDestino === 'modal-equipes') {
+            voltarParaListaEquipes();
+            carregarEquipesDoUsuario();
+          }
+          // Se abrir amigos, carrega a lista
+          else if (idModalDestino === 'modal-amigos') {
+            carregarAmigosEConvites();
+          }
+          // Se abrir check-in dos amigos, carrega o feed
+          else if (idModalDestino === 'modal-feed-amigos') {
+            carregarFeedAmigos();
+          }
+        }
       });
     }
   };
 
+  // Associando cada ID da lista do menu ao seu respetivo modal
   associarMenuModal('menu-conquistas', 'modal-conquistas');
   associarMenuModal('menu-equipes', 'modal-equipes');
+  associarMenuModal('menu-amigos', 'modal-amigos');          // Botão Amigos
+  associarMenuModal('menu-checkin', 'modal-feed-amigos');    // Botão Check-in dos Amigos
   associarMenuModal('menu-alongamento', 'modal-alongamento');
   associarMenuModal('menu-treinador', 'modal-treinador');
 
