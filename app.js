@@ -159,6 +159,33 @@ function obterDataFormatadaBR(dataIso) {
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
+function gerarCodigoUsuario() {
+  return Math.random().toString(36).substr(2, 6).toUpperCase();
+}
+
+async function obterOuCriarCodigoUsuario(user, tipoDefinido = "aluno") {
+  const userRef = db.collection("usuarios").doc(user.uid);
+  const docUser = await userRef.get();
+
+  if (docUser.exists) {
+    const dados = docUser.data();
+    if (dados.codigo) {
+      return dados.codigo;
+    }
+  }
+
+  const codigoGerado = gerarCodigoUsuario();
+  const dadosNovos = {
+    email: user.email,
+    nomeExibicao: user.displayName || user.email.split('@')[0],
+    tipo: tipoDefinido,
+    codigo: codigoGerado
+  };
+
+  await userRef.set(dadosNovos, { merge: true });
+  return codigoGerado;
+}
+
 // CÁLCULO DA OFENSIVA E ESTATÍSTICAS
 function calcularStatsMembro(historico) {
   if (!historico) return { streak: 0, total: 0 };
@@ -255,24 +282,61 @@ function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
   };
 }
 
-// REGISTRO DE EVENTOS
-document.addEventListener("DOMContentLoaded", () => {
-  // Atualizar o texto quando uma foto for selecionada/capturada no Feed de Equipe
-const inputFotoFeed = document.getElementById('input-foto-feed');
-const textoFotoFeed = document.getElementById('texto-foto-feed'); // Ajuste o ID conforme o seu HTML se necessário
+// OBSERVADOR DE AUTENTICAÇÃO ÚNICO E CENTRALIZADO
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    usuarioLogado = user;
+    uidAlvoTrabalho = user.uid;
 
-if (inputFotoFeed) {
-  inputFotoFeed.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      // Se houver um span/p para o texto ao lado do botão
-      if (textoFotoFeed) {
-        textoFotoFeed.textContent = "Foto capturada ✓";
-        textoFotoFeed.style.color = "#00e676";
+    try {
+      const codigoOficial = await obterOuCriarCodigoUsuario(user);
+      const docUser = await db.collection("usuarios").doc(user.uid).get();
+      perfilUsuario = docUser.data();
+      if (perfilUsuario) {
+        perfilUsuario.codigo = codigoOficial;
       }
+    } catch (e) {
+      console.error("Erro ao sincronizar perfil:", e);
+      perfilUsuario = { 
+        email: user.email, 
+        nomeExibicao: user.email.split('@')[0], 
+        tipo: "aluno", 
+        codigo: "ERRO-COD" 
+      };
     }
-  });
-}
 
+    const nomeExibir = perfilUsuario?.nomeExibicao || user.email.split('@')[0];
+
+    const telaLogin = document.getElementById("tela-login");
+    const appPrincipal = document.getElementById("app-principal");
+    if (telaLogin) telaLogin.classList.add("hidden");
+    if (appPrincipal) appPrincipal.classList.remove("hidden");
+    
+    const infoUser = document.getElementById("info-usuario-logado");
+    if (infoUser) infoUser.innerText = `Olá, ${nomeExibir} | Código: ${perfilUsuario.codigo}`;
+    
+    const emailDestaque = document.getElementById("perfil-email-destaque");
+    if (emailDestaque) emailDestaque.innerText = `${user.email} (${perfilUsuario.codigo})`;
+    
+    const inputNome = document.getElementById("input-nome-exibicao") || document.getElementById("input-nome-feed");
+    if (inputNome) inputNome.value = nomeExibir;
+
+    const btnTreinadorMenu = document.getElementById("menu-treinador") || document.getElementById("btn-perfil-treinador");
+    if (btnTreinadorMenu && perfilUsuario.tipo === "treinador") {
+      btnTreinadorMenu.classList.remove("hidden");
+    }
+
+    carregarDadosDoServidor();
+  } else {
+    const telaLogin = document.getElementById("tela-login");
+    const appPrincipal = document.getElementById("app-principal");
+    if (telaLogin) telaLogin.classList.remove("hidden");
+    if (appPrincipal) appPrincipal.classList.add("hidden");
+  }
+});
+
+// REGISTRO DE EVENTOS E INTERAÇÕES DO DOM
+document.addEventListener("DOMContentLoaded", () => {
   const btnGoogle = document.getElementById('btn-login-google');
   if (btnGoogle) btnGoogle.addEventListener('click', autenticarComGoogle);
 
@@ -282,20 +346,11 @@ if (inputFotoFeed) {
   const linkAlternar = document.getElementById('link-alternar-login');
   if (linkAlternar) linkAlternar.addEventListener('click', alternarModoLogin);
 
-  const btnDeslogar = document.getElementById('btn-deslogar');
+  const btnDeslogar = document.getElementById('btn-deslogar') || document.getElementById('btn-sair-conta');
   if (btnDeslogar) {
     btnDeslogar.addEventListener('click', async () => {
       try {
         await auth.signOut();
-        const modalPerfil = document.getElementById('modal-perfil');
-        if (modalPerfil) modalPerfil.classList.add('hidden');
-
-        const telaPrincipal = document.getElementById('tela-principal');
-        const telaLogin = document.getElementById('tela-login');
-
-        if (telaPrincipal) telaPrincipal.classList.add('hidden');
-        if (telaLogin) telaLogin.classList.remove('hidden');
-
         window.location.reload();
       } catch (error) {
         console.error("Erro ao encerrar sessão:", error);
@@ -310,76 +365,80 @@ if (inputFotoFeed) {
   const btnSalvarNome = document.getElementById('btn-salvar-nome');
   if (btnSalvarNome) btnSalvarNome.addEventListener('click', salvarNomeExibicao);
 
-  // Perfil
-  const btnAbrirPerfil = document.getElementById('btn-abrir-perfil');
-  if (btnAbrirPerfil) btnAbrirPerfil.addEventListener('click', abrirModalPerfil);
-
+  // --- Menu Lateral / Perfil & Configurações ---
+  const modalPerfil = document.getElementById('modal-perfil');
+  const btnAbrirMenu = document.getElementById('btn-abrir-menu');
   const btnFecharPerfil = document.getElementById('btn-fechar-modal-perfil');
-  if (btnFecharPerfil) btnFecharPerfil.addEventListener('click', fecharModalPerfil);
 
-  const btnPerfilConquistas = document.getElementById('btn-perfil-conquistas');
-  if (btnPerfilConquistas) {
-    btnPerfilConquistas.addEventListener('click', () => {
-      fecharModalPerfil();
-      document.getElementById('modal-conquistas').classList.remove('hidden');
+  if (btnAbrirMenu && modalPerfil) {
+    btnAbrirMenu.addEventListener('click', () => {
+      modalPerfil.classList.remove('hidden');
     });
   }
 
-const btnFecharConquistas = document.getElementById('btn-fechar-modal-conquistas');
-if (btnFecharConquistas) {
-  btnFecharConquistas.addEventListener('click', () => {
-    document.getElementById('modal-conquistas').classList.add('hidden');
-    abrirModalPerfil(); // Reabre o perfil
-  });
-}
-
-
-  const btnVoltarConquistas = document.getElementById('btn-voltar-conquistas');
-if (btnVoltarConquistas) {
-    btnVoltarConquistas.addEventListener('click', () => {
-    document.getElementById('modal-conquistas').classList.add('hidden');
-    abrirModalPerfil(); // Reabre o perfil
-  });
-}
-
-  const btnPerfilEquipes = document.getElementById('btn-perfil-equipes');
-  if (btnPerfilEquipes) {
-    btnPerfilEquipes.addEventListener('click', () => {
-      fecharModalPerfil();
-      abrirModalEquipes();
+  if (btnFecharPerfil && modalPerfil) {
+    btnFecharPerfil.addEventListener('click', () => {
+      modalPerfil.classList.add('hidden');
     });
   }
 
-  const btnPerfilAlongamento = document.getElementById('btn-perfil-alongamento');
-  if (btnPerfilAlongamento) {
-    btnPerfilAlongamento.addEventListener('click', () => {
-      fecharModalPerfil();
-      document.getElementById('modal-alongamento').classList.remove('hidden');
+  window.addEventListener('click', (event) => {
+    if (modalPerfil && event.target === modalPerfil) {
+      modalPerfil.classList.add('hidden');
+    }
+  });
+
+  // Mapeamento dos itens do menu lateral em lista
+  const associarMenuModal = (idElemento, idModalDestino) => {
+    const el = document.getElementById(idElemento);
+    if (el) {
+      el.addEventListener('click', () => {
+        if (modalPerfil) modalPerfil.classList.add('hidden');
+        const modalDest = document.getElementById(idModalDestino);
+        if (modalDest) modalDest.classList.remove('hidden');
+      });
+    }
+  };
+
+  associarMenuModal('menu-conquistas', 'modal-conquistas');
+  associarMenuModal('menu-equipes', 'modal-equipes');
+  associarMenuModal('menu-alongamento', 'modal-alongamento');
+  associarMenuModal('menu-treinador', 'modal-treinador');
+
+  // Botões de fechar e voltar dos submodais para reabrir o perfil ou voltar
+  const configurarBotaoVoltar = (idBtn, idSubModal) => {
+    const btn = document.getElementById(idBtn);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const sub = document.getElementById(idSubModal);
+        if (sub) sub.classList.add('hidden');
+        if (modalPerfil) modalPerfil.classList.remove('hidden');
+      });
+    }
+  };
+
+  configurarBotaoVoltar('btn-fechar-modal-conquistas', 'modal-conquistas');
+  configurarBotaoVoltar('btn-voltar-conquistas', 'modal-conquistas');
+  configurarBotaoVoltar('btn-fechar-modal-treinador', 'modal-treinador');
+  configurarBotaoVoltar('btn-voltar-treinador', 'modal-treinador');
+  configurarBotaoVoltar('btn-fechar-modal-alongamento', 'modal-alongamento');
+  configurarBotaoVoltar('btn-voltar-alongamento', 'modal-alongamento');
+  configurarBotaoVoltar('btn-fechar-modal-equipes', 'modal-equipes');
+
+  // Notificações
+  const btnNotificacoes = document.getElementById('btn-notificacoes');
+  const badgeNotificacao = document.getElementById('badge-notificacao');
+  if (btnNotificacoes) {
+    btnNotificacoes.addEventListener('click', () => {
+      if (badgeNotificacao) badgeNotificacao.classList.add('hidden');
+      const modalFeedAmigos = document.getElementById('modal-feed-amigos');
+      if (modalFeedAmigos) {
+        modalFeedAmigos.classList.remove('hidden');
+        carregarFeedAmigos();
+      }
     });
   }
 
-  const btnPerfilTreinador = document.getElementById('btn-perfil-treinador');
-  if (btnPerfilTreinador) {
-    btnPerfilTreinador.addEventListener('click', () => {
-      fecharModalPerfil();
-      document.getElementById('modal-treinador').classList.remove('hidden');
-    });
-  }
-
-  const btnFecharTreinador = document.getElementById('btn-fechar-modal-treinador');
-if (btnFecharTreinador) {
-  btnFecharTreinador.addEventListener('click', () => {
-    document.getElementById('modal-treinador').classList.add('hidden');
-    abrirModalPerfil(); // Reabre o perfil
-  });
-}
-  const btnVoltarTreinador = document.getElementById('btn-voltar-treinador');
-if (btnVoltarTreinador) {
-  btnVoltarTreinador.addEventListener('click', () => {
-    document.getElementById('modal-treinador').classList.add('hidden');
-    abrirModalPerfil(); // Reabre o perfil
-  });
-}
   // Treinador
   const btnAcessarAluno = document.getElementById('btn-acessar-aluno');
   if (btnAcessarAluno) btnAcessarAluno.addEventListener('click', carregarTreinoDoAluno);
@@ -411,7 +470,8 @@ if (btnVoltarTreinador) {
   const btnAbrirConfig = document.getElementById('btn-abrir-config');
   if (btnAbrirConfig) btnAbrirConfig.addEventListener('click', () => {
     uidAlvoTrabalho = usuarioLogado.uid;
-    document.getElementById('titulo-modal-config').innerText = "Configurar Minha Rotina";
+    const tituloConf = document.getElementById('titulo-modal-config');
+    if (tituloConf) tituloConf.innerText = "Configurar Minha Rotina";
     abrirConfigRotina();
   });
 
@@ -434,19 +494,6 @@ if (btnVoltarTreinador) {
   const btnSairEqAtiva = document.getElementById('btn-sair-equipe-ativa');
   if (btnSairEqAtiva) btnSairEqAtiva.addEventListener('click', sairDaEquipeAtiva);
 
-  // Fechar Modais Gerais
-  const btnFecharEq1 = document.getElementById('btn-fechar-modal-equipes');
-  if (btnFecharEq1) btnFecharEq1.addEventListener('click', fecharModalEquipes);
-
-  const btnFecharEq2 = document.getElementById('btn-fechar-equipes-btn');
-  if (btnFecharEq2) btnFecharEq2.addEventListener('click', fecharModalEquipes);
-
-  const btnFecharAlong1 = document.getElementById('btn-fechar-modal-alongamento');
-  if (btnFecharAlong1) btnFecharAlong1.addEventListener('click', fecharModalAlongamento);
-
-  const btnFecharAlong2 = document.getElementById('btn-voltar-alongamento');
-  if (btnFecharAlong2) btnFecharAlong2.addEventListener('click', fecharModalAlongamento);
-
   const btnFecharVid1 = document.getElementById('btn-fechar-modal-video');
   if (btnFecharVid1) btnFecharVid1.addEventListener('click', fecharModalVideo);
 
@@ -463,15 +510,94 @@ if (btnVoltarTreinador) {
   if (btnFecharConf) btnFecharConf.addEventListener('click', fecharModalConfig);
 });
 
+// FUNÇÕES DE AUTENTICAÇÃO E PERFIL
+async function autenticarUsuario(e) {
+  if (e) e.preventDefault();
+  
+  const emailInput = document.getElementById("login-email");
+  const senhaInput = document.getElementById("login-senha");
+
+  if (!emailInput || !senhaInput) return;
+
+  const email = emailInput.value.trim();
+  const senha = senhaInput.value;
+
+  try {
+    if (modoCadastro) {
+      const tipoPerfil = document.getElementById("login-tipo-perfil").value;
+      const res = await auth.createUserWithEmailAndPassword(email, senha);
+      await obterOuCriarCodigoUsuario(res.user, tipoPerfil);
+      alert("Conta criada com sucesso!");
+    } else {
+      await auth.signInWithEmailAndPassword(email, senha);
+    }
+  } catch (err) {
+    alert("Erro na autenticação: " + err.message);
+  }
+}
+
+async function autenticarComGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    const result = await auth.signInWithPopup(provider);
+    const user = result.user;
+    await obterOuCriarCodigoUsuario(user);
+    alert(`Bem-vindo, ${user.displayName || user.email}!`);
+  } catch (error) {
+    console.error("Erro no login com Google:", error);
+    alert("Erro ao fazer login com o Google: " + error.message);
+  }
+}
+
+async function salvarNomeExibicao() {
+  if (!usuarioLogado) return;
+  const inputNome = document.getElementById("input-nome-feed") || document.getElementById("input-nome-exibicao");
+  const novoNome = inputNome ? inputNome.value.trim() : "";
+
+  if (!novoNome) return alert("Digite um nome válido.");
+
+  try {
+    perfilUsuario.nomeExibicao = novoNome;
+    await db.collection("usuarios").doc(usuarioLogado.uid).set({
+      nomeExibicao: novoNome
+    }, { merge: true });
+
+    const infoUser = document.getElementById("info-usuario-logado");
+    if (infoUser) infoUser.innerText = `Olá, ${novoNome} | Código: ${perfilUsuario.codigo}`;
+    alert("Nome atualizado com sucesso!");
+  } catch (e) {
+    alert("Erro ao salvar nome: " + e.message);
+  }
+}
+
+function alternarModoLogin(e) {
+  if (e) e.preventDefault();
+  modoCadastro = !modoCadastro;
+  
+  const subtitulo = document.getElementById("login-subtitulo");
+  const btnSubmit = document.getElementById("btn-submit-login");
+  const txtAlternar = document.getElementById("txt-alternar-login");
+  const linkAlternar = document.getElementById("link-alternar-login");
+  const areaCadastro = document.getElementById("area-perfil-cadastro");
+
+  if (subtitulo) subtitulo.innerText = modoCadastro ? "Crie sua conta para começar" : "Acesse sua conta para continuar";
+  if (btnSubmit) btnSubmit.innerText = modoCadastro ? "CRIAR CONTA" : "ENTRAR";
+  if (txtAlternar) txtAlternar.innerText = modoCadastro ? "Já tem uma conta?" : "Não tem conta?";
+  if (linkAlternar) linkAlternar.innerText = modoCadastro ? "Fazer Login" : "Criar Conta";
+  
+  if (areaCadastro) {
+    if (modoCadastro) areaCadastro.classList.remove("hidden");
+    else areaCadastro.classList.add("hidden");
+  }
+}
+
 // ABRIR MODAL DE SELEÇÃO DO TREINO AVULSO
 function abrirModalTreinoAvulso() {
   const container = document.getElementById('container-selecao-avulso');
   if (!container) return;
   
-  // Limpa o modal para evitar duplicações
   container.innerHTML = '';
 
-  // 1. Renderizar os grupos musculares padrões
   todosGrupos.forEach(grupo => {
     const bloco = document.createElement('div');
     bloco.style.cssText = "margin-bottom: 15px; border-bottom: 1px solid #29292e; padding-bottom: 10px;";
@@ -480,20 +606,17 @@ function abrirModalTreinoAvulso() {
     const exerciciosGrupo = catalogoExercicios[grupo] || [];
 
     exerciciosGrupo.forEach(ex => {
-      // Garanta que o value receba ex.nome ou o nome do exercício
-html += `
-  <label style='display: block; font-size: 0.85rem; margin-bottom: 4px; font-weight: normal; color: #e1e1e6;'>
-    <input type='checkbox' class='cb-ex-avulso' data-grupo='${grupo}' value='${ex.nome}'> ${ex.nome}
-  </label>
-`;
-
+      html += `
+        <label style='display: block; font-size: 0.85rem; margin-bottom: 4px; font-weight: normal; color: #e1e1e6;'>
+          <input type='checkbox' class='cb-ex-avulso' data-grupo='${grupo}' value='${ex.nome}'> ${ex.nome}
+        </label>
+      `;
     });
 
     bloco.innerHTML = html;
     container.appendChild(bloco);
   });
 
-  // 2. Renderizar a seção "Outros Treinos" UMA ÚNICA VEZ NO FINAL
   const blocoOutros = document.createElement('div');
   blocoOutros.style.cssText = "margin-top: 20px; margin-bottom: 15px; padding: 15px; background-color: #1e1e24; border-radius: 8px;";
   blocoOutros.innerHTML = `
@@ -509,7 +632,6 @@ html += `
   `;
   container.appendChild(blocoOutros);
 
-  // 3. Exibir o modal
   const modal = document.getElementById('modal-treino-avulso') || document.getElementById('modalTreinoAvulso');
   if (modal) modal.classList.remove('hidden');
 }
@@ -547,46 +669,34 @@ function adicionarCampoTreino() {
 }
 
 function montarEIniciarTreinoAvulso() {
-  // 1. Procurar checkboxes marcados
-  const selecionados = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'));
-  
-  // 2. Procurar treinos manuais preenchidos
+  const selecionados = Array.from(document.querySelectorAll('input[type="checkbox"].cb-ex-avulso:checked'));
   const inputsOutros = Array.from(document.querySelectorAll('.input-outro-treino'));
   const treinosManuais = inputsOutros
     .map(input => input.value.trim())
     .filter(texto => texto !== '');
 
-  // Validar se pelo menos 1 item foi selecionado ou preenchido
   if (selecionados.length === 0 && treinosManuais.length === 0) {
     return alert("Selecione pelo menos um exercício ou digite em Outros Treinos!");
   }
 
   ehTreinoAvulsoAtivo = true;
-
   const areaExecucao = document.getElementById('area-execucao') || document.getElementById('areaExecucaoTreino');
   const listaContainer = document.getElementById('lista-exercicios') || document.getElementById('listaExerciciosExecucao');
   
   if (listaContainer) listaContainer.innerHTML = '';
-
   const exerciciosPorGrupo = {};
 
-  // Agrupar exercícios marcados por Grupo
-  // Ler o valor do checkbox (ou data-nome se preferir)
-selecionados.forEach(cb => {
-  const grupo = cb.getAttribute('data-grupo') || 'Geral';
-  const nomeEx = cb.value !== 'on' ? cb.value : cb.getAttribute('data-nome');
+  selecionados.forEach(cb => {
+    const grupo = cb.getAttribute('data-grupo') || 'Geral';
+    const nomeEx = cb.value;
+    if (!exerciciosPorGrupo[grupo]) exerciciosPorGrupo[grupo] = [];
+    exerciciosPorGrupo[grupo].push(nomeEx);
+  });
 
-  if (!exerciciosPorGrupo[grupo]) exerciciosPorGrupo[grupo] = [];
-  exerciciosPorGrupo[grupo].push(nomeEx);
-});
-
-
-  // Agrupar treinos manuais no grupo "Outros Treinos"
   if (treinosManuais.length > 0) {
     exerciciosPorGrupo['Outros Treinos'] = treinosManuais;
   }
 
-  // Renderizar na tela de execução
   Object.keys(exerciciosPorGrupo).forEach(grupo => {
     const tituloGrupo = document.createElement('h3');
     tituloGrupo.style.cssText = "color: #00e676; margin: 15px 0 8px 0; font-size: 0.95rem; text-align: left;";
@@ -594,442 +704,15 @@ selecionados.forEach(cb => {
     if (listaContainer) listaContainer.appendChild(tituloGrupo);
 
     exerciciosPorGrupo[grupo].forEach(nomeEx => {
-      const cardEx = document.createElement('div');
-      cardEx.className = 'item-exercicio';
-
-      const topo = document.createElement('div');
-      topo.className = 'exercicio-topo';
-
-      const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox" class="check-ex" data-nome="${nomeEx}" checked> <strong>${nomeEx}</strong>`;
-
-      topo.appendChild(label);
-
-      const inputs = document.createElement('div');
-      inputs.className = 'inputs-treino';
-      inputs.innerHTML = `
-        <div class="input-group">
-          <label>Séries</label>
-          <input type="number" value="3" class="input-series">
-        </div>
-        <div class="input-group">
-          <label>Reps</label>
-          <input type="text" value="8-10" class="input-reps">
-        </div>
-        <div class="input-group" style="flex: 1.2; min-width: 100px;">
-          <label>Carga (kg)</label>
-          <input type="number" placeholder="Opcional" class="input-carga">
-        </div>
-      `;
-
-      cardEx.appendChild(topo);
-      cardEx.appendChild(inputs);
-      if (listaContainer) listaContainer.appendChild(cardEx);
+      renderizarCardExercicioExecucao(listaContainer, nomeEx, null);
     });
   });
 
-  // Fechar modal e abrir tela de treino ativo
   fecharModalTreinoAvulso();
   if (areaExecucao) areaExecucao.classList.remove('hidden');
 }
 
-// OBSERVADOR DE AUTENTICAÇÃO
-auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    usuarioLogado = user;
-    uidAlvoTrabalho = user.uid;
-
-    try {
-      const docUser = await db.collection("usuarios").doc(user.uid).get();
-      if (docUser.exists) {
-        perfilUsuario = docUser.data();
-      } else {
-        perfilUsuario = { 
-  email: user.email, 
-  nomeExibicao: user.displayName || user.email.split('@')[0], 
-  tipo: "aluno", 
-  codigo: gerarCodigoUsuario() 
-};
-
-        await db.collection("usuarios").doc(user.uid).set(perfilUsuario);
-      }
-    } catch (e) {
-      perfilUsuario = { 
-        email: user.email, 
-        nomeExibicao: user.email.split('@')[0], 
-        tipo: "aluno", 
-        codigo: "ALUNO-" + Math.random().toString(36).substr(2, 6).toUpperCase() 
-      };
-    }
-
-    const nomeExibir = perfilUsuario.nomeExibicao || user.email.split('@')[0];
-
-    document.getElementById("tela-login").classList.add("hidden");
-    document.getElementById("app-principal").classList.remove("hidden");
-    
-    document.getElementById("info-usuario-logado").innerText = `Olá, ${nomeExibir} | Código: ${perfilUsuario.codigo}`;
-    document.getElementById("perfil-email-destaque").innerText = `${user.email} (${perfilUsuario.codigo})`;
-    document.getElementById("input-nome-exibicao").value = nomeExibir;
-
-    if (perfilUsuario.tipo === "treinador") {
-      document.getElementById("btn-perfil-treinador").classList.remove("hidden");
-    }
-
-    carregarDadosDoServidor();
-  } else {
-    document.getElementById("tela-login").classList.remove("hidden");
-    document.getElementById("app-principal").classList.add("hidden");
-  }
-});
-
-async function salvarNomeExibicao() {
-  if (!usuarioLogado) return;
-  const novoNome = document.getElementById("input-nome-exibicao").value.trim();
-
-  if (!novoNome) return alert("Digite um nome válido.");
-
-  try {
-    perfilUsuario.nomeExibicao = novoNome;
-    await db.collection("usuarios").doc(usuarioLogado.uid).set({
-      nomeExibicao: novoNome
-    }, { merge: true });
-
-    document.getElementById("info-usuario-logado").innerText = `Olá, ${novoNome} | Código: ${perfilUsuario.codigo}`;
-    alert("Nome atualizado com sucesso!");
-  } catch (e) {
-    alert("Erro ao salvar nome: " + e.message);
-  }
-}
-
-async function carregarTreinoDoAluno() {
-  const codigoInput = document.getElementById("input-codigo-aluno");
-  const codigo = codigoInput.value.trim().toUpperCase();
-
-  if (!codigo) return alert("Digite o código do aluno.");
-
-  try {
-    const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
-    if (snap.empty) {
-      return alert("Nenhum aluno encontrado com este código.");
-    }
-
-    const docAluno = snap.docs[0];
-    uidAlvoTrabalho = docAluno.id;
-    const dadosAluno = docAluno.data();
-    const nomeAluno = dadosAluno.nomeExibicao || dadosAluno.email.split('@')[0];
-
-    document.getElementById("modal-treinador").classList.add("hidden");
-    codigoInput.value = "";
-
-    document.getElementById('titulo-modal-config').innerText = `⚙️ Montando Rotina de: ${nomeAluno}`;
-    
-    const docRotina = await db.collection("rotinas").doc(uidAlvoTrabalho).get();
-    if (docRotina.exists) {
-      configuracaoTreino = docRotina.data().rotina || [];
-    } else {
-      configuracaoTreino = [];
-    }
-
-    abrirConfigRotina();
-  } catch (e) {
-    alert("Erro ao buscar aluno: " + e.message);
-  }
-}
-
-function abrirModalPerfil() {
-  document.getElementById('modal-perfil').classList.remove('hidden');
-}
-
-function fecharModalPerfil() {
-  document.getElementById('modal-perfil').classList.add('hidden');
-}
-
-function alternarModoLogin(e) {
-  if (e) e.preventDefault();
-  modoCadastro = !modoCadastro;
-  
-  document.getElementById("login-subtitulo").innerText = modoCadastro ? "Crie sua conta para começar" : "Acesse sua conta para continuar";
-  document.getElementById("btn-submit-login").innerText = modoCadastro ? "CRIAR CONTA" : "ENTRAR";
-  document.getElementById("txt-alternar-login").innerText = modoCadastro ? "Já tem uma conta?" : "Não tem conta?";
-  document.getElementById("link-alternar-login").innerText = modoCadastro ? "Fazer Login" : "Criar Conta";
-  
-  if (modoCadastro) {
-    document.getElementById("area-perfil-cadastro").classList.remove("hidden");
-  } else {
-    document.getElementById("area-perfil-cadastro").classList.add("hidden");
-  }
-}
-// Função centralizada para garantir que o código seja SEMPRE o mesmo do banco
-async function obterOuCriarCodigoUsuario(user, tipoDefinido = "aluno") {
-  const userRef = db.collection("usuarios").doc(user.uid);
-  const docUser = await userRef.get();
-
-  if (docUser.exists) {
-    const dados = docUser.data();
-    // Se já tem código no banco, retorna ele (nunca gera outro!)
-    if (dados.codigo) {
-      return dados.codigo;
-    }
-  }
-
-  // Se não existe ou não tem código, gera um novo e salva
-  const codigoGerado = gerarCodigoUsuario();
-  const dadosNovos = {
-    email: user.email,
-    nomeExibicao: user.displayName || user.email.split('@')[0],
-    tipo: tipoDefinido,
-    codigo: codigoGerado
-  };
-
-  await userRef.set(dadosNovos, { merge: true });
-  return codigoGerado;
-}
-
-// OBSERVADOR DE AUTENTICAÇÃO ATUALIZADO
-auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    usuarioLogado = user;
-    uidAlvoTrabalho = user.uid;
-
-    try {
-      // Garante que o perfil existe e puxa o código oficial exato do banco
-      const codigoOficial = await obterOuCriarCodigoUsuario(user);
-      
-      const docUser = await db.collection("usuarios").doc(user.uid).get();
-      perfilUsuario = docUser.data();
-      perfilUsuario.codigo = codigoOficial; // Força sincronia exata
-
-    } catch (e) {
-      console.error("Erro ao sincronizar perfil:", e);
-      perfilUsuario = { 
-        email: user.email, 
-        nomeExibicao: user.email.split('@')[0], 
-        tipo: "aluno", 
-        codigo: "ERRO-COD" 
-      };
-    }
-
-    const nomeExibir = perfilUsuario.nomeExibicao || user.email.split('@')[0];
-
-    document.getElementById("tela-login").classList.add("hidden");
-    document.getElementById("app-principal").classList.remove("hidden");
-    
-    // Atualiza imediatamente na tela com o código oficial do banco
-    document.getElementById("info-usuario-logado").innerText = `Olá, ${nomeExibir} | Código: ${perfilUsuario.codigo}`;
-    document.getElementById("perfil-email-destaque").innerText = `${user.email} (${perfilUsuario.codigo})`;
-    document.getElementById("input-nome-exibicao").value = nomeExibir;
-
-    if (perfilUsuario.tipo === "treinador") {
-      document.getElementById("btn-perfil-treinador").classList.remove("hidden");
-    }
-
-    carregarDadosDoServidor();
-  } else {
-    document.getElementById("tela-login").classList.remove("hidden");
-    document.getElementById("app-principal").classList.add("hidden");
-  }
-});
-
-// AUTENTICAÇÃO POR EMAIL E SENHA ATUALIZADA
-async function autenticarUsuario(e) {
-  if (e) e.preventDefault();
-  
-  const emailInput = document.getElementById("login-email");
-  const senhaInput = document.getElementById("login-senha");
-
-  if (!emailInput || !senhaInput) return;
-
-  const email = emailInput.value.trim();
-  const senha = senhaInput.value;
-
-  try {
-    if (modoCadastro) {
-      const tipoPerfil = document.getElementById("login-tipo-perfil").value;
-      const res = await auth.createUserWithEmailAndPassword(email, senha);
-      
-      // Usa a função centralizada para criar com o código oficial
-      await obterOuCriarCodigoUsuario(res.user, tipoPerfil);
-
-      alert("Conta criada com sucesso!");
-    } else {
-      await auth.signInWithEmailAndPassword(email, senha);
-    }
-  } catch (err) {
-    alert("Erro na autenticação: " + err.message);
-  }
-}
-
-
-// Atualizar função abrirModalPerfil para revalidar os dados na tela
-async function abrirModalPerfil() {
-  if (usuarioLogado) {
-    try {
-      const docRef = await db.collection("usuarios").doc(usuarioLogado.uid).get();
-      if (docRef.exists) {
-        const dados = docRef.data();
-        perfilUsuario = dados;
-        const codigoAtual = dados.codigo || "--";
-        const emailDestaque = document.getElementById("perfil-email-destaque");
-        if (emailDestaque) {
-          emailDestaque.innerText = `${usuarioLogado.email} (${codigoAtual})`;
-        }
-      }
-    } catch (e) {}
-  }
-  document.getElementById('modal-perfil').classList.remove('hidden');
-}
-
-
-
-
-async function publicarFotoNoFeed() {
-  if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipe primeiro.");
-
-  const fileInput = document.getElementById('input-foto-feed');
-  if (!fileInput.files || fileInput.files.length === 0) {
-    return alert("Selecione uma foto para publicar!");
-  }
-
-  const file = fileInput.files[0];
-  const btnPublicar = document.getElementById('btn-publicar-foto');
-  
-  if (btnPublicar) {
-    btnPublicar.disabled = true;
-    btnPublicar.innerText = "⏳ Comprimindo e publicando...";
-  }
-
-  comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
-    const agora = new Date();
-    const dia = String(agora.getDate()).padStart(2, '0');
-    const mes = String(agora.getMonth() + 1).padStart(2, '0');
-    const ano = agora.getFullYear();
-    
-    const dataFormatada = `${dia}/${mes}/${ano}`;
-    const horaAtual = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    const nomeAutor = perfilUsuario.nomeExibicao || usuarioLogado.email.split('@')[0];
-
-    try {
-      const snapFeed = await db.collection("feed_fotos")
-        .where("equipeId", "==", equipeAtiva.id)
-        .get();
-
-      const posts = snapFeed.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-      if (posts.length >= 30) {
-        posts.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-        const qtdParaDeletar = posts.length - 29;
-        
-        for (let i = 0; i < qtdParaDeletar; i++) {
-          await db.collection("feed_fotos").doc(posts[i].id).delete();
-        }
-      }
-
-      await db.collection("feed_fotos").add({
-        equipeId: equipeAtiva.id,
-        usuarioUid: usuarioLogado.uid,
-        usuarioNome: nomeAutor,
-        fotoUrl: base64Comprimido,
-        dataIso: dataFormatada,
-        dataHora: horaAtual,
-        timestamp: agora.getTime(),
-        curtidas: []
-      });
-
-      fileInput.value = "";
-      alert("Foto publicada com sucesso!");
-      await renderizarFeedEquipe();
-    } catch (err) {
-      alert("Erro ao publicar foto: " + err.message);
-    } finally {
-      if (btnPublicar) {
-        btnPublicar.disabled = false;
-        btnPublicar.innerText = "📸 Publicar Foto no Feed";
-      }
-      // Dentro de publicarFotoNoFeed(), após o sucesso:
-// Dentro da função publicarFotoNoFeed(), logo após enviar a foto:
-const textoStatus = document.getElementById('nome-arquivo-foto');
-if (textoStatus) {
-  textoStatus.innerText = "Nenhuma foto selecionada";
-  textoStatus.style.color = "#a8a8b3";
-}
-
-
-    }
-  });
-}
-
-async function renderizarFeedEquipe() {
-  if (!equipeAtiva) return;
-
-  const container = document.getElementById("container-feed-equipe");
-  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando fotos do feed...</p>";
-
-  try {
-    const snapFeed = await db.collection("feed_fotos")
-      .where("equipeId", "==", equipeAtiva.id)
-      .get();
-
-    if (snapFeed.empty) {
-      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Ainda não há fotos nesta equipe. Seja o primeiro a publicar!</p>";
-      return;
-    }
-
-    const posts = snapFeed.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-    let html = "";
-    posts.forEach(post => {
-      const curtidas = post.curtidas || [];
-      const jaCurtiu = usuarioLogado ? curtidas.includes(usuarioLogado.uid) : false;
-
-      html += `
-        <div class="feed-foto-card">
-          <div class="feed-header">
-            <span class="feed-usuario">📸 ${post.usuarioNome}</span>
-            <span class="feed-data">${post.dataIso} às ${post.dataHora || ''}</span>
-          </div>
-          <img src="${post.fotoUrl}" class="feed-foto-img" alt="Foto do treino">
-          <div>
-            <button class="btn-curtir ${jaCurtiu ? 'curtido' : ''}" onclick="alternarCurtida('${post.id}')">
-              ❤️ ${curtidas.length} ${curtidas.length === 1 ? 'Curtida' : 'Curtidas'}
-            </button>
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  } catch (e) {
-    console.error("Erro ao carregar feed:", e);
-    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar as fotos.</p>";
-  }
-}
-
-async function alternarCurtida(postId) {
-  if (!usuarioLogado) return;
-
-  try {
-    const postRef = db.collection("feed_fotos").doc(postId);
-    const doc = await postRef.get();
-
-    if (doc.exists) {
-      const data = doc.data();
-      let curtidas = data.curtidas || [];
-
-      if (curtidas.includes(usuarioLogado.uid)) {
-        curtidas = curtidas.filter(uid => uid !== usuarioLogado.uid);
-      } else {
-        curtidas.push(usuarioLogado.uid);
-      }
-
-      await postRef.update({ curtidas: curtidas });
-      renderizarFeedEquipe();
-    }
-  } catch (e) {
-    console.error("Erro ao alterar curtida:", e);
-  }
-}
-
+// CARREGAR DADOS DO SERVIDOR E CALENDÁRIO
 async function carregarDadosDoServidor() {
   try {
     const docRotina = await db.collection("rotinas").doc(usuarioLogado.uid).get();
@@ -1058,18 +741,23 @@ function calcularEstatisticasEOfensiva() {
   const stats = calcularStatsMembro(historicoTreinos);
   const datasTreinadas = Object.keys(historicoTreinos).sort();
 
-  document.getElementById("stat-total").innerText = `📊 ${stats.total} treinos`;
+  const statTotal = document.getElementById("stat-total");
+  if (statTotal) statTotal.innerText = `📊 ${stats.total} treinos`;
 
   if (stats.total === 0) {
-    document.getElementById("stat-inicio").innerText = "desde o início";
-    document.getElementById("stat-ofensiva").innerText = "🔥 0 dias";
+    const statInicio = document.getElementById("stat-inicio");
+    const statOfensiva = document.getElementById("stat-ofensiva");
+    if (statInicio) statInicio.innerText = "desde o início";
+    if (statOfensiva) statOfensiva.innerText = "🔥 0 dias";
     renderizarConquistas(0, 0);
     return;
   }
 
   const primeiraDataFormatada = obterDataFormatadaBR(datasTreinadas[0]);
-  document.getElementById("stat-inicio").innerText = `desde ${primeiraDataFormatada}`;
-  document.getElementById("stat-ofensiva").innerText = `🔥 ${stats.streak} ${stats.streak === 1 ? "dia" : "dias"}`;
+  const statInicio = document.getElementById("stat-inicio");
+  const statOfensiva = document.getElementById("stat-ofensiva");
+  if (statInicio) statInicio.innerText = `desde ${primeiraDataFormatada}`;
+  if (statOfensiva) statOfensiva.innerText = `🔥 ${stats.streak} ${stats.streak === 1 ? "dia" : "dias"}`;
 
   renderizarConquistas(stats.streak, stats.total);
 }
@@ -1102,359 +790,71 @@ function renderizarConquistas(streak, total) {
   container.innerHTML = html;
 }
 
-// GERENCIAMENTO DE EQUIPES
-async function abrirModalEquipes() {
-  document.getElementById('modal-equipes').classList.remove('hidden');
-  voltarParaListaEquipes();
-  await carregarEquipesDoUsuario();
-}
-
-function fecharModalEquipes() {
-  document.getElementById('modal-equipes').classList.add('hidden');
-  abrirModalPerfil(); // Reabre o perfil
-}
-
-function voltarParaListaEquipes() {
-  document.getElementById('view-lista-equipes').classList.remove('hidden');
-  document.getElementById('view-detalhes-equipe').classList.add('hidden');
-  equipeAtiva = null;
-}
-
-async function carregarEquipesDoUsuario() {
-  if (!usuarioLogado) return;
-
-  const container = document.getElementById('container-lista-equipes');
-  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando equipes...</p>";
-
-  try {
-    const snap = await db.collection("equipes").where("membrosUids", "array-contains", usuarioLogado.uid).get();
-    equipesDoUsuario = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-    document.getElementById('contador-equipes-texto').innerText = `Você participa de ${equipesDoUsuario.length}/5 equipes`;
-
-    if (equipesDoUsuario.length === 0) {
-      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Você ainda não participa de nenhuma equipe.</p>";
-      return;
-    }
-
-    let html = "";
-    equipesDoUsuario.forEach(eq => {
-      html += `
-        <div class="equipe-item-card" onclick="abrirDetalhesEquipe('${eq.id}')">
-          <div>
-            <div class="equipe-item-nome">👥 ${eq.nome}</div>
-            <div class="equipe-item-membros-count">${eq.membrosUids.length} membro(s)</div>
-          </div>
-          <span style="color: #00e676; font-weight: bold;">➔</span>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  } catch (e) {
-    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar equipes.</p>";
-  }
-}
-
-async function criarEquipe() {
-  if (!usuarioLogado) return;
-
-  if (equipesDoUsuario.length >= 5) {
-    return alert("Você atingiu o limite de 5 equipes ativas!");
-  }
-
-  const inputNome = document.getElementById("input-nome-equipe");
-  const nome = inputNome.value.trim();
-
-  if (!nome) return alert("Digite um nome para a equipe.");
-
-  try {
-    const novaEquipe = {
-      nome: nome,
-      criadorUid: usuarioLogado.uid,
-      membrosUids: [usuarioLogado.uid]
-    };
-
-    await db.collection("equipes").add(novaEquipe);
-    inputNome.value = "";
-    await carregarEquipesDoUsuario();
-    alert("Equipe criada com sucesso!");
-  } catch (e) {
-    alert("Erro ao criar equipe: " + e.message);
-  }
-}
-
-async function abrirDetalhesEquipe(equipeId) {
-  equipeAtiva = equipesDoUsuario.find(eq => eq.id === equipeId);
-  if (!equipeAtiva) return;
-
-  document.getElementById('view-lista-equipes').classList.add('hidden');
-  document.getElementById('view-detalhes-equipe').classList.remove('hidden');
-  document.getElementById('titulo-equipe-ativa').innerText = `👥 ${equipeAtiva.nome}`;
-
-  mudarAbaEquipe('membros');
-}
-
-function mudarAbaEquipe(aba) {
-  document.getElementById('aba-membros').classList.remove('ativa');
-  document.getElementById('aba-ranking').classList.remove('ativa');
-  document.getElementById('aba-feed').classList.remove('ativa');
-
-  document.getElementById('conteudo-aba-membros').classList.add('hidden');
-  document.getElementById('conteudo-aba-ranking').classList.add('hidden');
-  document.getElementById('conteudo-aba-feed').classList.add('hidden');
-
-  document.getElementById(`aba-${aba}`).classList.add('ativa');
-  document.getElementById(`conteudo-aba-${aba}`).classList.remove('hidden');
-
-  if (aba === 'membros') renderizarMembrosEquipe();
-  if (aba === 'ranking') renderizarRankingEquipe();
-  if (aba === 'feed') renderizarFeedEquipe();
-}
-
-async function renderizarMembrosEquipe() {
-  if (!equipeAtiva) return;
-
-  const container = document.getElementById("container-membros-equipe");
-  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando membros...</p>";
-
-  try {
-    const promessasMembros = equipeAtiva.membrosUids.map(async (uid) => {
-      let userData = { email: "Usuário", codigo: "--", nomeExibicao: "" };
-      let historico = {};
-
-      try {
-        const userDoc = await db.collection("usuarios").doc(uid).get();
-        if (userDoc.exists) userData = userDoc.data();
-      } catch (e) {}
-
-      try {
-        const histDoc = await db.collection("historicos").doc(uid).get();
-        if (histDoc.exists) historico = histDoc.data();
-      } catch (e) {}
-
-      const stats = calcularStatsMembro(historico);
-      const nomeExibicao = userData.nomeExibicao || (userData.email ? userData.email.split('@')[0] : "Usuário");
-
-      return {
-        uid,
-        nomeExibicao,
-        codigo: userData.codigo || "--",
-        stats
-      };
-    });
-
-    const membros = await Promise.all(promessasMembros);
-
-    if (membros.length === 0) {
-      container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Nenhum membro encontrado.</p>";
-      return;
-    }
-
-    let html = "";
-    membros.forEach(m => {
-      html += `
-        <div class="membro-card">
-          <div class="membro-info">
-            <span class="membro-email">${m.nomeExibicao} ${m.uid === usuarioLogado.uid ? '(Você)' : ''}</span>
-            <span class="membro-codigo">${m.codigo}</span>
-          </div>
-          <div class="membro-stats">
-            <span class="stat-badge" title="Dias Seguidos">🔥 ${m.stats.streak}d</span>
-            <span class="stat-badge" style="color: #e1e1e6;" title="Total de Treinos">📊 ${m.stats.total}t</span>
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  } catch (e) {
-    console.error("Erro ao carregar membros:", e);
-    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar membros do grupo.</p>";
-  }
-}
-
-async function renderizarRankingEquipe() {
-  if (!equipeAtiva) return;
-
-  const container = document.getElementById("container-ranking-equipe");
-  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Gerando ranking da equipe...</p>";
-
-  try {
-    const promessasMembros = equipeAtiva.membrosUids.map(async (uid) => {
-      let userData = { email: "Usuário", nomeExibicao: "" };
-      let historico = {};
-
-      try {
-        const userDoc = await db.collection("usuarios").doc(uid).get();
-        if (userDoc.exists) userData = userDoc.data();
-      } catch (e) {}
-
-      try {
-        const histDoc = await db.collection("historicos").doc(uid).get();
-        if (histDoc.exists) historico = histDoc.data();
-      } catch (e) {}
-
-      const stats = calcularStatsMembro(historico);
-      const pontos = (stats.total * 10) + (stats.streak * 25);
-      const nome = userData.nomeExibicao || (userData.email ? userData.email.split('@')[0] : "Usuário");
-
-      return {
-        nome,
-        isVoce: uid === usuarioLogado.uid,
-        streak: stats.streak,
-        total: stats.total,
-        pontos
-      };
-    });
-
-    const listaMembros = await Promise.all(promessasMembros);
-    listaMembros.sort((a, b) => b.pontos - a.pontos);
-
-    let html = "";
-    const trofeus = ["🥇", "🥈", "🥉"];
-
-    listaMembros.forEach((membro, index) => {
-      const posi = trofeus[index] || `#${index + 1}`;
-      html += `
-        <div class="membro-card" style="${index === 0 ? 'border-color: #ffb703;' : ''}">
-          <div class="membro-info">
-            <span class="membro-email">${posi} ${membro.nome} ${membro.isVoce ? '(Você)' : ''}</span>
-            <span class="membro-codigo">${membro.pontos} Pts (🔥${membro.streak}d | 📊${membro.total}t)</span>
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  } catch (e) {
-    console.error("Erro ao carregar ranking:", e);
-    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar o ranking.</p>";
-  }
-}
-
-async function adicionarMembroEquipe() {
-  if (!equipeAtiva) return;
-
-  const inputCodigo = document.getElementById("input-codigo-membro");
-  const codigo = inputCodigo.value.trim().toUpperCase();
+// TREINADOR E ALUNO
+async function carregarTreinoDoAluno() {
+  const codigoInput = document.getElementById("input-codigo-aluno");
+  const codigo = codigoInput ? codigoInput.value.trim().toUpperCase() : "";
 
   if (!codigo) return alert("Digite o código do aluno.");
 
   try {
-    // Valida o limite de 15 membros na equipe atual
-    if (equipeAtiva.membrosUids.length >= 15) {
-      return alert("Esta equipe atingiu o limite máximo de 15 membros!");
-    }
-
     const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
     if (snap.empty) {
       return alert("Nenhum aluno encontrado com este código.");
     }
 
-    const alunoDoc = snap.docs[0];
-    const uidNovoMembro = alunoDoc.id;
+    const docAluno = snap.docs[0];
+    uidAlvoTrabalho = docAluno.id;
+    const dadosAluno = docAluno.data();
+    const nomeAluno = dadosAluno.nomeExibicao || dadosAluno.email.split('@')[0];
 
-    if (equipeAtiva.membrosUids.includes(uidNovoMembro)) {
-      return alert("Este aluno já faz parte desta equipe.");
-    }
+    const modalTreinador = document.getElementById("modal-treinador");
+    if (modalTreinador) modalTreinador.classList.add('hidden');
+    if (codigoInput) codigoInput.value = "";
 
-    equipeAtiva.membrosUids.push(uidNovoMembro);
-    await db.collection("equipes").doc(equipeAtiva.id).update({
-      membrosUids: equipeAtiva.membrosUids
-    });
+    const tituloConfig = document.getElementById('titulo-modal-config');
+    if (tituloConfig) tituloConfig.innerText = `⚙️ Montando Rotina de: ${nomeAluno}`;
+    
+    const docRotina = await db.collection("rotinas").doc(uidAlvoTrabalho).get();
+    configuracaoTreino = docRotina.exists ? (docRotina.data().rotina || []) : [];
 
-    inputCodigo.value = "";
-    await renderizarMembrosEquipe();
-    alert("Membro adicionado com sucesso!");
+    abrirConfigRotina();
   } catch (e) {
-    alert("Erro ao adicionar membro: " + e.message);
+    alert("Erro ao buscar aluno: " + e.message);
   }
 }
 
-
-async function sairDaEquipeAtiva() {
-  if (!equipeAtiva) return;
-
-  if (!confirm(`Deseja realmente sair da equipe "${equipeAtiva.nome}"?`)) return;
-
-  try {
-    equipeAtiva.membrosUids = equipeAtiva.membrosUids.filter(uid => uid !== usuarioLogado.uid);
-
-    if (equipeAtiva.membrosUids.length === 0) {
-      await db.collection("equipes").doc(equipeAtiva.id).delete();
-    } else {
-      await db.collection("equipes").doc(equipeAtiva.id).update({
-        membrosUids: equipeAtiva.membrosUids
-      });
-    }
-
-    voltarParaListaEquipes();
-    await carregarEquipesDoUsuario();
-    alert("Você saiu da equipe.");
-  } catch (e) {
-    alert("Erro ao sair da equipe: " + e.message);
-  }
-}
-
-function fecharModalAlongamento() {
-  document.getElementById('modal-alongamento').classList.add('hidden');
-  abrirModalPerfil(); // Reabre o perfil
-}
-
-function carregarBlocoAlongamento() {
-  const container = document.getElementById('lista-alongamento');
-  if (!container) return;
-  container.innerHTML = '';
-
-  catalogoExercicios.Alongamento.forEach(ex => {
-    const item = document.createElement('div');
-    item.className = 'item-exercicio';
-    item.style.cssText = "display: flex; justify-content: space-between; align-items: center;";
-
-    const span = document.createElement('span');
-    span.style.fontSize = "0.85rem";
-    span.innerText = ex.nome;
-
-    const btn = document.createElement('button');
-    btn.className = 'btn-secundario';
-    btn.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
-    btn.innerText = '▶ Vídeo';
-    btn.addEventListener('click', () => verVideo(ex.nome, ex.video));
-
-    item.appendChild(span);
-    item.appendChild(btn);
-    container.appendChild(item);
-  });
-}
-
+// EXECUÇÃO E FLUXO DO TREINO
 function atualizarTelaInicial() {
-  if (configuracaoTreino.length === 0) return;
+  const nomeTreinoEl = document.getElementById('nome-treino');
+  const focoTreinoEl = document.getElementById('foco-treino');
+
+  if (configuracaoTreino.length === 0) {
+    if (nomeTreinoEl) nomeTreinoEl.innerText = "Nenhuma Rotina";
+    if (focoTreinoEl) focoTreinoEl.innerText = "Toque em Configurar Divisão e Exercícios";
+    return;
+  }
   if (indiceTreinoAtual >= configuracaoTreino.length) indiceTreinoAtual = 0;
   
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
-  document.getElementById('nome-treino').innerText = `TREINO ${treinoAtual.letra}`;
-  document.getElementById('foco-treino').innerText = `Músculos: ${treinoAtual.grupos.join(', ')}`;
+  if (nomeTreinoEl) nomeTreinoEl.innerText = `TREINO ${treinoAtual.letra}`;
+  if (focoTreinoEl) focoTreinoEl.innerText = `Músculos: ${treinoAtual.grupos.join(', ')}`;
 }
-
 
 function iniciarTreino() {
   ehTreinoAvulsoAtivo = false;
   const areaExecucao = document.getElementById('area-execucao');
   const listaContainer = document.getElementById('lista-exercicios');
+  if (!listaContainer) return;
   listaContainer.innerHTML = '';
 
   const treinoAtual = configuracaoTreino[indiceTreinoAtual];
   if (!treinoAtual) return;
 
-  // 1. Renderizar exercícios dos grupos musculares normais
   treinoAtual.grupos.forEach(grupo => {
-    if (grupo === "Avulso") return; // Ignora o grupo placeholder se houver
-    
+    if (grupo === "Avulso") return;
     const exerciciosGrupo = catalogoExercicios[grupo] || [];
     const selecionados = treinoAtual.exerciciosFixos || [];
-    
-    // Filtra apenas os do catálogo que pertencem a este grupo e foram selecionados
     const exerciciosExibir = exerciciosGrupo.filter(ex => selecionados.length === 0 || selecionados.includes(ex.nome));
 
     if (exerciciosExibir.length > 0) {
@@ -1469,7 +869,6 @@ function iniciarTreino() {
     });
   });
 
-  // 2. Renderizar os treinos avulsos / manuais digitados especificamente nesta letra
   const exerciciosFixosSalvos = treinoAtual.exerciciosFixos || [];
   const exerciciosManuais = exerciciosFixosSalvos.filter(nomeEx => {
     let pertenceCatalogo = false;
@@ -1479,7 +878,7 @@ function iniciarTreino() {
         pertenceCatalogo = true;
       }
     });
-    return !pertenceCatalogo; // Se não está no catálogo padrão, é um treino manual/avulso!
+    return !pertenceCatalogo;
   });
 
   if (exerciciosManuais.length > 0) {
@@ -1493,10 +892,9 @@ function iniciarTreino() {
     });
   }
 
-  areaExecucao.classList.remove('hidden');
+  if (areaExecucao) areaExecucao.classList.remove('hidden');
 }
 
-// Função auxiliar para desenhar o card na tela (evita código duplicado)
 function renderizarCardExercicioExecucao(container, nomeExercicio, videoUrl) {
   const cardEx = document.createElement('div');
   cardEx.className = 'item-exercicio';
@@ -1539,7 +937,6 @@ function renderizarCardExercicioExecucao(container, nomeExercicio, videoUrl) {
   cardEx.appendChild(inputs);
   container.appendChild(cardEx);
 }
-
 
 async function concluirTreino() {
   const hojeChave = obterDataLocalIso();
@@ -1585,9 +982,11 @@ async function concluirTreino() {
   }
 
   ehTreinoAvulsoAtivo = false;
-
   alert('Treino concluído com sucesso! 👏');
-  document.getElementById('area-execucao').classList.add('hidden');
+  
+  const areaExecucao = document.getElementById('area-execucao');
+  if (areaExecucao) areaExecucao.classList.add('hidden');
+  
   atualizarTelaInicial();
   renderizarCalendario();
   calcularEstatisticasEOfensiva();
@@ -1595,7 +994,6 @@ async function concluirTreino() {
 
 async function trocarTreinoManual() {
   if (!configuracaoTreino || configuracaoTreino.length === 0) return;
-
   indiceTreinoAtual = (indiceTreinoAtual + 1) % configuracaoTreino.length;
 
   if (usuarioLogado) {
@@ -1610,10 +1008,7 @@ async function trocarTreinoManual() {
   }
 
   const areaExecucao = document.getElementById('area-execucao');
-  if (areaExecucao) {
-    areaExecucao.classList.add('hidden');
-  }
-
+  if (areaExecucao) areaExecucao.classList.add('hidden');
   atualizarTelaInicial();
 }
 
@@ -1651,10 +1046,11 @@ function abrirDetalhesDia(dataIso) {
   const corpo = document.getElementById('detalhes-corpo');
   const dataFormatada = obterDataFormatadaBR(dataIso);
 
-  document.getElementById('detalhes-data').innerText = `Treino de ${dataFormatada}`;
+  const detalhesData = document.getElementById('detalhes-data');
+  if (detalhesData) detalhesData.innerText = `Treino de ${dataFormatada}`;
 
   if (!treinoFeito) {
-    corpo.innerHTML = "<p style='color: #a8a8b3;'>Nenhum treino registrado neste dia.</p>";
+    if (corpo) corpo.innerHTML = "<p style='color: #a8a8b3;'>Nenhum treino registrado neste dia.</p>";
   } else {
     let html = `<p style='margin-bottom: 10px;'><strong>Treino ${treinoFeito.letra}</strong> (${treinoFeito.grupos.join(', ')})</p>`;
     html += "<div style='max-height: 50vh; overflow-y: auto; padding-right: 5px;'>";
@@ -1669,45 +1065,48 @@ function abrirDetalhesDia(dataIso) {
       `;
     });
     html += "</ul></div>";
-    corpo.innerHTML = html;
+    if (corpo) corpo.innerHTML = html;
   }
 
-  modal.classList.remove('hidden');
+  if (modal) modal.classList.remove('hidden');
 }
 
 function fecharModalDetalhes() {
-  document.getElementById('modal-detalhes').classList.add('hidden');
+  const modal = document.getElementById('modal-detalhes');
+  if (modal) modal.classList.add('hidden');
 }
 
+// CONFIGURAÇÃO DE ROTINA
 function abrirConfigRotina() {
-  document.getElementById('modal-config-rotina').classList.remove('hidden');
+  const modal = document.getElementById('modal-config-rotina');
+  if (modal) modal.classList.remove('hidden');
   
-  if (configuracaoTreino && configuracaoTreino.length > 0) {
-    const letrasSalvas = configuracaoTreino.map(t => t.letra).join('');
-    document.getElementById('input-divisao-letras').value = letrasSalvas;
-  } else {
-    document.getElementById('input-divisao-letras').value = "ABC";
+  const inputDivisao = document.getElementById('input-divisao-letras');
+  if (inputDivisao) {
+    if (configuracaoTreino && configuracaoTreino.length > 0) {
+      inputDivisao.value = configuracaoTreino.map(t => t.letra).join('');
+    } else {
+      inputDivisao.value = "ABC";
+    }
   }
-  
   gerarCamposConfig();
 }
 
 function gerarCamposConfig() {
-  const inputDiv = document.getElementById('input-divisao-letras').value.toUpperCase().trim();
+  const inputDiv = document.getElementById('input-divisao-letras');
+  if (!inputDiv) return;
+  const letras = inputDiv.value.toUpperCase().trim().split('');
   const container = document.getElementById('container-config-dias');
   if (!container) return;
   container.innerHTML = '';
 
-  if (!inputDiv) return;
-
-  const letras = inputDiv.split('');
+  if (letras.length === 0 || (letras.length === 1 && letras[0] === "")) return;
 
   letras.forEach((letra) => {
     const treinoSalvo = configuracaoTreino.find(t => t.letra === letra);
     const gruposSalvos = treinoSalvo ? treinoSalvo.grupos : [];
     const exerciciosFixosSalvos = treinoSalvo ? (treinoSalvo.exerciciosFixos || []) : [];
     
-    // Filtra o que são treinos avulsos manuais salvos nesta letra (itens que não estão no catálogo padrão)
     const exerciciosManuaisSalvos = exerciciosFixosSalvos.filter(exNome => {
       let pertenceCatalogo = false;
       Object.keys(catalogoExercicios).forEach(g => {
@@ -1737,7 +1136,6 @@ function gerarCamposConfig() {
     });
     html += `</div>`;
 
-    // Seção de Treinos Avulsos / Manuais para esta letra específica
     html += `
       <div style="margin-top: 15px; padding: 10px; background-color: #121214; border-radius: 6px; border: 1px solid #29292e;">
         <p style="font-size: 0.8rem; color: #00e676; margin-bottom: 8px; font-weight: bold;">+ Adicionar Treino Avulso / Manual no Treino ${letra}:</p>
@@ -1774,10 +1172,10 @@ function gerarCamposConfig() {
     });
   });
 
-  document.getElementById('btn-salvar-rotina').classList.remove('hidden');
+  const btnSalvar = document.getElementById('btn-salvar-rotina');
+  if (btnSalvar) btnSalvar.classList.remove('hidden');
 }
 
-// Função auxiliar para criar nova linha de treino avulso na configuração
 function adicionarCampoTreinoConfig(letra) {
   const container = document.getElementById(`lista-outros-config-${letra}`);
   if (!container) return;
@@ -1805,7 +1203,6 @@ function adicionarCampoTreinoConfig(letra) {
   container.appendChild(divItem);
 }
 
-
 function toggleExerciciosMontagem(cb, letra, grupo) {
   const containerExs = document.getElementById(`exs-${letra}-${grupo}`);
   if (!containerExs) return;
@@ -1818,7 +1215,6 @@ function toggleExerciciosMontagem(cb, letra, grupo) {
     containerExs.innerHTML = `<strong style='font-size: 0.75rem; color: #00e676;'>Exercícios de ${grupo}:</strong>`;
     
     catalogoExercicios[grupo].forEach(ex => {
-      // Garante que só marca se estiver explicitamente salvo, vindo limpo para contas novas
       const marcado = exerciciosFixosSalvos.includes(ex.nome) ? 'checked' : '';
       containerExs.innerHTML += `
         <label style='font-weight: normal;'>
@@ -1831,7 +1227,6 @@ function toggleExerciciosMontagem(cb, letra, grupo) {
     containerExs.innerHTML = '';
   }
 }
-
 
 async function salvarNovaConfig() {
   const blocos = document.querySelectorAll('.grupo-checkboxes');
@@ -1851,7 +1246,6 @@ async function salvarNovaConfig() {
       exerciciosFixos.push(cbEx.value);
     });
 
-    // Recolher também os treinos avulsos/manuais adicionados nesta letra
     const containerOutros = document.getElementById(`lista-outros-config-${letra}`);
     if (containerOutros) {
       const inputsManuais = containerOutros.querySelectorAll('.input-outro-treino-config');
@@ -1891,14 +1285,16 @@ async function salvarNovaConfig() {
   }
 }
 
-
 function fecharModalConfig() {
-  document.getElementById('modal-config-rotina').classList.add('hidden');
+  const modal = document.getElementById('modal-config-rotina');
+  if (modal) modal.classList.add('hidden');
   uidAlvoTrabalho = usuarioLogado ? usuarioLogado.uid : null;
 }
 
+// VÍDEOS DE EXECUÇÃO
 function verVideo(titulo, url) {
-  document.getElementById('video-titulo').innerText = titulo;
+  const tituloEl = document.getElementById('video-titulo');
+  if (tituloEl) tituloEl.innerText = titulo;
   
   let urlFormatada = url;
   if (!urlFormatada.includes('?')) {
@@ -1907,77 +1303,58 @@ function verVideo(titulo, url) {
     urlFormatada += '&enablejsapi=1&rel=0';
   }
 
-  document.getElementById('video-container').innerHTML = `
-    <iframe 
-      width="100%" 
-      height="220" 
-      src="${urlFormatada}" 
-      frameborder="0" 
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-      referrerpolicy="strict-origin-when-cross-origin"
-      allowfullscreen>
-    </iframe>
-  `;
-  document.getElementById('modal-video').classList.remove('hidden');
+  const containerVid = document.getElementById('video-container');
+  if (containerVid) {
+    containerVid.innerHTML = `
+      <iframe 
+        width="100%" 
+        height="220" 
+        src="${urlFormatada}" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+        referrerpolicy="strict-origin-when-cross-origin"
+        allowfullscreen>
+      </iframe>
+    `;
+  }
+  const modalVid = document.getElementById('modal-video');
+  if (modalVid) modalVid.classList.remove('hidden');
 }
 
 function fecharModalVideo() {
-  document.getElementById('modal-video').classList.add('hidden');
-  document.getElementById('video-container').innerHTML = '';
+  const modalVid = document.getElementById('modal-video');
+  const containerVid = document.getElementById('video-container');
+  if (modalVid) modalVid.classList.add('hidden');
+  if (containerVid) containerVid.innerHTML = '';
 }
 
-// LOGIN COM O GOOGLE
-async function autenticarComGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  
-  try {
-    const result = await auth.signInWithPopup(provider);
-    const user = result.user;
+function carregarBlocoAlongamento() {
+  const container = document.getElementById('lista-alongamento');
+  if (!container) return;
+  container.innerHTML = '';
 
-    const docUser = await db.collection("usuarios").doc(user.uid).get();
-    
-    if (!docUser.exists) {
-  const codigoGerado = gerarCodigoUsuario();
-  const novoPerfil = {
-    email: user.email,
-    nomeExibicao: user.displayName || user.email.split('@')[0],
-    tipo: "aluno",
-    codigo: codigoGerado
-  };
-  await db.collection("usuarios").doc(user.uid).set(novoPerfil);
+  catalogoExercicios.Alongamento.forEach(ex => {
+    const item = document.createElement('div');
+    item.className = 'item-exercicio';
+    item.style.cssText = "display: flex; justify-content: space-between; align-items: center;";
+
+    const span = document.createElement('span');
+    span.style.fontSize = "0.85rem";
+    span.innerText = ex.nome;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-secundario';
+    btn.style.cssText = 'padding: 4px 8px; font-size: 0.75rem;';
+    btn.innerText = '▶ Vídeo';
+    btn.addEventListener('click', () => verVideo(ex.nome, ex.video));
+
+    item.appendChild(span);
+    item.appendChild(btn);
+    container.appendChild(item);
+  });
 }
 
-
-    alert(`Bem-vindo, ${user.displayName || user.email}!`);
-  } catch (error) {
-    console.error("Erro no login com Google:", error);
-    alert("Erro ao fazer login com o Google: " + error.message);
-  }
-}
-
-// AMIGOS E FEED DOS AMIGOS
-const modalAmigos = document.getElementById('modal-amigos');
-const modalFeedAmigos = document.getElementById('modal-feed-amigos');
-
-document.getElementById('btn-amigos')?.addEventListener('click', () => {
-  if (modalAmigos) modalAmigos.classList.remove('hidden');
-  carregarAmigosEConvites();
-});
-
-document.getElementById('btn-fechar-amigos')?.addEventListener('click', () => {
-  if (modalAmigos) modalAmigos.classList.add('hidden');
-});
-
-document.getElementById('btn-feed-amigos')?.addEventListener('click', () => {
-  if (modalFeedAmigos) modalFeedAmigos.classList.remove('hidden');
-  carregarFeedAmigos();
-});
-
-document.getElementById('btn-fechar-feed-amigos')?.addEventListener('click', () => {
-  if (modalFeedAmigos) modalFeedAmigos.classList.add('hidden');
-});
-
-// Enviar convite de amizade
+// AMIGOS E CONVITES
 document.getElementById('btn-enviar-convite')?.addEventListener('click', async () => {
   const inputCodigo = document.getElementById('input-codigo-amigo');
   const codigoDigitado = inputCodigo ? inputCodigo.value.trim().toUpperCase() : "";
@@ -1986,7 +1363,6 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
   if (!codigoDigitado) return alert("Digite o código do seu amigo.");
 
   try {
-    // 1. Valida o limite de 25 amigos antes de enviar
     const amigosSnapAtual = await db.collection("amizades")
       .where("usuarios", "array-contains", userAtual.uid)
       .get();
@@ -2002,7 +1378,6 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
       return alert("Você atingiu o limite máximo de 25 amigos!");
     }
 
-    // 2. Procura o usuário pelo código
     const snap = await db.collection("usuarios").where("codigo", "==", codigoDigitado).get();
     if (snap.empty) return alert("Usuário não encontrado com esse código.");
 
@@ -2014,30 +1389,8 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
       return alert("Você não pode adicionar a si mesmo.");
     }
 
-    let jaEAmigo = mapaAmigosCheck.has(amigoId);
-
-    if (jaEAmigo) {
+    if (mapaAmigosCheck.has(amigoId)) {
       return alert(`Você e ${amigoData.nomeExibicao || 'essa pessoa'} já são amigos!`);
-    }
-
-    const convitesEnviados = await db.collection("convites_amizade")
-      .where("remetenteId", "==", userAtual.uid)
-      .where("destinatarioId", "==", amigoId)
-      .where("status", "==", "pendente")
-      .get();
-
-    const convitesRecebidos = await db.collection("convites_amizade")
-      .where("remetenteId", "==", amigoId)
-      .where("destinatarioId", "==", userAtual.uid)
-      .where("status", "==", "pendente")
-      .get();
-
-    if (!convitesEnviados.empty) {
-      return alert(`Você já enviou um convite de amizade para ${amigoData.nomeExibicao || 'essa pessoa'}. Aguarde a resposta.`);
-    }
-
-    if (!convitesRecebidos.empty) {
-      return alert(`${amigoData.nomeExibicao || 'Esta pessoa'} já enviou um convite para você! Verifique a aba de convites pendentes.`);
     }
 
     await db.collection("convites_amizade").add({
@@ -2049,15 +1402,12 @@ document.getElementById('btn-enviar-convite')?.addEventListener('click', async (
 
     alert(`Convite enviado com sucesso para ${amigoData.nomeExibicao || 'o usuário'}!`);
     if (inputCodigo) inputCodigo.value = "";
-
   } catch (err) {
     console.error("Erro ao enviar convite:", err);
     alert("Erro ao enviar convite: " + err.message);
   }
 });
 
-
-// Carregar Lista de Amigos e Convites (Corrigido sem duplicados)
 async function carregarAmigosEConvites() {
   const userAtual = auth.currentUser;
   if (!userAtual) return;
@@ -2070,7 +1420,6 @@ async function carregarAmigosEConvites() {
   if (listaConvites) listaConvites.innerHTML = "";
 
   try {
-    // 1. CARREGAR CONVITES RECEBIDOS PENDENTES
     const convitesSnap = await db.collection("convites_amizade")
       .where("destinatarioId", "==", userAtual.uid)
       .where("status", "==", "pendente")
@@ -2085,7 +1434,7 @@ async function carregarAmigosEConvites() {
         try {
           const remetenteDoc = await db.collection("usuarios").doc(convite.remetenteId).get();
           if (remetenteDoc.exists) {
-            remetenteNome = remetenteDoc.data().nomeExibicao || remetenteDoc.data().email?.split('@')[0] || 'Usuário';
+            remetenteNome = remetenteDoc.data().nomeExibicao || 'Usuário';
           }
         } catch (e) {}
 
@@ -2103,7 +1452,6 @@ async function carregarAmigosEConvites() {
       if (containerConvites) containerConvites.classList.add('hidden');
     }
 
-    // 2. CARREGAR AMIGOS CONFIRMADOS (SEM DUPLICAÇÃO)
     const amigosSnap = await db.collection("amizades")
       .where("usuarios", "array-contains", userAtual.uid)
       .get();
@@ -2113,18 +1461,15 @@ async function carregarAmigosEConvites() {
       return;
     }
 
-    // Usar um Map para garantir apenas 1 registro por amigo (evita duplicações de amizades duplicadas no banco)
     const mapaAmigos = new Map();
-
     amigosSnap.docs.forEach(doc => {
       const amizade = doc.data();
       const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
       if (amigoId && !mapaAmigos.has(amigoId)) {
-        mapaAmigos.set(amigoId, doc.id); // Guarda o ID do amigo e o docId da amizade
+        mapaAmigos.set(amigoId, doc.id);
       }
     });
 
-    // Buscar dados dos amigos em paralelo
     const promessasAmigos = Array.from(mapaAmigos.entries()).map(async ([amigoId, amizadeDocId]) => {
       let userData = {};
       let historico = {};
@@ -2140,18 +1485,13 @@ async function carregarAmigosEConvites() {
       } catch (e) {}
 
       const statsAmigo = calcularStatsMembro(historico);
-      const nomeAmigo = userData.nomeExibicao || (userData.email ? userData.email.split('@')[0] : 'Amigo');
+      const nomeAmigo = userData.nomeExibicao || 'Amigo';
 
-      return {
-        amizadeDocId,
-        nomeAmigo,
-        statsAmigo
-      };
+      return { amizadeDocId, nomeAmigo, statsAmigo };
     });
 
     const listaProcessada = await Promise.all(promessasAmigos);
-
-    if (listaAmigos) listaAmigos.innerHTML = ""; // Limpa a mensagem de carregando
+    if (listaAmigos) listaAmigos.innerHTML = "";
 
     listaProcessada.forEach(item => {
       const div = document.createElement('div');
@@ -2161,185 +1501,49 @@ async function carregarAmigosEConvites() {
       div.innerHTML = `
         <div style="flex: 1;">
           <strong style="color: #fff; font-size: 0.9rem;">${item.nomeAmigo}</strong>
-          <div class="info-amigo-stats" style="font-size: 0.8rem; color: #00e676; margin-top: 2px;">
+          <div style="font-size: 0.8rem; color: #00e676; margin-top: 2px;">
             🔥 ${item.statsAmigo.streak} dias seguidos | 📊 ${item.statsAmigo.total} treinos
           </div>
         </div>
-        <button 
-          onclick="removerAmizade('${item.amizadeDocId}', '${item.nomeAmigo.replace(/'/g, "\\'")}')" 
-          title="Remover Amigo"
-          style="background: transparent; border: none; color: #ef4444; font-size: 1.1rem; cursor: pointer; padding: 4px 8px;"
-        >
-          ✖
-        </button>
+        <button onclick="removerAmizade('${item.amizadeDocId}', '${item.nomeAmigo.replace(/'/g, "\\'")}')" style="background: transparent; border: none; color: #ef4444; font-size: 1.1rem; cursor: pointer; padding: 4px 8px;">✖</button>
       `;
       listaAmigos.appendChild(div);
     });
-const totalAmigosAtuais = listaProcessada.length;
-const textoContadorAmigos = document.getElementById('contador-amigos-texto');
-if (textoContadorAmigos) {
-  const formatado = String(totalAmigosAtuais).padStart(2, '0');
-  textoContadorAmigos.innerText = `Você possui ${formatado}/25 amigos`;
-}
 
+    const textoContadorAmigos = document.getElementById('contador-amigos-texto');
+    if (textoContadorAmigos) {
+      textoContadorAmigos.innerText = `Você possui ${String(listaProcessada.length).padStart(2, '0')}/25 amigos`;
+    }
   } catch (err) {
-    console.error("Erro ao carregar amigos e convites:", err);
-    if (listaAmigos) listaAmigos.innerHTML = `<p style="color: #ef4444; font-size: 0.85rem;">Erro ao carregar a lista de amigos.</p>`;
+    console.error("Erro ao carregar amigos:", err);
   }
 }
 
-
-// Remover Amizade
 async function removerAmizade(amizadeDocId, nomeAmigo) {
-  const confirmar = confirm(`Quer remover amizade com ${nomeAmigo}?`);
-  if (!confirmar) return;
-
+  if (!confirm(`Quer remover amizade com ${nomeAmigo}?`)) return;
   try {
     await db.collection("amizades").doc(amizadeDocId).delete();
-    alert(`Amizade com ${nomeAmigo} foi removida.`);
     carregarAmigosEConvites();
   } catch (err) {
-    console.error("Erro ao remover amizade:", err);
     alert("Erro ao remover amizade: " + err.message);
   }
 }
 
-// Aceitar Convite de Amizade
 async function aceitarAmigo(conviteId, remetenteId) {
   const userAtual = auth.currentUser;
   try {
-    const amigosSnapAtual = await db.collection("amizades")
-      .where("usuarios", "array-contains", userAtual.uid)
-      .get();
-      
-    const mapaAmigosCheck = new Map();
-    amigosSnapAtual.docs.forEach(doc => {
-      const amizade = doc.data();
-      const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
-      if (amigoId) mapaAmigosCheck.set(amigoId, true);
-    });
-
-    if (mapaAmigosCheck.size >= 25) {
-      return alert("Você atingiu o limite máximo de 25 amigos!");
-    }
-
     await db.collection("amizades").add({
       usuarios: [userAtual.uid, remetenteId],
       criadoEm: firebase.firestore.FieldValue.serverTimestamp()
     });
-
     await db.collection("convites_amizade").doc(conviteId).update({ status: "aceito" });
-
-    alert("Convite aceito!");
     carregarAmigosEConvites();
   } catch (err) {
-    console.error("Erro ao aceitar convite:", err);
     alert("Erro ao aceitar convite: " + err.message);
   }
 }
 
-
-// -------------------------------------------------------------
-// FEED DOS AMIGOS (CHECK-IN E REGRAS DE ROLAGEM/LIMITE)
-// -------------------------------------------------------------
-
-const inputFotoCheckin = document.getElementById('input-foto-checkin');
-const nomeFotoCheckin = document.getElementById('nome-foto-checkin');
-
-if (inputFotoCheckin && nomeFotoCheckin) {
-  inputFotoCheckin.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-      nomeFotoCheckin.textContent = "Foto capturada ✓";
-      nomeFotoCheckin.style.color = "#00e676";
-    }
-  });
-}
-
-// Postar foto no feed de check-in dos amigos (Máximo 20 fotos e 1 por dia)
-document.getElementById('btn-postar-checkin')?.addEventListener('click', async () => {
-  if (!inputFotoCheckin || !inputFotoCheckin.files.length) {
-    return alert("Tire uma foto antes de postar.");
-  }
-
-  const file = inputFotoCheckin.files[0];
-  const userAtual = auth.currentUser;
-  const hoje = obterDataLocalIso();
-  const btnPostar = document.getElementById('btn-postar-checkin');
-
-  try {
-    // 1. Valida se já postou hoje
-    const checkHoje = await db.collection("feed_amigos")
-      .where("usuarioId", "==", userAtual.uid)
-      .where("dataData", "==", hoje)
-      .get();
-
-    if (!checkHoje.empty) {
-      return alert("Você já realizou o seu check-in diário de hoje!");
-    }
-
-    if (btnPostar) {
-      btnPostar.disabled = true;
-      btnPostar.textContent = "⏳ Enviando foto...";
-    }
-
-    // 2. Comprime a foto
-    comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
-      const userDoc = await db.collection("usuarios").doc(userAtual.uid).get();
-      const userData = userDoc.data();
-
-      const agora = new Date();
-      const dataFormatada = agora.toLocaleDateString('pt-BR');
-      const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-      // 3. Salva a foto no Firestore
-      await db.collection("feed_amigos").add({
-        usuarioId: userAtual.uid,
-        nomeUsuario: userData?.nomeExibicao || (userData?.email ? userData.email.split('@')[0] : 'Usuário'),
-        fotoUrl: base64Comprimido,
-        dataData: hoje,
-        dataExibicao: `${dataFormatada} às ${horaFormatada}`,
-        timestamp: agora.getTime(),
-        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      // 4. Limpeza automática: Mantém apenas os últimos 20 posts no feed geral
-      const todosPostsSnap = await db.collection("feed_amigos")
-        .orderBy("timestamp", "asc")
-        .get();
-
-      if (todosPostsSnap.docs.length > 20) {
-        const excesso = todosPostsSnap.docs.length - 20;
-        for (let i = 0; i < excesso; i++) {
-          await db.collection("feed_amigos").doc(todosPostsSnap.docs[i].id).delete();
-        }
-      }
-
-      alert("Check-in postado com sucesso!");
-      inputFotoCheckin.value = "";
-      if (nomeFotoCheckin) {
-        nomeFotoCheckin.textContent = "Nenhuma foto";
-        nomeFotoCheckin.style.color = "#a1a1aa";
-      }
-
-      if (btnPostar) {
-        btnPostar.disabled = false;
-        btnPostar.textContent = "Postar Check-in no Feed";
-      }
-
-      carregarFeedAmigos();
-    });
-
-  } catch (err) {
-    console.error("Erro ao postar check-in:", err);
-    alert("Erro ao postar check-in: " + err.message);
-    if (btnPostar) {
-      btnPostar.disabled = false;
-      btnPostar.textContent = "Postar Check-in no Feed";
-    }
-  }
-});
-
-// Carregar Feed de fotos dos amigos
+// FEED DOS AMIGOS E EQUIPES
 async function carregarFeedAmigos() {
   const userAtual = auth.currentUser;
   if (!userAtual) return;
@@ -2348,7 +1552,6 @@ async function carregarFeedAmigos() {
   const avisoCheckin = document.getElementById('aviso-checkin-realizado');
   const hoje = obterDataLocalIso();
 
-  // 1. Verifica se já fez check-in hoje
   try {
     const checkHoje = await db.collection("feed_amigos")
       .where("usuarioId", "==", userAtual.uid)
@@ -2362,11 +1565,8 @@ async function carregarFeedAmigos() {
       if (areaPostar) areaPostar.classList.remove('hidden');
       if (avisoCheckin) avisoCheckin.classList.add('hidden');
     }
-  } catch (e) {
-    console.error("Erro ao verificar check-in de hoje:", e);
-  }
+  } catch (e) {}
 
-  // 2. Busca IDs dos amigos
   const idsPermitidos = [userAtual.uid];
   try {
     const amizadesSnap = await db.collection("amizades")
@@ -2378,11 +1578,8 @@ async function carregarFeedAmigos() {
       const amigoId = amizade.usuarios.find(id => id !== userAtual.uid);
       if (amigoId) idsPermitidos.push(amigoId);
     });
-  } catch (e) {
-    console.error("Erro ao buscar amigos:", e);
-  }
+  } catch (e) {}
 
-  // 3. Busca os posts do feed sem travar na ordenação do banco
   const containerFeed = document.getElementById('container-feed-fotos');
   if (!containerFeed) return;
   containerFeed.innerHTML = "";
@@ -2398,14 +1595,11 @@ async function carregarFeedAmigos() {
       }
     });
 
-    // Ordena as fotos da mais recente para a mais antiga via código
     posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-    // Limita às 20 fotos mais recentes
     posts = posts.slice(0, 20);
 
     if (posts.length === 0) {
-      containerFeed.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem; text-align: center; margin-top: 20px;">Nenhum check-in postado recentemente pelos seus amigos.</p>`;
+      containerFeed.innerHTML = `<p style="color: #a1a1aa; font-size: 0.85rem; text-align: center; margin-top: 20px;">Nenhum check-in postado recentemente.</p>`;
       return;
     }
 
@@ -2421,223 +1615,351 @@ async function carregarFeedAmigos() {
       `;
       containerFeed.appendChild(div);
     });
-
   } catch (err) {
-    console.error("Erro ao carregar feed de amigos:", err);
-    containerFeed.innerHTML = `<p style="color: #ef4444; font-size: 0.85rem; text-align: center;">Erro ao carregar fotos do feed.</p>`;
+    containerFeed.innerHTML = `<p style="color: #ef4444; font-size: 0.85rem; text-align: center;">Erro ao carregar fotos.</p>`;
   }
 }
-// Função chamada automaticamente quando escolhe/tira a foto no Feed da Equipe
-// Função chamada automaticamente quando escolhe/tira a foto no Feed da Equipe
-function atualizarTextoFotoFeed(input) {
-  const textoStatus = document.getElementById('nome-arquivo-foto');
-  if (input.files && input.files.length > 0) {
-    if (textoStatus) {
-      textoStatus.innerText = "Foto capturada ✓";
-      textoStatus.style.color = "#00e676";
+
+// EQUIPES
+async function abrirModalEquipes() {
+  const modalEq = document.getElementById('modal-equipes');
+  if (modalEq) modalEq.classList.remove('hidden');
+  voltarParaListaEquipes();
+  await carregarEquipesDoUsuario();
+}
+
+function fecharModalEquipes() {
+  const modalEq = document.getElementById('modal-equipes');
+  if (modalEq) modalEq.classList.add('hidden');
+}
+
+function voltarParaListaEquipes() {
+  const listaEq = document.getElementById('view-lista-equipes');
+  const detalheEq = document.getElementById('view-detalhes-equipe');
+  if (listaEq) listaEq.classList.remove('hidden');
+  if (detalheEq) detalheEq.classList.add('hidden');
+  equipeAtiva = null;
+}
+
+async function carregarEquipesDoUsuario() {
+  if (!usuarioLogado) return;
+  const container = document.getElementById('container-lista-equipes');
+  if (!container) return;
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando equipes...</p>";
+
+  try {
+    const snap = await db.collection("equipes").where("membrosUids", "array-contains", usuarioLogado.uid).get();
+    equipesDoUsuario = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    const txtContador = document.getElementById('contador-equipes-texto');
+    if (txtContador) txtContador.innerText = `Você participa de ${equipesDoUsuario.length}/5 equipes`;
+
+    if (equipesDoUsuario.length === 0) {
+      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Você ainda não participa de nenhuma equipe.</p>";
+      return;
     }
-  } else {
-    if (textoStatus) {
-      textoStatus.innerText = "Nenhuma foto selecionada";
-      textoStatus.style.color = "#a8a8b3";
-    }
-  }
-}
 
-// Função para gerar código único de 6 caracteres (Ex: WNUF33)
-function gerarCodigoUsuario() {
-  return Math.random().toString(36).substr(2, 6).toUpperCase();
-}
-
-// Pré-visualizar foto do Feed da Equipe
-function previsualizarFotoFeed(input) {
-  const textoStatus = document.getElementById('nome-arquivo-foto');
-  const miniatura = document.getElementById('miniatura-foto-feed');
-
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      if (miniatura) {
-        miniatura.src = e.target.result;
-        miniatura.classList.remove('hidden');
-      }
-      if (textoStatus) {
-        textoStatus.innerText = "Foto capturada ✓ (Toque na foto para ver)";
-        textoStatus.style.color = "#00e676";
-      }
-    }
-    reader.readAsDataURL(input.files[0]);
-  } else {
-    resetarVisualizacaoFeed();
-  }
-}
-
-function resetarVisualizacaoFeed() {
-  const textoStatus = document.getElementById('nome-arquivo-foto');
-  const miniatura = document.getElementById('miniatura-foto-feed');
-  if (miniatura) {
-    miniatura.src = "";
-    miniatura.classList.add('hidden');
-  }
-  if (textoStatus) {
-    textoStatus.innerText = "Nenhuma foto selecionada";
-    textoStatus.style.color = "#a8a8b3";
-  }
-}
-
-// Pré-visualizar foto do Check-in dos Amigos
-function previsualizarFotoCheckin(input) {
-  const textoStatus = document.getElementById('nome-foto-checkin');
-  const miniatura = document.getElementById('miniatura-foto-checkin');
-
-  if (input.files && input.files[0]) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      if (miniatura) {
-        miniatura.src = e.target.result;
-        miniatura.classList.remove('hidden');
-      }
-      if (textoStatus) {
-        textoStatus.innerText = "Foto capturada ✓";
-        textoStatus.style.color = "#00e676";
-      }
-    }
-    reader.readAsDataURL(input.files[0]);
-  } else {
-    resetarVisualizacaoCheckin();
-  }
-}
-
-function resetarVisualizacaoCheckin() {
-  const textoStatus = document.getElementById('nome-foto-checkin');
-  const miniatura = document.getElementById('miniatura-foto-checkin');
-  if (miniatura) {
-    miniatura.src = "";
-    miniatura.classList.add('hidden');
-  }
-  if (textoStatus) {
-    textoStatus.innerText = "Nenhuma foto";
-    textoStatus.style.color = "#a1a1aa";
-  }
-}
-
-// Funções para Abrir/Fechar o Modal de Ampliação
-function ampliarFotoMiniatura(src) {
-  const modal = document.getElementById('modal-ampliar-foto');
-  const imgAmpliada = document.getElementById('imagem-ampliada');
-  if (modal && imgAmpliada) {
-    imgAmpliada.src = src;
-    modal.classList.remove('hidden');
-  }
-}
-
-function fecharModalAmpliar() {
-  const modal = document.getElementById('modal-ampliar-foto');
-  if (modal) {
-    modal.classList.add('hidden');
-  }
-}
-
-const modalPerfil = document.getElementById('modal-perfil');
-const btnAbrirMenu = document.getElementById('btn-abrir-menu');
-const btnFecharPerfil = document.getElementById('btn-fechar-modal-perfil');
-
-// Abrir menu lateral/perfil pelos três riscos
-if (btnAbrirMenu) {
-  btnAbrirMenu.addEventListener('click', () => {
-    modalPerfil.classList.remove('hidden');
-  });
-}
-
-// Fechar modal pelo botão "X"
-if (btnFecharPerfil) {
-  btnFecharPerfil.addEventListener('click', () => {
-    modalPerfil.classList.add('hidden');
-  });
-}
-
-// Fechar modal ao clicar fora da caixa de conteúdo (fundo escuro)
-window.addEventListener('click', (event) => {
-  if (event.target === modalPerfil) {
-    modalPerfil.classList.add('hidden');
-  }
-});
-
-// --- Lógica de Notificação de Nova Foto no Feed ---
-const badgeNotificacao = document.getElementById('badge-notificacao');
-
-// Função para chamar quando houver um post novo de amigo ou equipe
-function dispararNotificacaoNovaFoto() {
-  if (badgeNotificacao) {
-    badgeNotificacao.classList.remove('hidden'); // Exibe o ponto vermelho
-  }
-}
-
-// Exemplo: Ao clicar no sininho de notificações, o utilizador visualiza o feed e o ponto desaparece
-const btnNotificacoes = document.getElementById('btn-notificacoes');
-if (btnNotificacoes) {
-  btnNotificacoes.addEventListener('click', () => {
-    badgeNotificacao.classList.add('hidden'); // Oculta o alerta ao ler
-    // Aqui você pode adicionar a função que abre a tela do Feed de Amigos/Check-in
-    console.log("Abrindo notificações / feed...");
-  });
-}
-
-// Função auxiliar para fechar o perfil e abrir o submodal correspondente
-function abrirSubModal(idModal) {
-  document.getElementById('modal-perfil').classList.add('hidden');
-  document.getElementById(idModal).classList.remove('hidden');
-}
-
-// Conquistas
-const btnMenuConquistas = document.getElementById('menu-conquistas');
-if (btnMenuConquistas) {
-  btnMenuConquistas.addEventListener('click', () => {
-    abrirSubModal('modal-conquistas');
-  });
-}
-
-// Equipes
-const btnMenuEquipes = document.getElementById('menu-equipes');
-if (btnMenuEquipes) {
-  btnMenuEquipes.addEventListener('click', () => {
-    abrirSubModal('modal-equipes');
-  });
-}
-
-// Alongamento
-const btnMenuAlongamento = document.getElementById('menu-alongamento');
-if (btnMenuAlongamento) {
-  btnMenuAlongamento.addEventListener('click', () => {
-    abrirSubModal('modal-alongamento');
-  });
-}
-
-// Modo Treinador
-const btnMenuTreinador = document.getElementById('menu-treinador');
-if (btnMenuTreinador) {
-  btnMenuTreinador.addEventListener('click', () => {
-    abrirSubModal('modal-treinador');
-  });
-}
-
-// Salvar Nome no Feed
-const btnSalvarNome = document.getElementById('btn-salvar-nome');
-if (btnSalvarNome) {
-  btnSalvarNome.addEventListener('click', () => {
-    const novoNome = document.getElementById('input-nome-feed').value;
-    // Adicione aqui a lógica para salvar no Firebase (ex: db.collection(...))
-    alert("Nome salvo com sucesso: " + novoNome);
-  });
-}
-
-// Botão Sair da Conta
-const btnSairConta = document.getElementById('btn-sair-conta');
-if (btnSairConta) {
-  btnSairConta.addEventListener('click', () => {
-    firebase.auth().signOut().then(() => {
-      window.location.reload();
+    let html = "";
+    equipesDoUsuario.forEach(eq => {
+      html += `
+        <div class="equipe-item-card" onclick="abrirDetalhesEquipe('${eq.id}')">
+          <div>
+            <div class="equipe-item-nome">👥 ${eq.nome}</div>
+            <div class="equipe-item-membros-count">${eq.membrosUids.length} membro(s)</div>
+          </div>
+          <span style="color: #00e676; font-weight: bold;">➔</span>
+        </div>
+      `;
     });
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar equipes.</p>";
+  }
+}
+
+async function criarEquipe() {
+  if (!usuarioLogado) return;
+  if (equipesDoUsuario.length >= 5) {
+    return alert("Você atingiu o limite de 5 equipes ativas!");
+  }
+
+  const inputNome = document.getElementById("input-nome-equipe");
+  const nome = inputNome ? inputNome.value.trim() : "";
+  if (!nome) return alert("Digite um nome para a equipe.");
+
+  try {
+    await db.collection("equipes").add({
+      nome: nome,
+      criadorUid: usuarioLogado.uid,
+      membrosUids: [usuarioLogado.uid]
+    });
+    if (inputNome) inputNome.value = "";
+    await carregarEquipesDoUsuario();
+    alert("Equipe criada com sucesso!");
+  } catch (e) {
+    alert("Erro ao criar equipe: " + e.message);
+  }
+}
+
+async function abrirDetalhesEquipe(equipeId) {
+  equipeAtiva = equipesDoUsuario.find(eq => eq.id === equipeId);
+  if (!equipeAtiva) return;
+
+  const listaEq = document.getElementById('view-lista-equipes');
+  const detalheEq = document.getElementById('view-detalhes-equipe');
+  if (listaEq) listaEq.classList.add('hidden');
+  if (detalheEq) detalheEq.classList.remove('hidden');
+
+  const tituloEq = document.getElementById('titulo-equipe-ativa');
+  if (tituloEq) tituloEq.innerText = `👥 ${equipeAtiva.nome}`;
+  mudarAbaEquipe('membros');
+}
+
+function mudarAbaEquipe(aba) {
+  ['membros', 'ranking', 'feed'].forEach(a => {
+    const abaEl = document.getElementById(`aba-${a}`);
+    const contEl = document.getElementById(`conteudo-aba-${a}`);
+    if (abaEl) abaEl.classList.remove('ativa');
+    if (contEl) contEl.classList.add('hidden');
+  });
+
+  const abaAtiva = document.getElementById(`aba-${aba}`);
+  const contAtivo = document.getElementById(`conteudo-aba-${aba}`);
+  if (abaAtiva) abaAtiva.classList.add('ativa');
+  if (contAtivo) contAtivo.classList.remove('hidden');
+
+  if (aba === 'membros') renderizarMembrosEquipe();
+  if (aba === 'ranking') renderizarRankingEquipe();
+  if (aba === 'feed') renderizarFeedEquipe();
+}
+
+async function renderizarMembrosEquipe() {
+  if (!equipeAtiva) return;
+  const container = document.getElementById("container-membros-equipe");
+  if (!container) return;
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando membros...</p>";
+
+  try {
+    const promessas = equipeAtiva.membrosUids.map(async (uid) => {
+      let userData = { email: "Usuário", codigo: "--", nomeExibicao: "" };
+      let historico = {};
+
+      try {
+        const uDoc = await db.collection("usuarios").doc(uid).get();
+        if (uDoc.exists) userData = uDoc.data();
+      } catch (e) {}
+
+      try {
+        const hDoc = await db.collection("historicos").doc(uid).get();
+        if (hDoc.exists) historico = hDoc.data();
+      } catch (e) {}
+
+      const stats = calcularStatsMembro(historico);
+      const nomeExibicao = userData.nomeExibicao || 'Usuário';
+      return { uid, nomeExibicao, codigo: userData.codigo || "--", stats };
+    });
+
+    const membros = await Promise.all(promessas);
+    let html = "";
+    membros.forEach(m => {
+      html += `
+        <div class="membro-card">
+          <div class="membro-info">
+            <span class="membro-email">${m.nomeExibicao} ${m.uid === usuarioLogado.uid ? '(Você)' : ''}</span>
+            <span class="membro-codigo">${m.codigo}</span>
+          </div>
+          <div class="membro-stats">
+            <span class="stat-badge">🔥 ${m.stats.streak}d</span>
+            <span class="stat-badge" style="color: #e1e1e6;">📊 ${m.stats.total}t</span>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar membros.</p>";
+  }
+}
+
+async function renderizarRankingEquipe() {
+  if (!equipeAtiva) return;
+  const container = document.getElementById("container-ranking-equipe");
+  if (!container) return;
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Gerando ranking...</p>";
+
+  try {
+    const promessas = equipeAtiva.membrosUids.map(async (uid) => {
+      let userData = { nomeExibicao: "" };
+      let historico = {};
+      try {
+        const uDoc = await db.collection("usuarios").doc(uid).get();
+        if (uDoc.exists) userData = uDoc.data();
+      } catch (e) {}
+      try {
+        const hDoc = await db.collection("historicos").doc(uid).get();
+        if (hDoc.exists) historico = hDoc.data();
+      } catch (e) {}
+
+      const stats = calcularStatsMembro(historico);
+      const pontos = (stats.total * 10) + (stats.streak * 25);
+      const nome = userData.nomeExibicao || 'Usuário';
+      return { nome, isVoce: uid === usuarioLogado.uid, streak: stats.streak, total: stats.total, pontos };
+    });
+
+    const lista = await Promise.all(promessas);
+    lista.sort((a, b) => b.pontos - a.pontos);
+
+    let html = "";
+    const trofeus = ["🥇", "🥈", "🥉"];
+    lista.forEach((m, idx) => {
+      const posi = trofeus[idx] || `#${idx + 1}`;
+      html += `
+        <div class="membro-card" style="${idx === 0 ? 'border-color: #ffb703;' : ''}">
+          <div class="membro-info">
+            <span class="membro-email">${posi} ${m.nome} ${m.isVoce ? '(Você)' : ''}</span>
+            <span class="membro-codigo">${m.pontos} Pts (🔥${m.streak}d | 📊${m.total}t)</span>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar ranking.</p>";
+  }
+}
+
+async function adicionarMembroEquipe() {
+  if (!equipeAtiva) return;
+  const inputCodigo = document.getElementById("input-codigo-membro");
+  const codigo = inputCodigo ? inputCodigo.value.trim().toUpperCase() : "";
+  if (!codigo) return alert("Digite o código do aluno.");
+
+  try {
+    if (equipeAtiva.membrosUids.length >= 15) {
+      return alert("Esta equipe atingiu o limite máximo de 15 membros!");
+    }
+
+    const snap = await db.collection("usuarios").where("codigo", "==", codigo).get();
+    if (snap.empty) return alert("Nenhum aluno encontrado.");
+
+    const uidNovo = snap.docs[0].id;
+    if (equipeAtiva.membrosUids.includes(uidNovo)) return alert("Já faz parte da equipe.");
+
+    equipeAtiva.membrosUids.push(uidNovo);
+    await db.collection("equipes").doc(equipeAtiva.id).update({ membrosUids: equipeAtiva.membrosUids });
+    if (inputCodigo) inputCodigo.value = "";
+    await renderizarMembrosEquipe();
+    alert("Membro adicionado com sucesso!");
+  } catch (e) {
+    alert("Erro ao adicionar membro: " + e.message);
+  }
+}
+
+async function sairDaEquipeAtiva() {
+  if (!equipeAtiva || !confirm(`Sair da equipe "${equipeAtiva.nome}"?`)) return;
+  try {
+    equipeAtiva.membrosUids = equipeAtiva.membrosUids.filter(uid => uid !== usuarioLogado.uid);
+    if (equipeAtiva.membrosUids.length === 0) {
+      await db.collection("equipes").doc(equipeAtiva.id).delete();
+    } else {
+      await db.collection("equipes").doc(equipeAtiva.id).update({ membrosUids: equipeAtiva.membrosUids });
+    }
+    voltarParaListaEquipes();
+    await carregarEquipesDoUsuario();
+    alert("Você saiu da equipe.");
+  } catch (e) {
+    alert("Erro ao sair: " + e.message);
+  }
+}
+
+async function publicarFotoNoFeed() {
+  if (!equipeAtiva || !usuarioLogado) return alert("Selecione uma equipe primeiro.");
+  const fileInput = document.getElementById('input-foto-feed');
+  if (!fileInput || !fileInput.files.length) return alert("Selecione uma foto!");
+
+  const file = fileInput.files[0];
+  const btnPub = document.getElementById('btn-publicar-foto');
+  if (btnPub) { btnPub.disabled = true; btnPub.innerText = "⏳ Publicando..."; }
+
+  comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
+    const agora = new Date();
+    try {
+      await db.collection("feed_fotos").add({
+        equipeId: equipeAtiva.id,
+        usuarioUid: usuarioLogado.uid,
+        usuarioNome: perfilUsuario.nomeExibicao || 'Usuário',
+        fotoUrl: base64Comprimido,
+        dataIso: obterDataLocalIso(),
+        dataHora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: agora.getTime(),
+        curtidas: []
+      });
+      fileInput.value = "";
+      alert("Foto publicada com sucesso!");
+      await renderizarFeedEquipe();
+    } catch (err) {
+      alert("Erro: " + err.message);
+    } finally {
+      if (btnPub) { btnPub.disabled = false; btnPub.innerText = "📸 Publicar Foto no Feed"; }
+    }
   });
 }
 
+async function renderizarFeedEquipe() {
+  if (!equipeAtiva) return;
+  const container = document.getElementById("container-feed-equipe");
+  if (!container) return;
+  container.innerHTML = "<p style='font-size:0.8rem; color:#a8a8b3;'>Carregando feed...</p>";
+
+  try {
+    const snap = await db.collection("feed_fotos").where("equipeId", "==", equipeAtiva.id).get();
+    if (snap.empty) {
+      container.innerHTML = "<p style='font-size:0.85rem; color:#a8a8b3;'>Ainda não há fotos nesta equipe.</p>";
+      return;
+    }
+
+    let posts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    let html = "";
+    posts.forEach(post => {
+      const curtidas = post.curtidas || [];
+      const jaCurtiu = usuarioLogado ? curtidas.includes(usuarioLogado.uid) : false;
+      html += `
+        <div class="feed-foto-card">
+          <div class="feed-header">
+            <span class="feed-usuario">📸 ${post.usuarioNome}</span>
+            <span class="feed-data">${post.dataHora || ''}</span>
+          </div>
+          <img src="${post.fotoUrl}" class="feed-foto-img" alt="Foto">
+          <div>
+            <button class="btn-curtir ${jaCurtiu ? 'curtido' : ''}" onclick="alternarCurtida('${post.id}')">
+              ❤️ ${curtidas.length} ${curtidas.length === 1 ? 'Curtida' : 'Curtidas'}
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = "<p style='font-size:0.8rem; color:#f75a68;'>Erro ao carregar feed.</p>";
+  }
+}
+
+async function alternarCurtida(postId) {
+  if (!usuarioLogado) return;
+  try {
+    const ref = db.collection("feed_fotos").doc(postId);
+    const doc = await ref.get();
+    if (doc.exists) {
+      let curtidas = doc.data().curtidas || [];
+      if (curtidas.includes(usuarioLogado.uid)) {
+        curtidas = curtidas.filter(id => id !== usuarioLogado.uid);
+      } else {
+        curtidas.push(usuarioLogado.uid);
+      }
+      await ref.update({ curtidas });
+      renderizarFeedEquipe();
+    }
+  } catch (e) {}
+}
