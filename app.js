@@ -2583,3 +2583,61 @@ if (btnNotificacoes) {
   });
 }
 
+// Função auxiliar para fechar o perfil e abrir o submodal correspondente
+function abrirSubModal(idModal) {
+  document.getElementById('modal-perfil').classList.add('hidden');
+  document.getElementById(idModal).classList.remove('hidden');
+}
+
+// Conquistas
+const btnMenuConquistas = document.getElementById('menu-conquistas');
+if (btnMenuConquistas) {
+  btnMenuConquistas.addEventListener('click', () => {
+    abrirSubModal('modal-conquistas');
+  });
+}
+
+// Equipes
+const btnMenuEquipes = document.getElementById('menu-equipes');
+if (btnMenuEquipes) {
+  btnMenuEquipes.addEventListener('click', () => {
+    abrirSubModal('modal-equipes');
+  });
+}
+
+// Alongamento
+const btnMenuAlongamento = document.getElementById('menu-alongamento');
+if (btnMenuAlongamento) {
+  btnMenuAlongamento.addEventListener('click', () => {
+    abrirSubModal('modal-alongamento');
+  });
+}
+
+// Modo Treinador
+const btnMenuTreinador = document.getElementById('menu-treinador');
+if (btnMenuTreinador) {
+  btnMenuTreinador.addEventListener('click', () => {
+    abrirSubModal('modal-treinador');
+  });
+}
+
+// Salvar Nome no Feed
+const btnSalvarNome = document.getElementById('btn-salvar-nome');
+if (btnSalvarNome) {
+  btnSalvarNome.addEventListener('click', () => {
+    const novoNome = document.getElementById('input-nome-feed').value;
+    // Adicione aqui a lógica para salvar no Firebase (ex: db.collection(...))
+    alert("Nome salvo com sucesso: " + novoNome);
+  });
+}
+
+// Botão Sair da Conta
+const btnSairConta = document.getElementById('btn-sair-conta');
+if (btnSairConta) {
+  btnSairConta.addEventListener('click', () => {
+    firebase.auth().signOut().then(() => {
+      window.location.reload();
+    });
+  });
+}
+
