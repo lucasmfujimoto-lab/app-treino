@@ -2095,3 +2095,33 @@ async function carregarNotificacoesTexto() {
     containerNotif.innerHTML = `<p style="color: #ef4444; font-size: 0.85rem; text-align: center;">Erro ao carregar notificações.</p>`;
   }
 }
+
+// --- CORREÇÃO DOS BOTÕES DE FECHAR (AMIGOS E CHECK-IN) ---
+const modalAmigos = document.getElementById('modal-amigos');
+const btnFecharAmigos = document.getElementById('btn-fechar-modal-amigos');
+
+if (btnFecharAmigos && modalAmigos) {
+  btnFecharAmigos.addEventListener('click', () => {
+    modalAmigos.classList.add('hidden');
+  });
+}
+
+const modalFeedAmigos = document.getElementById('modal-feed-amigos');
+const btnFecharFeedAmigos = document.getElementById('btn-fechar-modal-feed-amigos');
+
+if (btnFecharFeedAmigos && modalFeedAmigos) {
+  btnFecharFeedAmigos.addEventListener('click', () => {
+    modalFeedAmigos.classList.add('hidden');
+  });
+}
+
+// Fechar os modais ao clicar no fundo escuro fora deles
+window.addEventListener('click', (event) => {
+  if (modalAmigos && event.target === modalAmigos) {
+    modalAmigos.classList.add('hidden');
+  }
+  if (modalFeedAmigos && event.target === modalFeedAmigos) {
+    modalFeedAmigos.classList.add('hidden');
+  }
+});
+
