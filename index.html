@@ -64,22 +64,29 @@
   </div>
 
   <!-- INTERFACE PRINCIPAL DO APP -->
-  <div id="app-principal" class="hidden">
+<div id="app-principal" class="hidden">
     <header>
-      <div class="header-topo">
+      <div class="header-topo" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 15px;">
+        <!-- Botão de Menu (Três Riscos) à Esquerda -->
+        <button id="btn-abrir-menu" class="btn-icone-transparente" style="background: none; border: none; cursor: pointer; color: #fff; font-size: 1.4rem;">
+          ☰
+        </button>
+        
+        <!-- Logo e Título Centralizados -->
         <div class="logo-header" style="display: flex; align-items: center; gap: 8px;">
-          
-          <!-- Substitua o SVG antigo pela sua nova imagem -->
-          <img src="IMG_8372.png" alt="Treino do Dia" style="width: 28px; height: 28px; object-fit: contain;">
-          
-          <h1 style="margin: 0; font-size: 1.1rem;">Treino Do Dia</h1>
+          <img src="IMG_8372.png" alt="Logo" style="width: 28px; height: 28px; object-fit: contain;">
+          <h1 style="margin: 0; font-size: 1.1rem; color: #fff;">Treino Do Dia</h1>
         </div>
-        <button id="btn-abrir-perfil" class="btn-secundario" style="padding: 6px 12px; font-size: 0.85rem;">👤 Perfil</button>
+
+        <!-- Ícone de Notificação à Direita -->
+        <button id="btn-notificacoes" class="btn-icone-transparente" style="background: none; border: none; cursor: pointer; position: relative; color: #fff; font-size: 1.2rem;">
+          🔔
+          <!-- Ponto indicador de nova notificação (adicione a classe .ativa quando houver nova foto) -->
+          <span id="badge-notificacao" class="hidden" style="position: absolute; top: 0; right: 0; width: 8px; height: 8px; background-color: #ff3b30; border-radius: 50%;"></span>
+        </button>
       </div>
-      <p id="info-usuario-logado">Usuário: -- | Código: --</p>
+      <p id="info-usuario-logado" style="padding: 0 15px; margin: 0; font-size: 0.85rem; color: #a8a8b3;">Usuário: -- | Código: --</p>
     </header>
-
-
 
     <main class="container">
 
