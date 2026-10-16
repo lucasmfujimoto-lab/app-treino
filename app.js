@@ -1993,7 +1993,7 @@ window.addEventListener('click', (event) => {
   }
 });
 
-// Função para buscar e exibir apenas os textos descritivos das atividades
+// Função para buscar e exibir apenas os textos descritivos das atividades (sem imagens)
 async function carregarNotificacoesTexto() {
   const userAtual = auth.currentUser;
   const containerNotif = document.getElementById('container-lista-notificacoes');
@@ -2036,9 +2036,7 @@ async function carregarNotificacoesTexto() {
       
       feedFotosSnap.forEach(doc => {
         const dados = doc.data();
-        // Se a foto é de uma equipe do usuário e não foi postada por ele mesmo
         if (equipeIds.includes(dados.equipeId) && dados.usuarioUid !== userAtual.uid) {
-          // Acha o nome da equipe correspondente
           const eqObj = equipesDoUsuario.find(e => e.id === dados.equipeId);
           const nomeEquipe = eqObj ? eqObj.nome : "uma equipe";
 
@@ -2077,4 +2075,3 @@ async function carregarNotificacoesTexto() {
     containerNotif.innerHTML = `<p style="color: #ef4444; font-size: 0.85rem; text-align: center;">Erro ao carregar notificações.</p>`;
   }
 }
-
