@@ -690,5 +690,40 @@ button:active {
   font-weight: bold;
 }
 
+/* Estilo para transformar os botões do perfil em lista vertical */
+.modal-perfil-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.item-menu-lista {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #1a1a1e;
+  border: 1px solid #2a2a31;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.item-menu-lista:hover {
+  background-color: #25252b;
+}
+
+.item-menu-lista.destaque {
+  background-color: #00e676;
+  color: #000;
+  font-weight: bold;
+  border: none;
+}
+
 
 
