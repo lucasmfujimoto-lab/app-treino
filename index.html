@@ -456,6 +456,20 @@
   <span onclick="fecharModalAmpliar()" style="position: absolute; top: 20px; right: 25px; font-size: 30px; color: #fff; cursor: pointer;">&times;</span>
   <img id="imagem-ampliada" src="" style="max-width: 90%; max-height: 80vh; border-radius: 8px; border: 2px solid #29292e;" alt="Foto Ampliada">
 </div>
+<!-- Modal de Notificações -->
+<div id="modal-notificacoes" class="modal hidden">
+  <div class="modal-content" style="max-width: 400px; padding: 20px; background: #1a1a1e; border-radius: 12px; border: 1px solid #2a2a31;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin: 0; color: #fff; font-size: 1.1rem;">🔔 Notificações</h3>
+      <button id="btn-fechar-modal-notificacoes" style="background:none; border:none; color:#fff; font-size: 1.2rem; cursor:pointer;">✕</button>
+    </div>
+    
+    <!-- Lista onde aparecem apenas os textos descritivos -->
+    <div id="container-lista-notificacoes" style="max-height: 60vh; overflow-y: auto;">
+      <p style="color: #a1a1aa; font-size: 0.85rem; text-align: center;">Carregando notificações...</p>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
