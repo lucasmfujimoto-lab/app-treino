@@ -285,7 +285,12 @@ function comprimirImagem(file, maxWidth, maxHeight, quality, callback) {
 }
 
 // OBSERVADOR DE AUTENTICAÇÃO ÚNICO E CENTRALIZADO
+// OBSERVADOR DE AUTENTICAÇÃO COM SPLASH SCREEN PARA O IOS
 auth.onAuthStateChanged(async (user) => {
+  const telaSplash = document.getElementById('tela-splash');
+  const telaLogin = document.getElementById("tela-login");
+  const appPrincipal = document.getElementById("app-principal");
+
   if (user) {
     usuarioLogado = user;
     uidAlvoTrabalho = user.uid;
@@ -309,8 +314,6 @@ auth.onAuthStateChanged(async (user) => {
 
     const nomeExibir = perfilUsuario?.nomeExibicao || user.email.split('@')[0];
 
-    const telaLogin = document.getElementById("tela-login");
-    const appPrincipal = document.getElementById("app-principal");
     if (telaLogin) telaLogin.classList.add("hidden");
     if (appPrincipal) appPrincipal.classList.remove("hidden");
     
@@ -328,14 +331,22 @@ auth.onAuthStateChanged(async (user) => {
       btnTreinadorMenu.classList.remove("hidden");
     }
 
-    carregarDadosDoServidor();
+    await carregarDadosDoServidor();
   } else {
-    const telaLogin = document.getElementById("tela-login");
-    const appPrincipal = document.getElementById("app-principal");
     if (telaLogin) telaLogin.classList.remove("hidden");
     if (appPrincipal) appPrincipal.classList.add("hidden");
   }
+
+  // Remove a tela de splash suavemente após o Firebase decidir o estado
+  if (telaSplash) {
+    telaSplash.style.opacity = '0';
+    telaSplash.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => {
+      telaSplash.remove();
+    }, 300);
+  }
 });
+
 
 // REGISTRO DE EVENTOS E INTERAÇÕES DO DOM
 document.addEventListener("DOMContentLoaded", () => {
