@@ -319,51 +319,42 @@
 </div>
 
 <!-- MODAL FEED DOS AMIGOS -->
+<!-- Modal de Check-in dos Amigos -->
 <div id="modal-feed-amigos" class="modal hidden">
-  <div class="modal-content" style="max-width: 400px; padding: 20px;">
+  <div class="modal-content" style="max-width: 400px; padding: 20px; background: #1a1a1e; border-radius: 12px; border: 1px solid #2a2a31;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <!-- Título alterado conforme solicitado -->
       <h3 style="margin: 0; color: #fff; font-size: 1.1rem;">📸 Check-in dos Amigos</h3>
-      <!-- Botão X corrigido com ID exclusivo -->
       <button id="btn-fechar-modal-feed-amigos" style="background:none; border:none; color:#fff; font-size: 1.2rem; cursor:pointer;">✕</button>
     </div>
-
-
-    <!-- Área de Postar Check-in (Fica fixa no topo) -->
-<!-- Área de Postar Check-in -->
-<div id="area-postar-checkin" class="box-postar">
-  <p style="font-size: 0.85rem; color: #a1a1aa; margin-bottom: 10px;">Compartilhe o seu treino de hoje com os amigos:</p>
-  
-  <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
-    <!-- Input nativo com a função onchange para a miniatura -->
-    <input type="file" id="input-foto-checkin" accept="image/*" capture="environment" style="display: none;" onchange="previsualizarFotoCheckin(this)">
     
-    <label for="input-foto-checkin" class="btn-secundario" style="cursor: pointer; padding: 10px 14px; margin: 0;">
-      📸 Tirar foto
-    </label>
+    <div id="area-postar-checkin">
+      <p style="color: #a8a8b3; font-size: 0.85rem; margin-bottom: 12px;">Compartilhe o seu treino de hoje com os amigos:</p>
+      
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+        <label for="input-foto-checkin" style="background: #29292e; color: #00e676; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: bold; border: 1px solid #00e676;">
+          📷 Tirar foto
+        </label>
+        <!-- Importante: o onchange chama a função de pré-visualização -->
+        <input type="file" id="input-foto-checkin" accept="image/*" capture="environment" style="display: none;" onchange="previsualizarFotoCheckin(this)">
+        <span id="nome-foto-checkin" style="color: #a1a1aa; font-size: 0.85rem;">Nenhuma foto</span>
+      </div>
 
-    <!-- Miniatura da foto (clicável para ampliar) -->
-    <img id="miniatura-foto-checkin" src="" alt="Miniatura" class="hidden" style="width: 45px; height: 45px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #00e676;" onclick="ampliarFotoMiniatura(this.src)" title="Clique para ampliar">
+      <!-- Miniatura da foto antes de postar -->
+      <img id="miniatura-foto-checkin" class="hidden" style="width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid #29292e;" alt="Miniatura">
 
-    <span id="nome-foto-checkin" style="font-size: 0.85rem; color: #a1a1aa;">Nenhuma foto</span>
-  </div>
-
-  <button id="btn-postar-checkin" class="btn-primario" style="width: 100%;">Postar Check-in no Feed</button>
-</div>
-
-
-    <!-- Aviso quando já fez check-in no dia -->
-    <div id="aviso-checkin-realizado" class="hidden" style="flex-shrink: 0; background: #122b1c; border: 1px solid #00e676; padding: 10px; border-radius: 8px; text-align: center; color: #00e676; font-size: 0.85rem; font-weight: bold; margin-bottom: 12px;">
-      ✅ Você já realizou seu check-in de hoje!
+      <button id="btn-postar-checkin" style="width: 100%; padding: 12px; background: #00e676; border: none; border-radius: 8px; font-weight: bold; color: #000; cursor: pointer;">
+        Postar Check-in no Feed
+      </button>
     </div>
 
-    <!-- Contêiner de fotos COM ROLAGEM Apenas aqui -->
-    <div id="container-feed-fotos" class="feed-posts" style="flex: 1; overflow-y: auto; padding-right: 4px;">
-      <p style="color: #a1a1aa; font-size: 0.85rem; text-align: center;">Carregando check-ins...</p>
+    <div id="aviso-checkin-realizado" class="hidden" style="text-align: center; padding: 15px;">
+      <p style="color: #00e676; font-size: 0.9rem;">✅ Você já realizou o seu check-in de hoje!</p>
     </div>
 
+    <div id="container-feed-fotos" style="margin-top: 20px; max-height: 40vh; overflow-y: auto;"></div>
   </div>
 </div>
+
 
 
 
