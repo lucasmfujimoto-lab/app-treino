@@ -1142,7 +1142,7 @@ function renderizarCalendario() {
   if (!cal) return;
   cal.innerHTML = '';
 
-  for (let i = 13; i >= 0; i--) {
+  for (let i = 11; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     
