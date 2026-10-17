@@ -2127,3 +2127,43 @@ window.addEventListener('click', (event) => {
   }
 });
 
+function previsualizarFotoCheckin(input) {
+  const textoStatus = document.getElementById('nome-foto-checkin');
+  const miniatura = document.getElementById('miniatura-foto-checkin');
+
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (miniatura) {
+        miniatura.src = e.target.result;
+        miniatura.classList.remove('hidden');
+      }
+      if (textoStatus) {
+        textoStatus.innerText = "Foto capturada ✓";
+        textoStatus.style.color = "#00e676";
+      }
+    }
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function previsualizarFotoFeed(input) {
+  const textoStatus = document.getElementById('nome-arquivo-foto');
+  const miniatura = document.getElementById('miniatura-foto-feed');
+
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (miniatura) {
+        miniatura.src = e.target.result;
+        miniatura.classList.remove('hidden');
+      }
+      if (textoStatus) {
+        textoStatus.innerText = "Foto capturada ✓";
+        textoStatus.style.color = "#00e676";
+      }
+    }
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
