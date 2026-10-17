@@ -339,6 +339,109 @@ auth.onAuthStateChanged(async (user) => {
 
 // REGISTRO DE EVENTOS E INTERAÇÕES DO DOM
 document.addEventListener("DOMContentLoaded", () => {
+  
+  // Garantir o funcionamento direto do botão de postar check-in
+const btnPostarCheckin = document.getElementById('btn-postar-checkin');
+if (btnPostarCheckin) {
+  // Remove qualquer evento antigo duplicado e adiciona o novo
+  btnPostarCheckin.onclick = null;
+  btnPostarCheckin.addEventListener('click', async () => {
+    const inputFotoCheckin = document.getElementById('input-foto-checkin');
+    const nomeFotoCheckin = document.getElementById('nome-foto-checkin');
+    
+    if (!inputFotoCheckin || !inputFotoCheckin.files || inputFotoCheckin.files.length === 0) {
+      return alert("Por favor, tire uma foto antes de postar.");
+    }
+
+    const file = inputFotoCheckin.files[0];
+    const userAtual = auth.currentUser;
+    
+    if (!userAtual) {
+      return alert("Você precisa estar logado para postar.");
+    }
+
+    const hoje = obterDataLocalIso();
+    btnPostarCheckin.disabled = true;
+    btnPostarCheckin.textContent = "⏳ Enviando foto...";
+
+    try {
+      // 1. Valida se já postou hoje
+      const checkHoje = await db.collection("feed_amigos")
+        .where("usuarioId", "==", userAtual.uid)
+        .where("dataData", "==", hoje)
+        .get();
+
+      if (!checkHoje.empty) {
+        btnPostarCheckin.disabled = false;
+        btnPostarCheckin.textContent = "Postar Check-in no Feed";
+        return alert("Você já realizou o seu check-in diário de hoje!");
+      }
+
+      // 2. Comprime a foto antes de enviar
+      comprimirImagem(file, 800, 800, 0.7, async function(base64Comprimido) {
+        try {
+          const userDoc = await db.collection("usuarios").doc(userAtual.uid).get();
+          const userData = userDoc.exists ? userDoc.data() : {};
+
+          const agora = new Date();
+          const dataFormatada = agora.toLocaleDateString('pt-BR');
+          const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+          // 3. Salva no Firestore
+          await db.collection("feed_amigos").add({
+            usuarioId: userAtual.uid,
+            nomeUsuario: userData.nomeExibicao || userAtual.email.split('@')[0],
+            fotoUrl: base64Comprimido,
+            dataData: hoje,
+            dataExibicao: `${dataFormatada} às ${horaFormatada}`,
+            timestamp: agora.getTime(),
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          // 4. Limpeza automática (Mantém apenas os últimos 20 posts)
+          const todosPostsSnap = await db.collection("feed_amigos")
+            .orderBy("timestamp", "asc")
+            .get();
+
+          if (todosPostsSnap.docs.length > 20) {
+            const excesso = todosPostsSnap.docs.length - 20;
+            for (let i = 0; i < excesso; i++) {
+              await db.collection("feed_amigos").doc(todosPostsSnap.docs[i].id).delete();
+            }
+          }
+
+          alert("Check-in postado com sucesso! 🎉");
+          inputFotoCheckin.value = "";
+          
+          const miniatura = document.getElementById('miniatura-foto-checkin');
+          if (miniatura) {
+            miniatura.src = "";
+            miniatura.classList.add('hidden');
+          }
+          if (nomeFotoCheckin) {
+            nomeFotoCheckin.textContent = "Nenhuma foto";
+            nomeFotoCheckin.style.color = "#a1a1aa";
+          }
+
+          carregarFeedAmigos();
+        } catch (errInner) {
+          console.error("Erro interno ao salvar foto:", errInner);
+          alert("Erro ao salvar foto: " + errInner.message);
+        } finally {
+          btnPostarCheckin.disabled = false;
+          btnPostarCheckin.textContent = "Postar Check-in no Feed";
+        }
+      });
+
+    } catch (err) {
+      console.error("Erro ao postar check-in:", err);
+      alert("Erro ao postar check-in: " + err.message);
+      btnPostarCheckin.disabled = false;
+      btnPostarCheckin.textContent = "Postar Check-in no Feed";
+    }
+  });
+}
+
   const btnGoogle = document.getElementById('btn-login-google');
   if (btnGoogle) btnGoogle.addEventListener('click', autenticarComGoogle);
 
